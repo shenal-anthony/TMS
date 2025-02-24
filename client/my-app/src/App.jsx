@@ -1,25 +1,33 @@
-import { useState } from 'react'
-import './App.css'
-import Button from '@mui/material/Button';
+import React from "react";
+import "./App.css";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+// import GuideLayout from "./layouts/GuideLayout";
+// import GuideDashboard from "./pages/GuideDashboard";
 
+// Dummy role (replace with real auth logic)
+// const userRole = "admin"; // Change to "admin" for testing
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
+    // userRole === "admin" ?
+    // (
     <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <Button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </Button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-
-      </div>
+      <h2>Admin</h2>
+      <AdminLayout>
+        <AdminDashboard />
+      </AdminLayout>
     </>
-  )
+  );
+  // )
+  // : (
+  //   <>
+  //     <h1>Guide</h1>
+  //     <GuideLayout>
+  //       <GuideDashboard />
+  //     </GuideLayout>
+  //   </>
+  // )
 }
 
-export default App
+export default App;
