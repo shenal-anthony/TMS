@@ -11,7 +11,7 @@ import {
 
 const Header = () => {
   return (
-    <AppBar position="fixed" sx={{ width: `calc(100% - 240px )`, ml: "240px" }}>
+    <AppBar position="fixed" sx={{ width: `calc(100% - 200px )`, ml: "240px" }}>
       <Toolbar>
         {/* <IconButton
           size="large"
