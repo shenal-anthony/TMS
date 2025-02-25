@@ -1,26 +1,24 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-const { createUser, findUserByEmail } = require('../models/userModel');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
+    const { username, email, password } = req.body;
 
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
+    // Check if user already exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await createUser(name, email, hashedPassword);
-    
-    res.status(201).json({ message: 'User registered successfully', user });
+
+    // Create new user
+    const newUser = await User.create({ username, email, password: hashedPassword });
+
+    res.status(201).json({ message: "User registered successfully", user: newUser });
   } catch (error) {
-    res.status(500).json({ message: 'Error registering user', error: error.message });
+    res.status(500).json({ message: "Error registering user", error });
   }
 };
 
