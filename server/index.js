@@ -1,15 +1,16 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
-const pool = require('./db');
+const bodyParser = require('body-parser');
+const userRoutes = require('./routes/userRoutes');
 
-// middleware
+require('dotenv').config();
+
+const app = express();
+
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
+app.use('/api/users', userRoutes);
 
-// routes
-
-app.listen(8000, () => {
-    console.log('Server is running on port 8000');
-});
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
