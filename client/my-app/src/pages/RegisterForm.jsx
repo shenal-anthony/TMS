@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { registerUser } from "../services/authService";
 import { useNavigate } from "react-router-dom";
+import { TextField, Button, Container, Typography, Card } from "@mui/material";
 
 const RegisterForm = () => {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
@@ -23,16 +28,54 @@ const RegisterForm = () => {
   };
 
   return (
-    <div>
-      <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="name" name="name" placeholder="Username" onChange={handleChange} required />
-        <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
-        <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
-        <button type="submit">Register</button>
-      </form>
-      {message && <p>{message}</p>}
-    </div>
+    <Container className="flex items-center justify-center min-h-screen">
+      <Card className="p-8 shadow-xl w-full max-w-sm">
+        <Typography variant="h5" className="text-center mb-4">
+          Register
+        </Typography>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <TextField
+              label="Username"
+              type="text"
+              name="name"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <TextField
+              label="Email"
+              type="email"
+              name="email"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <TextField
+              label="Password"
+              type="password"
+              name="password"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <Button type="submit" variant="contained" color="primary" fullWidth>
+            Register
+          </Button>
+        </form>
+        {message && (
+          <Typography variant="body2" className="text-center mt-4 text-red-600">
+            {message}
+          </Typography>
+        )}
+      </Card>
+    </Container>
   );
 };
 
