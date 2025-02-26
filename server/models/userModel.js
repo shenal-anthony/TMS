@@ -1,3 +1,4 @@
+const { Pool } = require('pg');
 const pool = require('../db');
 
 const createUser = async (name, email, hashedPassword) => {
