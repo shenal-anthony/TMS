@@ -1,26 +1,37 @@
+const pool = require("../db");
 const bcrypt = require("../node_modules/bcryptjs");
-const jwt = require("../node_modules/jsonwebtoken");
-const User = require("../models/User");
-
+const generateToken = require("../utils/jwtGenerator");
 
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Check if user exists
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(400).json({ message: "Invalid email or password" });
+    const userQuery = "SELECT * FROM users WHERE email = $1";
+    const userResult = await pool.query(userQuery, [email]);
 
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
 
-    // Generate token
-    const token = jwt.sign({ id: user.id }, "secret_key", { expiresIn: "1h" });
+    const user = userResult.rows[0];
 
-    res.status(200).json({ message: "Login successful", token });
+    // Compare passwords
+    // const isMatch = await bcrypt.compare(password, user.password);
+    // if (!isMatch) {
+    //     return res.status(401).json({ message: "Invalid email or password" });
+    // }
+    if (password !== user.password) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Generate JWT token
+    const token = generateToken(user.id);
+
+    res.status(200).json({ token, userId: user.id, email: user.email });
   } catch (error) {
-    res.status(500).json({ message: "Error logging in", error });
+    console.error("Login error:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
