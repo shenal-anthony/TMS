@@ -1,61 +1,26 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { getUserData } from "../services/authService";
 
 const Dashboard = () => {
-  const [userData, setUserData] = useState(null);
-  const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const fetchUserName = async () => {
+      try {
+        const data = await getUserData();
+        setUserName(data.name); // Store the user's name
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
 
-    if (!token) {
-      // Redirect to login if no token is found
-      navigate("/login");
-      return;
-    }
-
-    // Fetch user dashboard data
-    fetch("http://localhost:8000/api/auth/dashboard", {
-      method: "GET",
-      headers: {
-        Authorization: token, // Send the token in the Authorization header
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Authentication failed");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setUserData(data);
-      })
-      .catch(() => {
-        // console.error("Error:", error);
-        localStorage.removeItem("token"); // Remove invalid token
-        navigate("/login"); // Redirect to login if token is invalid or expired
-      });
-  }, [navigate]);
+    fetchUserName();
+  }, []);
 
   return (
     <div>
       <h1>Dashboard</h1>
-      {userData ? (
-        <div>
-          <p>Welcome, {userData.name}!</p>
-          <p>Email: {userData.email}</p>
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              navigate("/login");
-            }}
-          >
-            Logout
-          </button>
-        </div>
-      ) : (
-        <p>Loading...</p>
-      )}
+      <h2>Welcome, {userName ? userName : "User"}!</h2>
     </div>
   );
 };

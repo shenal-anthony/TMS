@@ -5,6 +5,8 @@ import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
 import VehicleRegForm from "./pages/VehicleRegisterForm";
 import ProtectedRoute from "./components/ProtectedRoute";
+// import PendingBookings from "./pages/PendingBookings";
+// import ConfirmedBookings from "./pages/ConfirmedBookings";
 
 const App = () => {
   return (
@@ -16,14 +18,17 @@ const App = () => {
 
         {/* Protected Routes (Wrapped in BaseLayout) */}
         <Route element={<BaseLayout />}>
+          <Routes path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/vehicleregister" element={<VehicleRegForm />} />
+          {/* <Route path="bookings/pending" element={<PendingBookings />} /> */}
+          {/* <Route path="bookings/confirmed" element={<ConfirmedBookings />} /> */}
+          {/* <Route path="/vehicleregister" element={<VehicleRegForm />} /> */}
           {/* <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} /> */}
         </Route>
       </Routes>
     </Router>
   );
-};
+}
 
 export default App;

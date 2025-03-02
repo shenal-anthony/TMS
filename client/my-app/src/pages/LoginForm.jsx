@@ -29,7 +29,7 @@ const LoginForm = () => {
     return (
         <Container className="flex items-center justify-center min-h-screen">
             <Card className="p-8 shadow-xl w-full max-w-sm">
-                <div><Typography variant="h5" className="text-center mb-4">
+                <div><Typography variant="h5" className="text-center mb-4 p-1">
                     Login
                 </Typography>
                 </div>
@@ -58,7 +58,7 @@ const LoginForm = () => {
                         Login
                     </Button>
                 </form>
-                <div>
+                <div className="p-2">
                 <Typography variant="body2" className="text-center mt-4">
                     Don't have an account? <Link to="/register" className="text-blue-600">Sign up</Link>
                 </Typography>

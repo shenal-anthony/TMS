@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { registerUser } from "../services/authService";
 import { useNavigate } from "react-router-dom";
-import { TextField, Button, Container, Typography, Card } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Container,
+  Typography,
+  Card,
+  Checkbox,
+} from "@mui/material";
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -30,15 +37,37 @@ const RegisterForm = () => {
   return (
     <Container className="flex items-center justify-center min-h-screen">
       <Card className="p-8 shadow-xl w-full max-w-sm">
-        <Typography variant="h5" className="text-center mb-4">
-          Register
-        </Typography>
+        <div className="mb-2">
+          <Typography variant="h5" className="text-center mb-4">
+            Register
+          </Typography>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <TextField
-              label="Username"
+              label="First name"
               type="text"
-              name="name"
+              name="firstName"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <TextField
+              label="Last name"
+              type="text"
+              name="lastName"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <TextField
+              label="Contact number"
+              type="tel"
+              name="contactNo"
               fullWidth
               onChange={handleChange}
               required
@@ -54,12 +83,55 @@ const RegisterForm = () => {
               required
             />
           </div>
+          <div>
+            <TextField
+              label="NIC"
+              type="text"
+              name="nic"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <select label="Admin" type="role" name="role" />
+          </div>
+          <div>
+            <TextField
+              label="Address line 01"
+              type="text"
+              name="addressLine1"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <TextField
+              label="Address line 02"
+              type="text"
+              name="addressLine2"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
 
           <div>
             <TextField
               label="Password"
               type="password"
               name="password"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <TextField
+              label="Confirm Password"
+              type="password"
+              name="confirmPassword"
               fullWidth
               onChange={handleChange}
               required

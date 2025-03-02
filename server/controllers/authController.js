@@ -62,11 +62,6 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // for testing purposes
-    // if (password !== user.password) {
-    //   return res.status(401).json({ message: "Invalid email or password" });
-    // }
-
     // Generate JWT token
     const token = generateToken(user.id);
 

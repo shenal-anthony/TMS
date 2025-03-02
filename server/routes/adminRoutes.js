@@ -1,0 +1,11 @@
+const express = require("express");
+const { getDashboardData } = require("../controllers/dashboardController");
+const { verifyJWT } = require("../middlewares/verifyJWT");
+
+
+const router = express.Router();
+
+// Protected Dashboard route
+router.get("/dashboard", verifyJWT, getDashboardData);
+
+exports.router = router;
