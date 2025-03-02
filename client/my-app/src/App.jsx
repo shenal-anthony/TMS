@@ -1,33 +1,49 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Routes,
+  Route,
+} from "react-router-dom";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { createTheme } from "@mui/material/styles";
+import { useMemo } from "react";
+import { themeSettings } from "./theme";
+import { useSelector } from "react-redux";
+
 import BaseLayout from "./layouts/BaseLayout";
+import Dashboard from "./pages/Dashboard";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
-import Dashboard from "./pages/Dashboard";
-import VehicleRegForm from "./pages/VehicleRegisterForm";
-import ProtectedRoute from "./components/ProtectedRoute";
-// import PendingBookings from "./pages/PendingBookings";
-// import ConfirmedBookings from "./pages/ConfirmedBookings";
 
-const App = () => {
+function App() {
+  const mode = useSelector((state) => state.global.mode);
+  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<RegisterForm />} />
+    <div className="app">
+      <Router>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Routes>
+            {/* Public Routes */}
+            {/* <Route path="/login" element={<LoginForm />} /> */}
+            {/* 
+        
+        <Route path="/register" element={<RegisterForm />} /> */}
 
-        {/* Protected Routes (Wrapped in BaseLayout) */}
-        <Route element={<BaseLayout />}>
-          <Routes path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          {/* <Route path="bookings/pending" element={<PendingBookings />} /> */}
-          {/* <Route path="bookings/confirmed" element={<ConfirmedBookings />} /> */}
-          {/* <Route path="/vehicleregister" element={<VehicleRegForm />} /> */}
-          {/* <Route path="/users" element={<Users />} />
+            {/* Protected Routes (Wrapped in BaseLayout) */}
+            <Route element={<BaseLayout />}>
+              <Routes path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* <Route path="bookings/pending" element={<PendingBookings />} /> */}
+              {/* <Route path="bookings/confirmed" element={<ConfirmedBookings />} /> */}
+              {/* <Route path="/vehicleregister" element={<VehicleRegForm />} /> */}
+              {/* <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} /> */}
-        </Route>
-      </Routes>
-    </Router>
+            </Route>
+          </Routes>
+        </ThemeProvider>
+      </Router>
+    </div>
   );
 }
 
