@@ -6,6 +6,8 @@ require("dotenv").config();
 
 const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
+const fileUpload = require("express-fileupload");
+
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -16,6 +18,7 @@ const PORT = process.env.PORT || 8000;
 // Middlewares
 app.use(cors());
 app.use(bodyParser.json());
+app.use(fileUpload());
 
 // Routes
 app.use("/api/auth", authRoutes);

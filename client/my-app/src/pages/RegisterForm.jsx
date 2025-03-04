@@ -1,82 +1,104 @@
 import { useState } from "react";
-import { registerUser } from "../services/authService";
-import { useNavigate } from "react-router-dom";
-import { TextField, Button, Container, Typography, Card } from "@mui/material";
+import {
+  TextField,
+  Button,
+  MenuItem,
+  Checkbox,
+  FormControlLabel,
+} from "@mui/material";
 
-const RegisterForm = () => {
+export default function SignupForm() {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
+    contactNumber: "",
     email: "",
+    nic: "",
+    address1: "",
+    address2: "",
+    profilePicture: null,
+    role: "Guide",
+    touristLicense: null,
     password: "",
+    confirmPassword: "",
+    agreeTerms: false,
   });
-  const [message, setMessage] = useState("");
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked, files } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "file" ? files[0] : type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const formPayload = new FormData();
+    
+    Object.keys(formData).forEach((key) => {
+      if (formData[key]) {
+        formPayload.append(key, formData[key]);
+      }
+    });
+
     try {
-      const response = await registerUser(formData);
-      setMessage(response.message);
-      navigate("/login"); // Redirect to login after successful registration
+      const response = await fetch("http://localhost:8000/api/auth/register", {
+        method: "POST",
+        body: formPayload,
+      });
+      const data = await response.json();
+      console.log("User registered:", data);
     } catch (error) {
-      setMessage(error.response?.data?.message || "Registration failed");
+      console.error("Error registering user:", error);
     }
   };
 
   return (
-    <Container className="flex items-center justify-center min-h-screen">
-      <Card className="p-8 shadow-xl w-full max-w-sm">
-        <Typography variant="h5" className="text-center mb-4">
-          Register
-        </Typography>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <TextField
-              label="Username"
-              type="text"
-              name="name"
-              fullWidth
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <TextField
-              label="Email"
-              type="email"
-              name="email"
-              fullWidth
-              onChange={handleChange}
-              required
-            />
-          </div>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <form
+        className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md"
+        onSubmit={handleSubmit}
+      >
+        <h2 className="text-2xl font-bold text-center mb-4">Create your account</h2>
+        
+        <TextField label="First name" name="firstName" fullWidth className="mb-3" onChange={handleChange} value={formData.firstName} />
+        <TextField label="Last name" name="lastName" fullWidth className="mb-3" onChange={handleChange} value={formData.lastName} />
+        <TextField label="Contact number" name="contactNumber" fullWidth className="mb-3" onChange={handleChange} value={formData.contactNumber} />
+        <TextField label="E-mail" name="email" type="email" fullWidth className="mb-3" onChange={handleChange} value={formData.email} />
+        <TextField label="NIC" name="nic" fullWidth className="mb-3" onChange={handleChange} value={formData.nic} />
+        <TextField label="Address Line 01" name="address1" fullWidth className="mb-3" onChange={handleChange} value={formData.address1} />
+        <TextField label="Address Line 02" name="address2" fullWidth className="mb-3" onChange={handleChange} value={formData.address2} />
 
-          <div>
-            <TextField
-              label="Password"
-              type="password"
-              name="password"
-              fullWidth
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <Button type="submit" variant="contained" color="primary" fullWidth>
-            Register
-          </Button>
-        </form>
-        {message && (
-          <Typography variant="body2" className="text-center mt-4 text-red-600">
-            {message}
-          </Typography>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Profile Picture</label>
+        <input type="file" name="profilePicture" className="mb-3" onChange={handleChange} />
+
+        <TextField select label="Select the role" name="role" fullWidth className="mb-3" onChange={handleChange} value={formData.role}>
+          <MenuItem value="Guide">Guide</MenuItem>
+          <MenuItem value="Admin">Admin</MenuItem>
+        </TextField>
+
+        {formData.role === "Guide" && (
+          <>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tourist License</label>
+            <input type="file" name="touristLicense" className="mb-3" onChange={handleChange} />
+          </>
         )}
-      </Card>
-    </Container>
-  );
-};
 
-export default RegisterForm;
+        <TextField label="Password" name="password" type="password" fullWidth className="mb-3" onChange={handleChange} value={formData.password} />
+        <TextField label="Re-enter Password" name="confirmPassword" type="password" fullWidth className="mb-3" onChange={handleChange} value={formData.confirmPassword} />
+
+        <FormControlLabel
+          control={<Checkbox name="agreeTerms" onChange={handleChange} checked={formData.agreeTerms} />}
+          label="I agree to the Terms and Conditions, and Privacy Policy"
+        />
+
+        <Button type="submit" variant="contained" color="primary" fullWidth className="mt-4">Sign Up</Button>
+
+        <p className="text-center mt-3 text-gray-600">
+          Already have an account? <a href="/login" className="text-blue-500">Sign In</a>
+        </p>
+      </form>
+    </div>
+  );
+}

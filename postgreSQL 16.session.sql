@@ -1,18 +1,11 @@
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  role VARCHAR(50) NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password TEXT NOT NULL
-);
+-- ALTER TABLE users ADD COLUMN first_name VARCHAR(100);
+-- ALTER TABLE users ADD COLUMN last_name VARCHAR(100);
+-- ALTER TABLE users ADD COLUMN nic VARCHAR(20);
+-- ALTER TABLE users ADD COLUMN contact_number VARCHAR(20);
+-- ALTER TABLE users ADD COLUMN address1 TEXT;
+-- ALTER TABLE users ADD COLUMN address2 TEXT;
+-- ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(20);
+-- ALTER TABLE users ADD COLUMN profile_picture TEXT;
+-- ALTER TABLE users ADD COLUMN tourist_license TEXT;
 
-ALTER TABLE users ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'admin';
-
-
-INSERT INTO users (name, email, password, role)
-VALUES (
-    'name:damian',
-    'email:damian@gmail.com',
-    'password:12345678',
-    'role:guide'
-  );
+ALTER TABLE users drop COLUMN name;

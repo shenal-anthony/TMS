@@ -12,6 +12,7 @@ import Contents from "./pages/Contents";
 import GuideAvailability from "./pages/GuideAvailability";
 import YourVehicles from "./pages/YourVehicles";
 import ManageVehicles from "./pages/ManageVehicles";
+import EditProfile from "./pages/EditProfile";
 
 // import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -22,6 +23,8 @@ const App = () => {
         {/* Public Routes */}
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+
 
         {/* Protected Routes (Wrapped in BaseLayout) */}
         <Route element={<BaseLayout />}>
