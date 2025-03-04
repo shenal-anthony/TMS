@@ -7,22 +7,21 @@ import {
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 import { useMemo } from "react";
-import { themeSettings } from "./theme";
 import { useSelector } from "react-redux";
+import { themeSettings } from "./theme";
+// import { state } from "./state/index";
 
 import BaseLayout from "./layouts/BaseLayout";
 import Dashboard from "./pages/Dashboard";
-import LoginForm from "./pages/LoginForm";
-import RegisterForm from "./pages/RegisterForm";
 
 function App() {
-  const mode = useSelector((state) => state.global.mode);
-  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+  // const mode = useSelector((state) => state.global.mode);
+  // const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
   return (
     <div className="app">
       <Router>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
+        {/* <ThemeProvider theme={theme}> */}
+          {/* <CssBaseline /> */}
           <Routes>
             {/* Public Routes */}
             {/* <Route path="/login" element={<LoginForm />} /> */}
@@ -41,7 +40,7 @@ function App() {
           <Route path="/reports" element={<Reports />} /> */}
             </Route>
           </Routes>
-        </ThemeProvider>
+        {/* </ThemeProvider> */}
       </Router>
     </div>
   );
