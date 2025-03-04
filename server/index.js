@@ -21,10 +21,5 @@ app.use(bodyParser.json());
 app.use("/api/auth", authRoutes);
 
 
-// Default route (optional for testing)
-app.get("/", (req, res) => {
-    res.send("API is running...");
-});
-
 // Console output
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
