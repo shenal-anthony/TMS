@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 // const sequelize = require("./config/database");
 
 require("dotenv").config();
@@ -19,6 +20,10 @@ const PORT = process.env.PORT || 8000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(fileUpload());
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploaded images
+
+
+
 
 // Routes
 app.use("/api/auth", authRoutes);

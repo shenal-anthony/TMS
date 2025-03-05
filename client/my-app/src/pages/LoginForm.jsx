@@ -55,11 +55,16 @@ const LoginForm = () => {
               required
             />
           </div>
+          <div>
+            <Typography variant="body2" className="text-right text-blue-600 ">
+              <Link to="/forgot-password">Forgot password?</Link>
+            </Typography>
+          </div>
           <Button type="submit" variant="contained" color="primary" fullWidth>
             Login
           </Button>
         </form>
-        <div>
+        <div className="mt-4">
           <Typography variant="body2" className="text-center mt-4">
             Don't have an account?{" "}
             <Link to="/register" className="text-blue-600">

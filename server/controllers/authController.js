@@ -34,6 +34,7 @@ const registerUser = async (req, res) => {
     let profilePicturePath = null;
     let touristLicensePath = null;
 
+    // need to make two folders 
     if (profilePicture) {
       profilePicturePath = `/uploads/${Date.now()}_${profilePicture.name}`;
       await profilePicture.mv(`./public${profilePicturePath}`); // Move file to `public/uploads`
@@ -83,8 +84,6 @@ const registerUser = async (req, res) => {
 };
 
 
-
-
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -111,7 +110,6 @@ const loginUser = async (req, res) => {
     res.status(200).json({
       token,
       userId: user.id,
-      name: user.name,
       email: user.email,
     });
   } catch (error) {
@@ -120,4 +118,64 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, registerUser };
+
+const fs = require("fs");
+const path = require("path");
+
+const editProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, email, contactNumber, address1, address2 } = req.body;
+    
+    // Check if the user exists
+    const userQuery = "SELECT * FROM users WHERE id = $1";
+    const userResult = await pool.query(userQuery, [id]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let profilePicturePath = userResult.rows[0].profile_picture;
+
+    // Check if a new profile picture is uploaded
+    if (req.files?.profilePicture) {
+      const profilePicture = req.files.profilePicture;
+
+      // Delete old profile picture if exists
+      if (profilePicturePath) {
+        const oldFilePath = path.join(__dirname, "..", profilePicturePath);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+
+      // Save new profile picture
+      profilePicturePath = `/uploads/${Date.now()}_${profilePicture.name}`;
+      profilePicture.mv(path.join(__dirname, "..", profilePicturePath));
+    }
+
+    // Update user details in the database
+    const updateUserQuery = `
+      UPDATE users 
+      SET first_name = $1, last_name = $2, email = $3, contact_number = $4, 
+          address1 = $5, address2 = $6, profile_picture = $7
+      WHERE id = $8
+      RETURNING id, first_name, last_name, email, contact_number, address1, address2, profile_picture;
+    `;
+
+    const updatedUser = await pool.query(updateUserQuery, [
+      firstName, lastName, email, contactNumber, address1, address2, profilePicturePath, id
+    ]);
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser.rows[0]
+    });
+  } catch (error) {
+    console.error("Edit Profile error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = { loginUser, registerUser, editProfile };

@@ -81,7 +81,7 @@ export default function SignupForm() {
         {formData.role === "Guide" && (
           <>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tourist License</label>
-            <input type="file" name="touristLicense" className="mb-3" onChange={handleChange} />
+            <input type="file" name="touristLicense" className="mb-3" onChange={handleChange} multiple/>
           </>
         )}
 

@@ -40,11 +40,7 @@ const Dashboard = () => {
   return (
     <div>
       <h1>Dashboard</h1>
-      {userData ? (
-        <div>
-          <p>Welcome, {userData.name}!</p>
-          <p>Email: {userData.email}</p>
-          <button
+          <button className="btn"
             onClick={() => {
               localStorage.removeItem("token");
               navigate("/login");
@@ -53,10 +49,6 @@ const Dashboard = () => {
             Logout
           </button>
         </div>
-      ) : (
-        <p>Loading...</p>
-      )}
-    </div>
   );
 };
 

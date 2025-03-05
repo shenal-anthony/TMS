@@ -7,7 +7,7 @@ const router = express.Router();
 // Routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-
+// router.put("/edit-profile/:id", editProfile);
 // Protected Dashboard route
 router.get("/dashboard", verifyJWT, (req, res) => {
   res.json(req.user);
