@@ -1,4 +1,3 @@
-const { Pool } = require('pg');
 const pool = require('../db');
 
 const createUser = async (name, email, hashedPassword) => {
@@ -14,4 +13,19 @@ const findUserByEmail = async (email) => {
   return result.rows[0];
 };
 
-module.exports = { createUser, findUserByEmail };
+const getAllUsers = async () => {
+  const query = `SELECT * FROM users`;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+// Get all admins from the users table
+const getAdmins = async () => {
+  const query = 'SELECT * FROM users WHERE role = $1';
+  const values = ['Admin'];  // Role value for Admin
+  const result = await pool.query(query, values);
+  return result.rows;
+};
+
+
+module.exports = { createUser, findUserByEmail, getAllUsers, getAdmins };
