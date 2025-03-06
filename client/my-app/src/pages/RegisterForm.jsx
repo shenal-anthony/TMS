@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function SignupForm() {
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -52,7 +53,7 @@ export default function SignupForm() {
     });
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/register", {
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: "POST",
         body: formPayload,
       });

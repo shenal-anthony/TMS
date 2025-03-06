@@ -8,7 +8,7 @@ const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes")
 const fileUpload = require("express-fileupload");
-const PORT = process.env.PORT || 8000;
+const port = process.env.PORT || 8001;
 
 // Middlewares
 app.use(cors());
@@ -22,4 +22,4 @@ app.use("/api/auth", authRoutes);
 app.use('/api', adminRoutes);
 
 // Console output
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => console.log(`Server running on port ${port}`));
