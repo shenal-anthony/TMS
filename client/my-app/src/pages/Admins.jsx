@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TablePagination } from "@mui/material";
 
 const Admins = () => {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -24,40 +27,70 @@ const Admins = () => {
       });
   }, []);
 
+  const handleRemove = (id) => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    axios
+      .delete(`${apiUrl}/api/admins/${id}`)
+      .then(() => {
+        setAdmins(admins.filter((admin) => admin.id !== id));
+      })
+      .catch((error) => {
+        setError("Error deleting admin: " + error.message);
+      });
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
-
-  const headers = ["ID", "Name", "Email", "Role"];
 
   return (
     <div>
       <h1>Admins List</h1>
-      <table border="1" style={{ width: "100%", textAlign: "left" }}>
-        <thead>
-          <tr>
-            {headers.map((header, index) => (
-              <th key={index}>{header}</th>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>first name</TableCell>
+              <TableCell>last name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {admins.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((admin) => (
+              <TableRow key={admin.id}>
+                <TableCell>{admin.id}</TableCell>
+                <TableCell>{admin.first_name}</TableCell>
+                <TableCell>{admin.last_name}</TableCell>
+                <TableCell>{admin.email}</TableCell>
+                <TableCell>
+                  <Button variant="contained" color="secondary" onClick={() => handleRemove(admin.id)}>
+                    Remove
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {/* Admin Data Rows */}
-          {admins.length === 0 ? (
-            <tr>
-              <td colSpan="4">No admins found.</td>
-            </tr>
-          ) : (
-            admins.map((admin) => (
-              <tr key={admin.id}>
-                <td>{admin.id}</td>
-                <td>{admin.first_name}</td>
-                <td>{admin.email}</td>
-                <td>{admin.role}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={admins.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
     </div>
   );
 };

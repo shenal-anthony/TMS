@@ -63,7 +63,7 @@ export default function SignupForm() {
       }
 
       const data = await response.json();
-      console.log("User registered:", data);
+      // console.log("User registered:", data);
 
       navigate("/login");
     } catch (error) {

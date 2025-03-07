@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TextField, Button, Container, Typography, Card } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -11,19 +12,19 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch(`${apiUrl}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await axios.post(`${apiUrl}/api/auth/login`, {
+        email,
+        password,
+      });
 
-    const data = await response.json();
-
-    if (response.ok) {
-      localStorage.setItem("token", data.token);
-      navigate("/dashboard"); // Redirect to dashboard
-    } else {
-      alert("Invalid login. Please try again.");
+      // If login is successful, store the token and navigate
+      localStorage.setItem("token", response.data.token);
+      navigate("/dashboard");
+    } catch (error) {
+      alert(
+        error.response?.data?.message || "Invalid login. Please try again."
+      );
     }
   };
 

@@ -1,11 +1,11 @@
-const pool = require('../db');
+const pool = require("../db");
 
-const createUser = async (name, email, hashedPassword) => {
-  const query = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *`;
-  const values = [name, email, hashedPassword];
-  const result = await pool.query(query, values);
-  return result.rows[0];
-};
+// const createUser = async (name, email, hashedPassword) => {
+//   const query = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *`;
+//   const values = [name, email, hashedPassword];
+//   const result = await pool.query(query, values);
+//   return result.rows[0];
+// };
 
 const findUserByEmail = async (email) => {
   const query = `SELECT * FROM users WHERE email = $1`;
@@ -21,11 +21,21 @@ const getAllUsers = async () => {
 
 // Get all admins from the users table
 const getAdmins = async () => {
-  const query = 'SELECT * FROM users WHERE role = $1';
-  const values = ['Admin'];  // Role value for Admin
+  const query = "SELECT * FROM users WHERE role = $1";
+  const values = ["Admin"]; // Role value for Admin
   const result = await pool.query(query, values);
   return result.rows;
 };
 
+const deleteAdminById = async (id) => {
+  const query = "DELETE FROM users WHERE id = $1";
+  await pool.query(query, [id]);
+};
 
-module.exports = { createUser, findUserByEmail, getAllUsers, getAdmins };
+module.exports = {
+  // createUser,
+  findUserByEmail,
+  getAllUsers,
+  getAdmins,
+  deleteAdminById,
+};

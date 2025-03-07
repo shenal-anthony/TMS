@@ -1,9 +1,11 @@
 // server/routes/adminRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const adminController = require('../controllers/adminController');
+const { getAllAdmins, deleteAdmin } = require("../controllers/adminController");
 
 // Route to get all admins
-router.get('/admins', adminController.getAllAdmins);
+router.get("/admins", getAllAdmins);
+router.delete("/admins/:id", deleteAdmin);
+
 
 module.exports = router;
