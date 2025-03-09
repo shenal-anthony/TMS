@@ -1,6 +1,7 @@
 const pool = require("../db");
 const bcrypt = require("../node_modules/bcryptjs");
 const generateToken = require("../utils/jwtGenerator");
+const { findUserByEmail, createUser } = require("../models/userModel");
 
 const registerUser = async (req, res) => {
   try {
@@ -15,14 +16,13 @@ const registerUser = async (req, res) => {
       address2,
       role,
     } = req.body;
+
     const profilePicture = req.files?.profilePicture; // Assuming file upload via FormData
     const touristLicense = req.files?.touristLicense; // Assuming file upload via FormData
 
     // Check if user already exists
-    const userQuery = "SELECT * FROM users WHERE email = $1";
-    const userResult = await pool.query(userQuery, [email]);
-
-    if (userResult.rows.length > 0) {
+    const existingUser = await findUserByEmail(email);
+    if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
@@ -34,10 +34,9 @@ const registerUser = async (req, res) => {
     let profilePicturePath = null;
     let touristLicensePath = null;
 
-    // need to make two folders 
     if (profilePicture) {
       profilePicturePath = `/uploads/${Date.now()}_${profilePicture.name}`;
-      await profilePicture.mv(`./public${profilePicturePath}`); // Move file to `public/uploads`
+      await profilePicture.mv(`./public${profilePicturePath}`);
     }
 
     if (touristLicense) {
@@ -45,14 +44,8 @@ const registerUser = async (req, res) => {
       await touristLicense.mv(`./public${touristLicensePath}`);
     }
 
-    // Insert new user into database
-    const insertUserQuery = `
-      INSERT INTO users 
-      (first_name, last_name, email, password, nic, contact_number, address1, address2, role, profile_picture, tourist_license) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-      RETURNING id, first_name, last_name, email, role`;
-
-    const newUser = await pool.query(insertUserQuery, [
+    // Create user in the database
+    const newUser = await createUser({
       firstName,
       lastName,
       email,
@@ -64,18 +57,18 @@ const registerUser = async (req, res) => {
       role,
       profilePicturePath,
       touristLicensePath,
-    ]);
+    });
 
     // Generate JWT token
-    const token = generateToken(newUser.rows[0].id);
+    const token = generateToken(newUser.user_id);
 
     res.status(201).json({
       token,
-      userId: newUser.rows[0].id,
-      firstName: newUser.rows[0].first_name,
-      lastName: newUser.rows[0].last_name,
-      email: newUser.rows[0].email,
-      role: newUser.rows[0].role,
+      userId: newUser.user_id,
+      firstName: newUser.first_name,
+      lastName: newUser.last_name,
+      email: newUser.email_address,
+      role: newUser.role,
     });
   } catch (error) {
     console.error("Registration error:", error.message);
@@ -83,20 +76,15 @@ const registerUser = async (req, res) => {
   }
 };
 
-
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // Check if user exists
-    const userQuery = "SELECT * FROM users WHERE email = $1";
-    const userResult = await pool.query(userQuery, [email]);
-
-    if (userResult.rows.length === 0) {
+    const user = await findUserByEmail(email);
+    if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
-    const user = userResult.rows[0];
 
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
@@ -105,12 +93,12 @@ const loginUser = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = generateToken(user.id);
+    const token = generateToken(user.user_id);
 
     res.status(200).json({
       token,
-      userId: user.id,
-      email: user.email,
+      userId: user.user_id,
+      email: user.email_address,
     });
   } catch (error) {
     console.error("Login error:", error.message);
@@ -118,15 +106,15 @@ const loginUser = async (req, res) => {
   }
 };
 
-
 const fs = require("fs");
 const path = require("path");
 
 const editProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, contactNumber, address1, address2 } = req.body;
-    
+    const { firstName, lastName, email, contactNumber, address1, address2 } =
+      req.body;
+
     // Check if the user exists
     const userQuery = "SELECT * FROM users WHERE id = $1";
     const userResult = await pool.query(userQuery, [id]);
@@ -164,18 +152,24 @@ const editProfile = async (req, res) => {
     `;
 
     const updatedUser = await pool.query(updateUserQuery, [
-      firstName, lastName, email, contactNumber, address1, address2, profilePicturePath, id
+      firstName,
+      lastName,
+      email,
+      contactNumber,
+      address1,
+      address2,
+      profilePicturePath,
+      id,
     ]);
 
     res.status(200).json({
       message: "Profile updated successfully",
-      user: updatedUser.rows[0]
+      user: updatedUser.rows[0],
     });
   } catch (error) {
     console.error("Edit Profile error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 module.exports = { loginUser, registerUser, editProfile };

@@ -1,16 +1,49 @@
 const pool = require("../db");
 
-// const createUser = async (name, email, hashedPassword) => {
-//   const query = `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *`;
-//   const values = [name, email, hashedPassword];
-//   const result = await pool.query(query, values);
-//   return result.rows[0];
-// };
+const createUser = async (userData) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    hashedPassword,
+    nic,
+    contactNumber,
+    address1,
+    address2,
+    role,
+    profilePicturePath,
+    touristLicensePath,
+  } = userData;
+
+  const query = `
+    INSERT INTO users 
+    (first_name, last_name, email_address, password, nic_number, contact_number, addressline_01, addressline_02, role, profile_picture, tourist_license, status) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Active') 
+    RETURNING user_id, first_name, last_name, email_address, role`;
+
+  const values = [
+    firstName,
+    lastName,
+    email,
+    hashedPassword,
+    nic,
+    contactNumber,
+    address1,
+    address2,
+    role,
+    profilePicturePath,
+    touristLicensePath,
+  ];
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
 
 const findUserByEmail = async (email) => {
-  const query = `SELECT * FROM users WHERE email = $1`;
-  const result = await pool.query(query, [email]);
-  return result.rows[0];
+  const query = "SELECT * FROM users WHERE email_address = $1";
+  const values = [email];
+  const result = await pool.query(query, values);
+  return result.rows.length > 0 ? result.rows[0] : null;
 };
 
 const getAllUsers = async () => {
@@ -28,12 +61,12 @@ const getAdmins = async () => {
 };
 
 const deleteAdminById = async (id) => {
-  const query = "DELETE FROM users WHERE id = $1";
+  const query = "DELETE FROM users WHERE user_id = $1";
   await pool.query(query, [id]);
 };
 
 module.exports = {
-  // createUser,
+  createUser,
   findUserByEmail,
   getAllUsers,
   getAdmins,

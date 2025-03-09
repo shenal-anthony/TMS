@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, TablePagination } from "@mui/material";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  TablePagination,
+} from "@mui/material";
 
 const Admins = () => {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(8);
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -66,24 +76,38 @@ const Admins = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {admins.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((admin) => (
-              <TableRow key={admin.id}>
-                <TableCell>{admin.id}</TableCell>
-                <TableCell>{admin.first_name}</TableCell>
-                <TableCell>{admin.last_name}</TableCell>
-                <TableCell>{admin.email}</TableCell>
-                <TableCell>
-                  <Button variant="contained" color="secondary" onClick={() => handleRemove(admin.id)}>
-                    Remove
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {admins
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((admin) => (
+                <TableRow
+                  key={admin.user_id}
+                  sx={{
+                    "&:hover": {
+                      backgroundColor: "#f5f5f5", // Light gray background on hover
+                      cursor: "default",
+                    },
+                  }}
+                >
+                  <TableCell>{admin.user_id}</TableCell>
+                  <TableCell>{admin.first_name}</TableCell>
+                  <TableCell>{admin.last_name}</TableCell>
+                  <TableCell>{admin.email_address}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleRemove(admin.user_id)}
+                    >
+                      Remove
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[8, 10, 25]}
         component="div"
         count={admins.length}
         rowsPerPage={rowsPerPage}
