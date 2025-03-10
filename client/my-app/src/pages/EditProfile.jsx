@@ -118,7 +118,7 @@ const EditProfile = ({ userId }) => {
           onClick={handleBack}
           className="mb-4"
         >
-          ← Back
+          Back
         </Button>
 
         <h2 className="text-2xl font-semibold text-center mb-4">

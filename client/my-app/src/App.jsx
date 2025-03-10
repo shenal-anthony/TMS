@@ -3,7 +3,7 @@ import BaseLayout from "./layouts/BaseLayout";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
-// import VehicleRegForm from "./pages/VehicleRegisterForm";
+import VehicleRegForm from "./pages/VehicleRegisterForm";
 import Reports from "./pages/Reports";
 import PendingBookings from "./pages/PendingBookings";
 import ViewBookings from "./pages/ViewBookings";
@@ -24,6 +24,7 @@ const App = () => {
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/vehicleRegisterForm" element={<VehicleRegForm />} />
 
 
         {/* Protected Routes (Wrapped in BaseLayout) */}

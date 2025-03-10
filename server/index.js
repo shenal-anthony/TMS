@@ -6,7 +6,9 @@ require("dotenv").config();
 
 const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
-const adminRoutes = require("./routes/adminRoutes")
+const adminRoutes = require("./routes/adminRoutes");
+const vehicleRoutes = require("./routes/vehicleRoutes");
+// const guideRoutes = require("./routes/guideRoutes");
 const fileUpload = require("express-fileupload");
 const port = process.env.PORT || 8001;
 
@@ -19,7 +21,10 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve u
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use('/api', adminRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+// app.use('/api/guide', guideRoutes);
+
 
 // Console output
 app.listen(port, () => console.log(`Server running on port ${port}`));

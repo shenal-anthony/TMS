@@ -40,15 +40,16 @@ const Dashboard = () => {
   return (
     <div>
       <h1>Dashboard</h1>
-          <button className="btn"
-            onClick={() => {
-              localStorage.removeItem("token");
-              navigate("/login");
-            }}
-          >
-            Logout
-          </button>
-        </div>
+      <button
+        className="btn"
+        onClick={() => {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }}
+      >
+        Logout
+      </button>
+    </div>
   );
 };
 

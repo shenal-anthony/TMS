@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import {
   TextField,
   Button,
@@ -45,7 +46,6 @@ export default function SignupForm() {
     }
 
     const formPayload = new FormData();
-
     Object.keys(formData).forEach((key) => {
       if (formData[key]) {
         formPayload.append(key, formData[key]);
@@ -53,17 +53,15 @@ export default function SignupForm() {
     });
 
     try {
-      const response = await fetch(`${apiUrl}/api/auth/register`, {
-        method: "POST",
-        body: formPayload,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to register");
-      }
-
-      const data = await response.json();
-      // console.log("User registered:", data);
+      const response = await axios.post(
+        `${apiUrl}/api/auth/register`,
+        formPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       navigate("/login");
     } catch (error) {
@@ -80,7 +78,6 @@ export default function SignupForm() {
         <h2 className="text-2xl font-bold text-center mb-4">
           Create your account
         </h2>
-
         <TextField
           label="First name"
           name="firstName"
@@ -139,15 +136,26 @@ export default function SignupForm() {
           value={formData.address2}
         />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Profile Picture
-        </label>
-        <input
-          type="file"
-          name="profilePicture"
-          className="mb-3"
-          onChange={handleChange}
-        />
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Profile Picture
+          </label>
+          <Button variant="contained" component="label" className="mb-3">
+            Upload Profile Picture
+            <input
+              type="file"
+              name="profilePicture"
+              id="profilePicture"
+              onChange={handleChange}
+              hidden
+            />
+          </Button>
+          {formData.profilePicture && (
+            <p className="text-sm text-gray-600">
+              Selected file: {formData.profilePicture.name}
+            </p>
+          )}
+        </div>
 
         <TextField
           select
@@ -163,18 +171,32 @@ export default function SignupForm() {
         </TextField>
 
         {formData.role === "Guide" && (
-          <>
+          <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Tourist License
             </label>
             <input
               type="file"
               name="touristLicense"
-              className="mb-3"
+              className="hidden"
+              id="touristLicense"
               onChange={handleChange}
-              multiple
             />
-          </>
+            <Button variant="contained" component="label" className="mb-3">
+              Upload Tourist License
+              <input
+                type="file"
+                name="touristLicense"
+                hidden
+                onChange={handleChange}
+              />
+            </Button>
+            {formData.touristLicense && (
+              <p className="text-sm text-gray-600">
+                Selected file: {formData.touristLicense.name}
+              </p>
+            )}
+          </div>
         )}
 
         <TextField
@@ -197,6 +219,7 @@ export default function SignupForm() {
         />
 
         <FormControlLabel
+          className="m-3"
           control={
             <Checkbox
               name="agreeTerms"

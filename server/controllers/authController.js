@@ -70,6 +70,7 @@ const registerUser = async (req, res) => {
       email: newUser.email_address,
       role: newUser.role,
     });
+    
   } catch (error) {
     console.error("Registration error:", error.message);
     res.status(500).json({ message: "Server error" });
