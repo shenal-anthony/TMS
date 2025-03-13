@@ -1,12 +1,19 @@
 const {
   createVehicle,
   getVehiclesByUserId,
+  findAllVehicles,
 } = require("../models/vehicleModel");
 const { findUserByEmail } = require("../models/userModel");
+const { body, validationResult } = require("express-validator");
 const path = require("path");
 
 const registerVehicle = async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     const {
       email,
       brand,
@@ -17,19 +24,14 @@ const registerVehicle = async (req, res) => {
       airCondition,
       registrationNumber,
       vehicleNumberPlate,
-      vehiclePicture,
-      touristLicense,
+      agreeTerms,
     } = req.body;
 
-    // Ensure required fields are present
-    if (
-      !email ||
-      !brand ||
-      !model ||
-      !registrationNumber ||
-      !vehicleNumberPlate
-    ) {
-      return res.status(400).json({ message: "Missing required fields" });
+    // Check if the user agreed to the terms
+    if (agreeTerms !== "true") {
+      return res
+        .status(400)
+        .json({ message: "You must agree to the terms and conditions" });
     }
 
     // Find user_id from the database using email
@@ -39,8 +41,7 @@ const registerVehicle = async (req, res) => {
     }
 
     const userId = user.user_id;
-
-    console.log("User ID:", userId); // Debug
+    // console.log("User ID:", userId); // Debug
 
     let vehiclePicturePath = null;
     let touristLicensePath = null;
@@ -49,6 +50,19 @@ const registerVehicle = async (req, res) => {
     if (req.files) {
       if (req.files.vehiclePicture) {
         const vehiclePicture = req.files.vehiclePicture;
+        const allowedMimeTypes = ["image/jpeg", "image/png"];
+        if (!allowedMimeTypes.includes(vehiclePicture.mimetype)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid file type for vehicle picture" });
+        }
+
+        // 16MB limit
+        if (vehiclePicture.size > 16 * 1024 * 1024) {
+          return res
+            .status(400)
+            .json({ message: "Vehicle picture size exceeds 16MB" });
+        }
         vehiclePicturePath = `/uploads/vehicles/${Date.now()}_${
           vehiclePicture.name
         }`;
@@ -59,6 +73,18 @@ const registerVehicle = async (req, res) => {
 
       if (req.files.touristLicense) {
         const touristLicense = req.files.touristLicense;
+        const allowedMimeTypes = ["image/jpeg", "image/png", "application/pdf"];
+        if (!allowedMimeTypes.includes(touristLicense.mimetype)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid file type for tourist license" });
+        }
+        if (touristLicense.size > 16 * 1024 * 1024) {
+          // 16MB limit
+          return res
+            .status(400)
+            .json({ message: "Tourist license size exceeds 16MB" });
+        }
         touristLicensePath = `/uploads/vehicles/${Date.now()}_${
           touristLicense.name
         }`;
@@ -113,4 +139,20 @@ const getVehiclesForUser = async (req, res) => {
   }
 };
 
-module.exports = { registerVehicle, getVehiclesForUser };
+const getAllVehicles = async (req, res) => {
+  try {
+    const vehicles = await findAllVehicles();
+    // console.log("Vehicles:", vehicles); // Debug
+
+    if (vehicles.length === 0) {
+      return res.status(404).json({ message: "No vehicles found" });
+    }
+
+    res.status(200).json(vehicles);
+  } catch (error) {
+    console.error("Error retrieving vehicles:", error);
+    res.status(500).json({ message: "Error retrieving vehicles" });
+  }
+};
+
+module.exports = { registerVehicle, getVehiclesForUser, getAllVehicles };

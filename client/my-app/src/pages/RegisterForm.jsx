@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   TextField,
@@ -7,9 +8,8 @@ import {
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 
-export default function SignupForm() {
+const SignupForm = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
   const [formData, setFormData] = useState({
@@ -249,4 +249,6 @@ export default function SignupForm() {
       </form>
     </div>
   );
-}
+};
+
+export default SignupForm;

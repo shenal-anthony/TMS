@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   TextField,
   Button,
@@ -7,8 +8,10 @@ import {
   Checkbox,
   Typography,
   MenuItem,
+  Alert,
+  Container,
+  Box,
 } from "@mui/material";
-import axios from "axios";
 
 const RegisterVehicleForm = () => {
   const [formData, setFormData] = useState({
@@ -16,8 +19,8 @@ const RegisterVehicleForm = () => {
     brand: "",
     model: "",
     vehicleColor: "",
-    vehicleType: "Van",
-    fuelType: "Petrol",
+    vehicleType: "van",
+    fuelType: "petrol",
     airCondition: true,
     registrationNumber: "",
     vehicleNumberPlate: "",
@@ -26,23 +29,30 @@ const RegisterVehicleForm = () => {
     agreeTerms: false,
   });
   const [message, setMessage] = useState("");
+  const [showWarning, setShowWarning] = useState(false);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
   const handleFileChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.files[0] });
   };
 
-  const handleCheckboxChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.checked });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if the user has agreed to the terms
+    if (!formData.agreeTerms) {
+      alert("You must agree to the Terms and Conditions to proceed.");
+      return;
+    }
 
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
@@ -72,103 +82,154 @@ const RegisterVehicleForm = () => {
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <form
-        className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md"
-        onSubmit={handleSubmit}
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          marginTop: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
       >
-        <Typography variant="h5" className="text-center mb-4">
+        <Typography variant="h5" sx={{ mb: 2 }}>
           Register your vehicle
         </Typography>
 
-        <TextField
-          label="Owner's Email"
-          name="email"
-          fullWidth
-          onChange={handleChange}
-          required
-        />
-
-        <TextField label="Brand" name="brand" fullWidth onChange={handleChange} required />
-        <TextField label="Model" name="model" fullWidth onChange={handleChange} required />
-        <TextField label="Vehicle color" name="vehicleColor" fullWidth onChange={handleChange} required />
-
-        <TextField
-          select
-          label="Vehicle type"
-          name="vehicleType"
-          fullWidth
-          onChange={handleChange}
-          value={formData.vehicleType}
-        >
-          <MenuItem value="Van">Van</MenuItem>
-          <MenuItem value="Car">Car</MenuItem>
-          <MenuItem value="Bike">Bike</MenuItem>
-        </TextField>
-
-        <TextField
-          select
-          label="Fuel type"
-          name="fuelType"
-          fullWidth
-          onChange={handleChange}
-          value={formData.fuelType}
-        >
-          <MenuItem value="Petrol">Petrol</MenuItem>
-          <MenuItem value="Diesel">Diesel</MenuItem>
-          <MenuItem value="Electric">Electric</MenuItem>
-        </TextField>
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              name="airCondition"
-              checked={formData.airCondition}
-              onChange={handleCheckboxChange}
+        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              label="Owner's Email"
+              name="email"
+              fullWidth
+              onChange={handleChange}
+              required
             />
-          }
-          label="Air Condition Available"
-        />
 
-        <TextField label="Registration number" name="registrationNumber" fullWidth onChange={handleChange} required />
-        <TextField label="Vehicle number plate" name="vehicleNumberPlate" fullWidth onChange={handleChange} required />
-
-        <div className="mb-4 mt-4">
-          <Button variant="contained" component="label">
-            Upload Vehicle Picture
-            <input type="file" name="vehiclePicture" onChange={handleFileChange} />
-          </Button>
-        </div>
-
-        <div className="mb-4 mt-4">
-          <Button variant="contained" component="label">
-            Upload Tourist License
-            <input type="file" name="touristLicense" onChange={handleFileChange} />
-          </Button>
-        </div>
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              name="agreeTerms"
-              checked={formData.agreeTerms}
-              onChange={handleCheckboxChange}
+            <TextField
+              label="Brand"
+              name="brand"
+              fullWidth
+              onChange={handleChange}
+              required
             />
-          }
-          label="I agree to the Terms and Conditions, and Privacy Policy"
-        />
 
-        <Button type="submit" variant="contained" color="error" fullWidth>
-          Register
-        </Button>
+            <TextField
+              label="Model"
+              name="model"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
 
-        <div className="mt-4">
-          <Button variant="contained" color="primary" fullWidth onClick={() => navigate(-1)}>
-            Back
-          </Button>
-        </div>
-      </form>
-    </div>
+            <TextField
+              label="Vehicle color"
+              name="vehicleColor"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+
+            <TextField
+              select
+              label="Vehicle type"
+              name="vehicleType"
+              fullWidth
+              onChange={handleChange}
+              value={formData.vehicleType}
+            >
+              <MenuItem value="van">Van</MenuItem>
+              <MenuItem value="car">Car</MenuItem>
+              <MenuItem value="jeep">Jeep</MenuItem>
+              <MenuItem value="suv">SUV</MenuItem>
+            </TextField>
+
+            <TextField
+              select
+              label="Fuel type"
+              name="fuelType"
+              fullWidth
+              onChange={handleChange}
+              value={formData.fuelType}
+            >
+              <MenuItem value="petrol">Petrol</MenuItem>
+              <MenuItem value="diesel">Diesel</MenuItem>
+              <MenuItem value="electric">Electric</MenuItem>
+            </TextField>
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="airCondition"
+                  checked={formData.airCondition}
+                  onChange={handleChange}
+                />
+              }
+              label="Air Condition Available"
+            />
+
+            <TextField
+              label="Registration number"
+              name="registrationNumber"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+
+            <TextField
+              label="Vehicle number plate"
+              name="vehicleNumberPlate"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
+
+            <Button variant="contained" component="label">
+              Upload Vehicle Picture
+              <input
+                type="file"
+                name="vehiclePicture"
+                onChange={handleFileChange}
+                hidden
+              />
+            </Button>
+
+            <Button variant="contained" component="label">
+              Upload Tourist License
+              <input
+                type="file"
+                name="touristLicense"
+                onChange={handleFileChange}
+                hidden
+              />
+            </Button>
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="agreeTerms"
+                  checked={formData.agreeTerms}
+                  onChange={handleChange}
+                />
+              }
+              label="I agree to the Terms and Conditions, and Privacy Policy"
+            />
+
+            <Button type="submit" variant="contained" color="error" fullWidth>
+              Register
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={() => navigate(-1)}
+            >
+              Back
+            </Button>
+          </Box>
+        </form>
+      </Box>
+    </Container>
   );
 };
 
