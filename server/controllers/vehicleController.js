@@ -1,4 +1,7 @@
-const { createVehicle, getVehicles } = require("../models/vehicleModel");
+const {
+  createVehicle,
+  getVehiclesByUserId,
+} = require("../models/vehicleModel");
 const { findUserByEmail } = require("../models/userModel");
 const path = require("path");
 
@@ -81,8 +84,7 @@ const registerVehicle = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "Vehicle registered successfully"
-        
+      message: "Vehicle registered successfully",
     });
   } catch (error) {
     console.error("Vehicle registration error:", error);
@@ -90,9 +92,20 @@ const registerVehicle = async (req, res) => {
   }
 };
 
-const getAllVehicles = async (req, res) => {
+const getVehiclesForUser = async (req, res) => {
   try {
-    const vehicles = await getVehicles();
+    const userId = req.user.userId; // From the authenticated token
+    // console.log("User ID:", userId); // Debug
+
+    const vehicles = await getVehiclesByUserId(userId);
+    // console.log("Vehicles:", vehicles); // Debug
+
+    if (vehicles.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No vehicles found for this user" });
+    }
+
     res.status(200).json(vehicles);
   } catch (error) {
     console.error("Error retrieving vehicles:", error);
@@ -100,4 +113,4 @@ const getAllVehicles = async (req, res) => {
   }
 };
 
-module.exports = { registerVehicle, getAllVehicles };
+module.exports = { registerVehicle, getVehiclesForUser };

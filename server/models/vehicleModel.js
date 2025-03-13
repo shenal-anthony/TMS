@@ -44,14 +44,18 @@ const createVehicle = async (vehicleData) => {
   }
 };
 
-const getVehicles = async () => {
+const getVehiclesByUserId = async (userId) => {
   try {
-    const query = "SELECT * FROM vehicles;";
-    const result = await pool.query(query);
+    const query = `
+      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition,registration_number, number_plate
+      FROM vehicles WHERE user_id = $1;
+    `;
+    const result = await pool.query(query, [userId]);
     return result.rows;
   } catch (error) {
+    console.error("Error fetching vehicles by user ID:", error);
     throw error;
   }
 };
 
-module.exports = { createVehicle, getVehicles };
+module.exports = { createVehicle, getVehiclesByUserId };

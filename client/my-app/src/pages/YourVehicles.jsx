@@ -14,35 +14,46 @@ import {
 } from "@mui/material";
 
 const YourVehicles = () => {
-  const [admins, setAdmins] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const handleRegister = () => {
     navigate("/vehicleRegisterForm");
   };
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const token = localStorage.getItem("token"); // Get the token from local storage
+
+    if (!token) {
+      setError("No token found");
+      setLoading(false);
+      return;
+    }
+
     axios
-      .get(`${apiUrl}/api/admins`)
+      .get(`${apiUrl}/api/vehicles`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then((response) => {
-        if (Array.isArray(response.data)) {
-          setAdmins(response.data);
-        } else {
-          setError("Response data is not an array");
-        }
+        setVehicles(response.data);
         setLoading(false);
       })
       .catch((error) => {
-        setError("Error fetching admins: " + error.message);
+        if (error.response && error.response.status === 404) {
+          setVehicles([]);
+        } else {
+          setError("Error fetching vehicles: " + error.message);
+        }
         setLoading(false);
       });
   }, []);
-
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -58,7 +69,9 @@ const YourVehicles = () => {
 
   return (
     <div>
-      <div className="mb-4 mt-4"><h1>View your vehicles here</h1></div>
+      <div className="mb-4 mt-4">
+        <h1>View your vehicles here</h1>
+      </div>
       <div className="mb-4">
         <Button variant="contained" color="primary" onClick={handleRegister}>
           Register vehicle
@@ -75,31 +88,39 @@ const YourVehicles = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {admins
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((vehicle) => (
-                <TableRow
-                  key={vehicle.vehicle_id}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "#f5f5f5", // Light gray background on hover
-                      cursor: "default",
-                    },
-                  }}
-                >
-                  <TableCell>{vehicle.vehicle_id}</TableCell>
-                  <TableCell>{vehicle.first_name}</TableCell>
-                  <TableCell>{vehicle.last_name}</TableCell>
-                  <TableCell>{vehicle.email_address}</TableCell>
-                </TableRow>
-              ))}
+            {vehicles.length > 0 ? (
+              vehicles
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((vehicle) => (
+                  <TableRow
+                    key={vehicle.vehicle_id}
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "#f5f5f5",
+                        cursor: "default",
+                      },
+                    }}
+                  >
+                    <TableCell>{vehicle.vehicle_id}</TableCell>
+                    <TableCell>{vehicle.brand}</TableCell>
+                    <TableCell>{vehicle.model}</TableCell>
+                    <TableCell>{vehicle.air_condition}</TableCell>
+                  </TableRow>
+                ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  No vehicles found
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
       <TablePagination
         rowsPerPageOptions={[8, 10, 25]}
         component="div"
-        count={admins.length}
+        count={vehicles.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}

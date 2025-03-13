@@ -1,11 +1,11 @@
-// server/routes/adminRoutes.js
 const express = require("express");
-const { getAllVehicles, registerVehicle } = require("../controllers/vehicleController");
+const { getVehiclesForUser, registerVehicle } = require("../controllers/vehicleController");
+const verifyJWT = require("../middlewares/verifyJWT");
 const router = express.Router();
 
 
 router.post("/register", registerVehicle);
-router.get("/all", getAllVehicles);
+router.get("/", verifyJWT ,getVehiclesForUser);
 
 
 module.exports = router;

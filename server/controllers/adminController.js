@@ -3,8 +3,8 @@ const user = require("../models/userModel");
 
 const getAllAdmins = async (req, res) => {
   try {
-    const admins = await user.getAdmins(); // Fetch admins
-    res.json(admins); // Send admins list as JSON response
+    const admins = await user.getAdmins();
+    res.json(admins);
   } catch (error) {
     res
       .status(500)

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; // Import axios
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -14,24 +16,18 @@ const Dashboard = () => {
       return;
     }
 
-    // Fetch user dashboard data
-    fetch("http://localhost:8000/api/auth/dashboard", {
-      method: "GET",
-      headers: {
-        Authorization: token, // Send the token in the Authorization header
-      },
-    })
+    // Fetch user dashboard data using axios
+    axios
+      .get(`${apiUrl}/api/auth/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Send the token in the Authorization header
+        },
+      })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Authentication failed");
-        }
-        return response.json();
+        setUserData(response.data); // Set user data from the response
       })
-      .then((data) => {
-        setUserData(data);
-      })
-      .catch(() => {
-        // console.error("Error:", error);
+      .catch((error) => {
+        console.error("Error:", error);
         localStorage.removeItem("token"); // Remove invalid token
         navigate("/login"); // Redirect to login if token is invalid or expired
       });
@@ -40,6 +36,12 @@ const Dashboard = () => {
   return (
     <div>
       <h1>Dashboard</h1>
+      {userData && (
+        <div>
+          <p>Welcome, {userData.name}!</p>
+          <p>Email: {userData.email}</p>
+        </div>
+      )}
       <button
         className="btn"
         onClick={() => {

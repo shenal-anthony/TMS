@@ -18,9 +18,9 @@ const Admins = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL;
     axios
       .get(`${apiUrl}/api/admins`)
       .then((response) => {
@@ -38,7 +38,6 @@ const Admins = () => {
   }, []);
 
   const handleRemove = (id) => {
-    const apiUrl = import.meta.env.VITE_API_URL;
     axios
       .delete(`${apiUrl}/api/admins/${id}`)
       .then(() => {

@@ -70,7 +70,6 @@ const registerUser = async (req, res) => {
       email: newUser.email_address,
       role: newUser.role,
     });
-    
   } catch (error) {
     console.error("Registration error:", error.message);
     res.status(500).json({ message: "Server error" });
@@ -80,27 +79,19 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     // Check if user exists
     const user = await findUserByEmail(email);
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
     // Generate JWT token
     const token = generateToken(user.user_id);
-
-    res.status(200).json({
-      token,
-      userId: user.user_id,
-      email: user.email_address,
-    });
+    res.status(200).json({ token });
   } catch (error) {
     console.error("Login error:", error.message);
     res.status(500).json({ message: "Server error" });
