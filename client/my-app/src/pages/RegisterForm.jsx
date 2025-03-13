@@ -7,6 +7,13 @@ import {
   MenuItem,
   Checkbox,
   FormControlLabel,
+  Box,
+  Typography,
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
 const SignupForm = () => {
@@ -27,6 +34,8 @@ const SignupForm = () => {
     confirmPassword: "",
     agreeTerms: false,
   });
+  const [modalOpen, setModalOpen] = useState(false); // For modal dialog visibility
+  const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -40,8 +49,35 @@ const SignupForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if the user has agreed to the terms
     if (!formData.agreeTerms) {
-      alert("You must agree to the Terms and Conditions before signing up.");
+      setModalMessage("You must agree to the Terms and Conditions before signing up.");
+      setModalOpen(true); // Open modal dialog
+      return; // Stop form submission
+    }
+
+    // Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setModalMessage("Passwords do not match.");
+      setModalOpen(true); // Open modal dialog
+      return;
+    }
+
+    // Check if all required fields are filled
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "contactNumber",
+      "email",
+      "nic",
+      "address1",
+      "password",
+      "confirmPassword",
+    ];
+    const isFormValid = requiredFields.every((field) => formData[field]);
+    if (!isFormValid) {
+      setModalMessage("Please fill out all required fields.");
+      setModalOpen(true); // Open modal dialog
       return;
     }
 
@@ -66,188 +102,200 @@ const SignupForm = () => {
       navigate("/login");
     } catch (error) {
       console.error("Error registering user:", error);
+      if (error.response?.data?.message === "User already exists") {
+        setModalMessage("User with this email already exists.");
+      } else {
+        setModalMessage(
+          error.response?.data?.message || "An error occurred during registration."
+        );
+      }
+      setModalOpen(true); // Open modal dialog
     }
   };
 
+  const handleCloseModal = () => {
+    setModalOpen(false); // Close modal dialog
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <form
-        className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md"
-        onSubmit={handleSubmit}
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          marginTop: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2, // Adds spacing between child elements
+        }}
       >
-        <h2 className="text-2xl font-bold text-center mb-4">
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Create your account
-        </h2>
-        <TextField
-          label="First name"
-          name="firstName"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.firstName}
-        />
-        <TextField
-          label="Last name"
-          name="lastName"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.lastName}
-        />
-        <TextField
-          label="Contact number"
-          name="contactNumber"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.contactNumber}
-        />
-        <TextField
-          label="E-mail"
-          name="email"
-          type="email"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.email}
-        />
-        <TextField
-          label="NIC"
-          name="nic"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.nic}
-        />
-        <TextField
-          label="Address Line 01"
-          name="address1"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.address1}
-        />
-        <TextField
-          label="Address Line 02"
-          name="address2"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.address2}
-        />
+        </Typography>
 
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Profile Picture
-          </label>
-          <Button variant="contained" component="label" className="mb-3">
-            Upload Profile Picture
-            <input
-              type="file"
-              name="profilePicture"
-              id="profilePicture"
+        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              label="First name"
+              name="firstName"
+              fullWidth
               onChange={handleChange}
-              hidden
+              value={formData.firstName}
+              required
             />
-          </Button>
-          {formData.profilePicture && (
-            <p className="text-sm text-gray-600">
-              Selected file: {formData.profilePicture.name}
-            </p>
-          )}
-        </div>
-
-        <TextField
-          select
-          label="Select the role"
-          name="role"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.role}
-        >
-          <MenuItem value="Guide">Guide</MenuItem>
-          <MenuItem value="Admin">Admin</MenuItem>
-        </TextField>
-
-        {formData.role === "Guide" && (
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tourist License
-            </label>
-            <input
-              type="file"
-              name="touristLicense"
-              className="hidden"
-              id="touristLicense"
+            <TextField
+              label="Last name"
+              name="lastName"
+              fullWidth
               onChange={handleChange}
+              value={formData.lastName}
+              required
             />
-            <Button variant="contained" component="label" className="mb-3">
-              Upload Tourist License
-              <input
-                type="file"
-                name="touristLicense"
-                hidden
-                onChange={handleChange}
-              />
-            </Button>
-            {formData.touristLicense && (
-              <p className="text-sm text-gray-600">
-                Selected file: {formData.touristLicense.name}
-              </p>
+            <TextField
+              label="Contact number"
+              name="contactNumber"
+              fullWidth
+              onChange={handleChange}
+              value={formData.contactNumber}
+              required
+            />
+            <TextField
+              label="E-mail"
+              name="email"
+              type="email"
+              fullWidth
+              onChange={handleChange}
+              value={formData.email}
+              required
+            />
+            <TextField
+              label="NIC"
+              name="nic"
+              fullWidth
+              onChange={handleChange}
+              value={formData.nic}
+              required
+            />
+            <TextField
+              label="Address Line 01"
+              name="address1"
+              fullWidth
+              onChange={handleChange}
+              value={formData.address1}
+              required
+            />
+            <TextField
+              label="Address Line 02"
+              name="address2"
+              fullWidth
+              onChange={handleChange}
+              value={formData.address2}
+            />
+
+            <Box>
+              <Button variant="contained" component="label">
+                Upload Profile Picture
+                <input
+                  type="file"
+                  name="profilePicture"
+                  onChange={handleChange}
+                  hidden
+                />
+              </Button>
+              {formData.profilePicture && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Selected file: {formData.profilePicture.name}
+                </Typography>
+              )}
+            </Box>
+
+            <TextField
+              select
+              label="Select the role"
+              name="role"
+              fullWidth
+              onChange={handleChange}
+              value={formData.role}
+            >
+              <MenuItem value="Guide">Guide</MenuItem>
+              <MenuItem value="Admin">Admin</MenuItem>
+            </TextField>
+
+            {formData.role === "Guide" && (
+              <Box>
+                <Button variant="contained" component="label">
+                  Upload Tourist License
+                  <input
+                    type="file"
+                    name="touristLicense"
+                    onChange={handleChange}
+                    hidden
+                  />
+                </Button>
+                {formData.touristLicense && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Selected file: {formData.touristLicense.name}
+                  </Typography>
+                )}
+              </Box>
             )}
-          </div>
-        )}
 
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.password}
-        />
-        <TextField
-          label="Re-enter Password"
-          name="confirmPassword"
-          type="password"
-          fullWidth
-          className="mb-3"
-          onChange={handleChange}
-          value={formData.confirmPassword}
-        />
-
-        <FormControlLabel
-          className="m-3"
-          control={
-            <Checkbox
-              name="agreeTerms"
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              fullWidth
               onChange={handleChange}
-              checked={formData.agreeTerms}
+              value={formData.password}
+              required
             />
-          }
-          label="I agree to the Terms and Conditions, and Privacy Policy"
-        />
+            <TextField
+              label="Re-enter Password"
+              name="confirmPassword"
+              type="password"
+              fullWidth
+              onChange={handleChange}
+              value={formData.confirmPassword}
+              required
+            />
 
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          fullWidth
-          className="mt-4"
-        >
-          Sign Up
-        </Button>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="agreeTerms"
+                  onChange={handleChange}
+                  checked={formData.agreeTerms}
+                />
+              }
+              label="I agree to the Terms and Conditions, and Privacy Policy"
+            />
 
-        <p className="text-center mt-3 text-gray-600">
-          Already have an account?{" "}
-          <a href="/login" className="text-blue-500">
-            Sign In
-          </a>
-        </p>
-      </form>
-    </div>
+            <Button type="submit" variant="contained" color="primary" fullWidth>
+              Sign Up
+            </Button>
+
+            <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
+              Already have an account?{" "}
+              <a href="/login" style={{ color: "primary.main" }}>
+                Sign In
+              </a>
+            </Typography>
+          </Box>
+        </form>
+
+        {/* Modal Dialog for all error messages */}
+        <Dialog open={modalOpen} onClose={handleCloseModal}>
+          <DialogTitle>Error</DialogTitle>
+          <DialogContent>
+            <Typography>{modalMessage}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseModal} color="primary">
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Container>
   );
 };
 
