@@ -282,7 +282,7 @@ const SignupForm = () => {
           </Box>
         </form>
 
-        {/* Modal Dialog for all error messages */}
+        // Modal Dialog for all error messages
         <Dialog open={modalOpen} onClose={handleCloseModal}>
           <DialogTitle>Error</DialogTitle>
           <DialogContent>

@@ -8,12 +8,17 @@ import {
   Checkbox,
   Typography,
   MenuItem,
-  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Container,
   Box,
 } from "@mui/material";
 
 const RegisterVehicleForm = () => {
+  const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
   const [formData, setFormData] = useState({
     email: "",
     brand: "",
@@ -28,17 +33,17 @@ const RegisterVehicleForm = () => {
     touristLicense: null,
     agreeTerms: false,
   });
-  const [message, setMessage] = useState("");
-  const [showWarning, setShowWarning] = useState(false);
-  const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const [modalOpen, setModalOpen] = useState(false); // For modal dialog visibility
+  const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
+  const [isSuccess, setIsSuccess] = useState(false); // To track if registration is successful
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    const { name, value, type, checked, files } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "file" ? files[0] : type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -50,8 +55,11 @@ const RegisterVehicleForm = () => {
 
     // Check if the user has agreed to the terms
     if (!formData.agreeTerms) {
-      alert("You must agree to the Terms and Conditions to proceed.");
-      return;
+      setModalMessage(
+        "You must agree to the Terms and Conditions before Register."
+      );
+      setModalOpen(true); // Open modal dialog
+      return; // Stop form submission
     }
 
     const formDataToSend = new FormData();
@@ -72,12 +80,31 @@ const RegisterVehicleForm = () => {
         }
       );
 
-      setMessage(response.data.message);
-      navigate("/dashboard");
+      // Show success message
+      setModalMessage(response.data.message || "Vehicle registered successfully!");
+      setIsSuccess(true); // Mark as success
+      setModalOpen(true); // Open modal dialog
     } catch (error) {
-      setMessage(
-        error.response?.data?.message || "Vehicle registration failed"
-      );
+      console.error("Error registering vehicle:", error);
+      if (error.response?.data?.message === "Vehicle already exists") {
+        setModalMessage("Vehicle with this License already exists.");
+      } else {
+        setModalMessage(
+          error.response?.data?.message ||
+            "An error occurred during registration."
+        );
+      }
+      setIsSuccess(false); // Mark as error
+      setModalOpen(true); // Open modal dialog
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false); // Close modal dialog
+
+    // Redirect to dashboard after successful registration
+    if (isSuccess) {
+      navigate("/dashboard");
     }
   };
 
@@ -94,7 +121,6 @@ const RegisterVehicleForm = () => {
         <Typography variant="h5" sx={{ mb: 2 }}>
           Register your vehicle
         </Typography>
-
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
@@ -228,6 +254,19 @@ const RegisterVehicleForm = () => {
             </Button>
           </Box>
         </form>
+
+        {/* Modal Dialog for all messages */}
+        <Dialog open={modalOpen} onClose={handleCloseModal}>
+          <DialogTitle>{isSuccess ? "Success" : "Error"}</DialogTitle>
+          <DialogContent>
+            <Typography>{modalMessage}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseModal} color="primary">
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Container>
   );
