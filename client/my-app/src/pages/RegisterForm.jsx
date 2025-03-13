@@ -36,6 +36,7 @@ const SignupForm = () => {
   });
   const [modalOpen, setModalOpen] = useState(false); // For modal dialog visibility
   const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
+  const [isSuccess, setIsSuccess] = useState(false); // To track if registration is successful
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -51,9 +52,11 @@ const SignupForm = () => {
 
     // Check if the user has agreed to the terms
     if (!formData.agreeTerms) {
-      setModalMessage("You must agree to the Terms and Conditions before signing up.");
+      setModalMessage(
+        "You must agree to the Terms and Conditions before signing up."
+      );
       setModalOpen(true); // Open modal dialog
-      return; // Stop form submission
+      return;
     }
 
     // Check if passwords match
@@ -99,22 +102,32 @@ const SignupForm = () => {
         }
       );
 
-      navigate("/login");
+      // Show success message
+      setModalMessage(response.data.message || "User registered successfully!");
+      setIsSuccess(true); // Mark as success
+      setModalOpen(true); // Open modal dialog
     } catch (error) {
       console.error("Error registering user:", error);
       if (error.response?.data?.message === "User already exists") {
         setModalMessage("User with this email already exists.");
       } else {
         setModalMessage(
-          error.response?.data?.message || "An error occurred during registration."
+          error.response?.data?.message ||
+            "An error occurred during registration."
         );
       }
+      setIsSuccess(false); // Mark as error
       setModalOpen(true); // Open modal dialog
     }
   };
 
   const handleCloseModal = () => {
     setModalOpen(false); // Close modal dialog
+
+    // Redirect to dashboard after successful registration
+    if (isSuccess) {
+      navigate("/login");
+    }
   };
 
   return (
@@ -131,7 +144,6 @@ const SignupForm = () => {
         <Typography variant="h4" sx={{ mb: 2 }}>
           Create your account
         </Typography>
-
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
@@ -282,9 +294,9 @@ const SignupForm = () => {
           </Box>
         </form>
 
-        // Modal Dialog for all error messages
+        {/* Modal Dialog for all error messages */}
         <Dialog open={modalOpen} onClose={handleCloseModal}>
-          <DialogTitle>Error</DialogTitle>
+          <DialogTitle>{isSuccess ? "Success" : "Error"}</DialogTitle>
           <DialogContent>
             <Typography>{modalMessage}</Typography>
           </DialogContent>

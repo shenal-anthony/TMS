@@ -59,7 +59,7 @@ const RegisterVehicleForm = () => {
         "You must agree to the Terms and Conditions before Register."
       );
       setModalOpen(true); // Open modal dialog
-      return; // Stop form submission
+      return;
     }
 
     const formDataToSend = new FormData();
