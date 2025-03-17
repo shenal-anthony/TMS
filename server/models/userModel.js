@@ -52,17 +52,23 @@ const getAllUsers = async () => {
   return result.rows;
 };
 
-// Get all admins from the users table
 const getAdmins = async () => {
   const query = "SELECT * FROM users WHERE role = $1";
-  const values = ["Admin"]; // Role value for Admin
+  const values = ["Admin"];
   const result = await pool.query(query, values);
   return result.rows;
 };
 
-const deleteAdminById = async (id) => {
+const deleteUserById = async (id) => {
   const query = "DELETE FROM users WHERE user_id = $1";
   await pool.query(query, [id]);
+};
+
+const getGuides = async () => {
+  const query = "SELECT * FROM users WHERE role = $1";
+  const values = ["Guide"];
+  const result = await pool.query(query, values);
+  return result.rows;
 };
 
 module.exports = {
@@ -70,5 +76,6 @@ module.exports = {
   findUserByEmail,
   getAllUsers,
   getAdmins,
-  deleteAdminById,
+  deleteUserById,
+  getGuides,
 };

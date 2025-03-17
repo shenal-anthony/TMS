@@ -8,7 +8,7 @@ const bodyParser = require("body-parser");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const vehicleRoutes = require("./routes/vehicleRoutes");
-// const guideRoutes = require("./routes/guideRoutes");
+const guideRoutes = require("./routes/guideRoutes");
 const fileUpload = require("express-fileupload");
 const port = process.env.PORT || 8001;
 
@@ -23,7 +23,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve u
 app.use("/api/auth", authRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/vehicles', vehicleRoutes);
-// app.use('/api/guide', guideRoutes);
+app.use('/api/guides', guideRoutes);
 
 
 // Console output

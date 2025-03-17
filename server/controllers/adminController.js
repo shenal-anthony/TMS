@@ -15,7 +15,7 @@ const getAllAdmins = async (req, res) => {
 const deleteAdmin = async (req, res) => {
   const { id } = req.params;
   try {
-    await user.deleteAdminById(id);
+    await user.deleteUserById(id);
     res.json({ message: "Admin deleted successfully" });
   } catch (error) {
     res
