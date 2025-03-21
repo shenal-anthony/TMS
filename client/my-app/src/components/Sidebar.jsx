@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Dashboard,
@@ -7,7 +7,7 @@ import {
   LibraryBooks,
   DirectionsCar,
   BarChart,
-  Explore,
+  ChevronRight,
   ExitToApp,
   ExpandMore,
   ExpandLess,
@@ -25,10 +25,26 @@ const Sidebar = ({ isCollapsed }) => {
   // Helper function to check if the current route is under a specific path
   const isRouteUnder = (path) => location.pathname.startsWith(path);
 
-  // Toggle submenu open/closed
+  // Toggle submenu open/closed and close other menus
   const toggleMenu = (menu) => {
-    setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
+    setOpenMenus((prev) => {
+      const newState = { bookings: false, contents: false, vehicles: false }; // Close all menus
+      newState[menu] = !prev[menu]; // Toggle the clicked menu
+      return newState;
+    });
   };
+
+  // Automatically close submenus when navigating to a different section
+  useEffect(() => {
+    // Close all submenus if the current route is not under any submenu
+    if (
+      !isRouteUnder("/bookings") &&
+      !isRouteUnder("/contents") &&
+      !isRouteUnder("/vehicles")
+    ) {
+      setOpenMenus({ bookings: false, contents: false, vehicles: false });
+    }
+  }, [location.pathname]);
 
   return (
     <aside
@@ -55,7 +71,7 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <div
             className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
-            onClick={() => toggleMenu("bookings")} // Always allow toggling, even in collapsed mode
+            onClick={() => toggleMenu("bookings")} // Toggle bookings menu
           >
             <div className="flex items-center gap-2">
               <Book /> {!isCollapsed && "Bookings"}
@@ -68,10 +84,9 @@ const Sidebar = ({ isCollapsed }) => {
               ))}
           </div>
 
-          {/* Show submenu if:
-              1. The menu is toggled open, OR
-              2. The current route is under "/bookings"
-          */}
+          {/* 1. bookings/confirmed
+              2. bookings/pending       
+           */}
           {(openMenus.bookings || isRouteUnder("/bookings")) && (
             <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
               <li>
@@ -83,7 +98,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <FiberManualRecord fontSize="small" />{" "}
+                  <ChevronRight fontSize="small" />{" "}
                   {!isCollapsed && "Pending Bookings"}
                 </NavLink>
               </li>
@@ -96,7 +111,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <FiberManualRecord fontSize="small" />{" "}
+                  <ChevronRight fontSize="small" />{" "}
                   {!isCollapsed && "View Bookings"}
                 </NavLink>
               </li>
@@ -122,7 +137,7 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <div
             className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
-            onClick={() => toggleMenu("contents")} // Always allow toggling, even in collapsed mode
+            onClick={() => toggleMenu("contents")}
           >
             <div className="flex items-center gap-2">
               <LibraryBooks /> {!isCollapsed && "Contents"}
@@ -150,7 +165,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <FiberManualRecord fontSize="small" />{" "}
+                  <ChevronRight fontSize="small" />{" "}
                   {!isCollapsed && "Destinations"}
                 </NavLink>
               </li>
@@ -163,7 +178,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <FiberManualRecord fontSize="small" />{" "}
+                  <ChevronRight fontSize="small" />{" "}
                   {!isCollapsed && "Events"}
                 </NavLink>
               </li>
@@ -175,7 +190,7 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <div
             className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
-            onClick={() => toggleMenu("vehicles")} // Always allow toggling, even in collapsed mode
+            onClick={() => toggleMenu("vehicles")} // Toggle vehicles menu
           >
             <div className="flex items-center gap-2">
               <DirectionsCar /> {!isCollapsed && "Vehicles"}
@@ -203,7 +218,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <FiberManualRecord fontSize="small" />{" "}
+                  <ChevronRight fontSize="small" />{" "}
                   {!isCollapsed && "Your Vehicles"}
                 </NavLink>
               </li>
@@ -216,7 +231,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <FiberManualRecord fontSize="small" />{" "}
+                  <ChevronRight fontSize="small" />{" "}
                   {!isCollapsed && "Manage Vehicles"}
                 </NavLink>
               </li>
