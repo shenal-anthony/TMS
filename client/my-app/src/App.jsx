@@ -8,7 +8,8 @@ import Reports from "./pages/Reports";
 import PendingBookings from "./pages/PendingBookings";
 import ViewBookings from "./pages/ViewBookings";
 import Admins from "./pages/Admins";
-import Contents from "./pages/Contents";
+import Destinations from "./pages/Destinations";
+import Events from "./pages/Events";
 import GuideAvailability from "./pages/GuideAvailability";
 import YourVehicles from "./pages/YourVehicles";
 import ManageVehicles from "./pages/ManageVehicles";
@@ -33,7 +34,8 @@ const App = () => {
           <Route path="/bookings/pending" element={<PendingBookings />} />
           <Route path="/bookings/confirmed" element={<ViewBookings />} />
           <Route path="/admins" element={<Admins />} />
-          <Route path="/contents" element={<Contents />} />
+          <Route path="/contents/destinations" element={<Destinations />} />
+          <Route path="/contents/events" element={<Events />} />
           <Route path="/guide-availability" element={<GuideAvailability />} />
           <Route path="/vehicles/your-vehicles" element={<YourVehicles />} />
           <Route path="/vehicles/manage-vehicles" element={<ManageVehicles />} />

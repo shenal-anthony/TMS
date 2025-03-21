@@ -1,28 +1,34 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Dashboard,
-  People,
-  DirectionsCar,
-  BarChart,
-  ExpandMore,
-  ExpandLess,
+  Book,
   SupervisorAccount,
   LibraryBooks,
-  FolderShared,
+  DirectionsCar,
+  BarChart,
+  Explore,
   ExitToApp,
-  Book,
-  ManageAccounts,
-  PermMedia,
-  ShowChart,
-  Explore
+  ExpandMore,
+  ExpandLess,
+  FiberManualRecord, // Icon for submenu items
 } from "@mui/icons-material";
 
 const Sidebar = ({ isCollapsed }) => {
-  const [open, setOpen] = useState({
+  const location = useLocation();
+  const [openMenus, setOpenMenus] = useState({
     bookings: false,
+    contents: false,
     vehicles: false,
   });
+
+  // Helper function to check if the current route is under a specific path
+  const isRouteUnder = (path) => location.pathname.startsWith(path);
+
+  // Toggle submenu open/closed
+  const toggleMenu = (menu) => {
+    setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
+  };
 
   return (
     <aside
@@ -35,7 +41,11 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <NavLink
             to="/dashboard"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
             <Dashboard /> {!isCollapsed && "Dashboard"}
           </NavLink>
@@ -43,32 +53,51 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Bookings */}
         <li>
-          <button
-            className="flex items-center justify-between w-full p-2 hover:bg-gray-700"
-            onClick={() => setOpen({ ...open, bookings: !open.bookings })}
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("bookings")} // Always allow toggling, even in collapsed mode
           >
             <div className="flex items-center gap-2">
               <Book /> {!isCollapsed && "Bookings"}
             </div>
-            {!isCollapsed && (open.bookings ? <ExpandLess /> : <ExpandMore />)}
-          </button>
+            {!isCollapsed &&
+              (openMenus.bookings || isRouteUnder("/bookings") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
 
-          {open.bookings && (
-            <ul className="ml-6">
+          {/* Show submenu if:
+              1. The menu is toggled open, OR
+              2. The current route is under "/bookings"
+          */}
+          {(openMenus.bookings || isRouteUnder("/bookings")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
               <li>
                 <NavLink
                   to="/bookings/pending"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  Pending Bookings
+                  <FiberManualRecord fontSize="small" />{" "}
+                  {!isCollapsed && "Pending Bookings"}
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/bookings/confirmed"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  View Bookings
+                  <FiberManualRecord fontSize="small" />{" "}
+                  {!isCollapsed && "View Bookings"}
                 </NavLink>
               </li>
             </ul>
@@ -79,7 +108,11 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <NavLink
             to="/admins"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
             <SupervisorAccount /> {!isCollapsed && "Admins"}
           </NavLink>
@@ -87,52 +120,104 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Contents */}
         <li>
-          <NavLink
-            to="/contents"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("contents")} // Always allow toggling, even in collapsed mode
           >
-            <LibraryBooks /> {!isCollapsed && "Contents"}
-          </NavLink>
-        </li>
+            <div className="flex items-center gap-2">
+              <LibraryBooks /> {!isCollapsed && "Contents"}
+            </div>
+            {!isCollapsed &&
+              (openMenus.contents || isRouteUnder("/contents") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
 
-        {/* Guide & Availability */}
-        <li>
-          <NavLink
-            to="/guide-availability"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
-          >
-            <Explore /> {!isCollapsed && "Guide & Availability"}
-          </NavLink>
+          {/* Show submenu if:
+              1. The menu is toggled open, OR
+              2. The current route is under "/contents"
+          */}
+          {(openMenus.contents || isRouteUnder("/contents")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
+              <li>
+                <NavLink
+                  to="/contents/destinations"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <FiberManualRecord fontSize="small" />{" "}
+                  {!isCollapsed && "Destinations"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contents/events"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <FiberManualRecord fontSize="small" />{" "}
+                  {!isCollapsed && "Events"}
+                </NavLink>
+              </li>
+            </ul>
+          )}
         </li>
 
         {/* Vehicles */}
         <li>
-          <button
-            className="flex items-center justify-between w-full p-2 hover:bg-gray-700"
-            onClick={() => setOpen({ ...open, vehicles: !open.vehicles })}
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("vehicles")} // Always allow toggling, even in collapsed mode
           >
             <div className="flex items-center gap-2">
               <DirectionsCar /> {!isCollapsed && "Vehicles"}
             </div>
-            {!isCollapsed && (open.vehicles ? <ExpandLess /> : <ExpandMore />)}
-          </button>
+            {!isCollapsed &&
+              (openMenus.vehicles || isRouteUnder("/vehicles") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
 
-          {open.vehicles && (
-            <ul className="ml-6">
+          {/* Show submenu if:
+              1. The menu is toggled open, OR
+              2. The current route is under "/vehicles"
+          */}
+          {(openMenus.vehicles || isRouteUnder("/vehicles")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
               <li>
                 <NavLink
                   to="/vehicles/your-vehicles"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  Your Vehicles
+                  <FiberManualRecord fontSize="small" />{" "}
+                  {!isCollapsed && "Your Vehicles"}
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/vehicles/manage-vehicles"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  Manage Vehicles
+                  <FiberManualRecord fontSize="small" />{" "}
+                  {!isCollapsed && "Manage Vehicles"}
                 </NavLink>
               </li>
             </ul>
@@ -143,7 +228,11 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <NavLink
             to="/reports"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
             <BarChart /> {!isCollapsed && "Reports"}
           </NavLink>
@@ -154,7 +243,11 @@ const Sidebar = ({ isCollapsed }) => {
       <div className="mt-auto">
         <NavLink
           to="/login"
-          className="flex items-center gap-2 p-2 hover:bg-red-600"
+          className={({ isActive }) =>
+            `flex items-center gap-2 p-2 hover:bg-red-600 ${
+              isActive ? "bg-red-600" : ""
+            }`
+          }
         >
           <ExitToApp /> {!isCollapsed && "Logout"}
         </NavLink>

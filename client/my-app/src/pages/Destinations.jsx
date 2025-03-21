@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 
-const Contents = () => {
+const Destinations = () => {
   const [contents, setContents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,9 +28,9 @@ const Contents = () => {
   const [currentDestination, setCurrentDestination] = useState({
     destinationName: "",
     description: "",
-    weather_condition: "",
-    location_url: "",
-    picture_url: "",
+    weatherCondition: "",
+    locationUrl: "",
+    pictureUrl: "",
   });
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -143,7 +143,7 @@ const Contents = () => {
 
   return (
     <div>
-      <div className="m-4">
+      <div className="mb-4 mt-4">
         <h1>Destination List</h1>
         <div className="mt-4">
           <Button
@@ -308,8 +308,11 @@ const Contents = () => {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+      <div>
+        <h1>Destination List</h1>
+      </div>
     </div>
   );
 };
 
-export default Contents;
+export default Destinations;
