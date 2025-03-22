@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // Import axios
+import axios from "axios";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
@@ -36,12 +36,8 @@ const Dashboard = () => {
   return (
     <div>
       <h1>Dashboard</h1>
-      {userData && (
-        <div>
-          <p>Welcome, {userData.name}!</p>
-          <p>Email: {userData.email}</p>
-        </div>
-      )}
+      
+      
       <button
         className="btn"
         onClick={() => {

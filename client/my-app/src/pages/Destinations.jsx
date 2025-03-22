@@ -18,13 +18,24 @@ import {
 } from "@mui/material";
 
 const Destinations = () => {
-  const [contents, setContents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [destinationContents, setDestinationContents] = useState([]);
+  const [packageContents, setPackageContents] = useState([]);
+
+  const [destinationloading, setDestinationLoading] = useState(true);
+  const [packageLoading, setPackageLoading] = useState(true);
+
+  const [destinationError, setDestinationError] = useState(null);
+  const [packageError, setPackageError] = useState(null);
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
+
   const [openDialog, setOpenDialog] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [openPackageDialog, setOpenPackageDialog] = useState(false);
+
+  const [isEditingDestination, setIsEditing] = useState(false);
+  const [isEditingPackage, setIsEditingPackage] = useState(false);
+
   const [currentDestination, setCurrentDestination] = useState({
     destinationName: "",
     description: "",
@@ -32,10 +43,18 @@ const Destinations = () => {
     locationUrl: "",
     pictureUrl: "",
   });
+  const [currentPackage, setCurrentPackage] = useState({
+    packageName: "",
+    description: "",
+    price: "",
+    duration: "",
+  });
+
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetchDestinations();
+    fetchPackages();
   }, []);
 
   const fetchDestinations = () => {
@@ -43,33 +62,71 @@ const Destinations = () => {
       .get(`${apiUrl}/api/tourists/destinations`)
       .then((response) => {
         if (Array.isArray(response.data)) {
-          setContents(response.data);
+          setDestinationContents(response.data);
         } else {
-          setError("Response data is not an array");
+          setDestinationError("Response data is not an array");
         }
-        setLoading(false);
+        setDestinationLoading(false);
       })
-      .catch((error) => {
-        setError("Error fetching contents: " + error.message);
-        setLoading(false);
+      .catch((destinationError) => {
+        setDestinationError(
+          "Error fetching destinationContents: " + destinationError.message
+        );
+        setDestinationLoading(false);
       });
   };
 
-  const handleRemove = (id) => {
+  const fetchPackages = () => {
+    axios
+      .get(`${apiUrl}/api/tourists/packages`)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setPackageContents(response.data);
+        } else {
+          setPackageError("Response data is not an array");
+        }
+        setPackageLoading(false);
+      })
+      .catch((packageError) => {
+        setPackageError(
+          "Error fetching destinationContents: " + packageError.message
+        );
+        setPackageLoading(false);
+      });
+  };
+
+  const handleRemoveDestination = (id) => {
     axios
       .delete(`${apiUrl}/api/tourists/destinations/${id}`)
       .then(() => {
-        setContents(
-          contents.filter((destination) => destination.destination_id !== id)
+        setDestinationContents(
+          destinationContents.filter(
+            (destination) => destination.destination_id !== id
+          )
         );
       })
-      .catch((error) => {
-        setError("Error deleting destination: " + error.message);
+      .catch((destinationError) => {
+        setDestinationError(
+          "Error deleting destination: " + destinationError.message
+        );
+      });
+  };
+
+  const handleRemovePackage = (id) => {
+    axios
+      .delete(`${apiUrl}/api/tourists/packages/${id}`)
+      .then(() => {
+        setPackageContents(
+          packageContents.filter((pkg) => pkg.package_id !== id)
+        );
+      })
+      .catch((packageError) => {
+        setPackageError("Error deleting package: " + packageError.message);
       });
   };
 
   const handleAddOrUpdateDestination = () => {
-    if (isEditing) {
+    if (isEditingDestination) {
       // Update existing destination
       axios
         .put(
@@ -77,8 +134,8 @@ const Destinations = () => {
           currentDestination
         )
         .then((response) => {
-          setContents(
-            contents.map((destination) =>
+          setDestinationContents(
+            destinationContents.map((destination) =>
               destination.destination_id === currentDestination.destination_id
                 ? response.data
                 : destination
@@ -87,25 +144,66 @@ const Destinations = () => {
           setOpenDialog(false);
           resetForm();
         })
-        .catch((error) => {
-          setError("Error updating destination: " + error.message);
+        .catch((destinationError) => {
+          setDestinationError(
+            "Error updating destination: " + destinationError.message
+          );
         });
     } else {
       // Add new destination
       axios
         .post(`${apiUrl}/api/tourists/destinations`, currentDestination)
         .then((response) => {
-          setContents([...contents, response.data]);
+          setDestinationContents([...destinationContents, response.data]);
           setOpenDialog(false);
           resetForm();
         })
-        .catch((error) => {
-          setError("Error adding destination: " + error.message);
+        .catch((destinationError) => {
+          setDestinationError(
+            "Error adding destination: " + destinationError.message
+          );
         });
     }
   };
 
-  const handleEdit = (destination) => {
+  const handleAddOrUpdatePackage = () => {
+    if (isEditingPackage) {
+      // Update existing package
+      axios
+        .put(
+          `${apiUrl}/api/tourists/packages/${currentPackage.package_id}`,
+          currentPackage
+        )
+        .then((response) => {
+          setPackageContents(
+            packageContents.map((pkg) =>
+              pkg.package_id === currentPackage.package_id ? response.data : pkg
+            )
+          );
+          setOpenDialog(false);
+          resetForm();
+        })
+        .catch((packageError) => {
+          setPackageError(
+            "Error updating destination: " + packageError.message
+          );
+        });
+    } else {
+      // Add new package
+      axios
+        .post(`${apiUrl}/api/tourists/packages`, currentPackage)
+        .then((response) => {
+          setPackageContents([...packageContents, response.data]);
+          setOpenPackageDialog(false);
+          resetPackageForm();
+        })
+        .catch((packageError) => {
+          setPackageError("Error adding destination: " + packageError.message);
+        });
+    }
+  };
+
+  const handleEditDestination = (destination) => {
     setCurrentDestination({
       destination_id: destination.destination_id,
       destinationName: destination.destination_name,
@@ -116,6 +214,18 @@ const Destinations = () => {
     });
     setIsEditing(true);
     setOpenDialog(true);
+  };
+
+  const handleEditPackage = (pkg) => {
+    setCurrentPackage({
+      package_id: pkg.package_id,
+      packageName: pkg.package_name,
+      description: pkg.description,
+      price: pkg.price,
+      duration: pkg.duration,
+    });
+    setIsEditingPackage(true);
+    setOpenPackageDialog(true);
   };
 
   const resetForm = () => {
@@ -129,6 +239,16 @@ const Destinations = () => {
     setIsEditing(false);
   };
 
+  const resetPackageForm = () => {
+    setCurrentPackage({
+      packageName: "",
+      description: "",
+      price: "",
+      duration: "",
+    });
+    setIsEditingPackage(false);
+  };
+
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -138,178 +258,378 @@ const Destinations = () => {
     setPage(0);
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (destinationloading) return <div>Loading...</div>;
+  if (packageLoading) return <div>Loading...</div>;
+  if (destinationError) return <div>{destinationError}</div>;
+  if (packageError) return <div>{packageError}</div>;
 
   return (
     <div>
-      <div className="mb-4 mt-4">
-        <h1>Destination List</h1>
-        <div className="mt-4">
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              resetForm();
-              setOpenDialog(true);
-            }}
-          >
-            Add New Destination
-          </Button>
+      {/* Destinations part */}
+      <div>
+        {/* para part */}
+        <div className="mb-4 mt-4">
+          <h1>Destination List</h1>
+          <div className="mt-4">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                resetForm();
+                setOpenDialog(true);
+              }}
+            >
+              Add New Destination
+            </Button>
+          </div>
         </div>
+
+        {/* Add/Edit Destination Dialog */}
+        <Dialog
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            resetForm();
+          }}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>
+            {isEditingDestination ? "Edit Destination" : "Add New Destination"}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Destination Name"
+              fullWidth
+              value={currentDestination.destinationName}
+              onChange={(e) =>
+                setCurrentDestination({
+                  ...currentDestination,
+                  destinationName: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Description"
+              fullWidth
+              value={currentDestination.description}
+              onChange={(e) =>
+                setCurrentDestination({
+                  ...currentDestination,
+                  description: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Weather Condition"
+              fullWidth
+              value={currentDestination.weatherCondition}
+              onChange={(e) =>
+                setCurrentDestination({
+                  ...currentDestination,
+                  weatherCondition: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Location URL"
+              fullWidth
+              value={currentDestination.locationUrl}
+              onChange={(e) =>
+                setCurrentDestination({
+                  ...currentDestination,
+                  locationUrl: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Picture URL"
+              fullWidth
+              value={currentDestination.pictureUrl}
+              onChange={(e) =>
+                setCurrentDestination({
+                  ...currentDestination,
+                  pictureUrl: e.target.value,
+                })
+              }
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setOpenDialog(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddOrUpdateDestination} color="primary">
+              {isEditingDestination ? "Update" : "Add"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Destinations Table */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Destination ID</TableCell>
+                <TableCell>Destination Name</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {destinationContents
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((destination) => (
+                  <TableRow
+                    key={destination.destination_id}
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "#f5f5f5",
+                        cursor: "default",
+                      },
+                    }}
+                  >
+                    <TableCell>{destination.destination_id}</TableCell>
+                    <TableCell>{destination.destination_name}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleEditDestination(destination)}
+                      >
+                        Update
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() =>
+                          handleRemoveDestination(destination.destination_id)
+                        }
+                        style={{ marginLeft: "10px" }}
+                      >
+                        Remove
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Pagination */}
+        <TablePagination
+          rowsPerPageOptions={[8, 10, 25]}
+          component="div"
+          count={destinationContents.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </div>
 
-      {/* Add/Edit Destination Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={() => {
-          setOpenDialog(false);
-          resetForm();
-        }}
-        fullWidth
-        maxWidth="md"
-      >
-        <DialogTitle>
-          {isEditing ? "Edit Destination" : "Add New Destination"}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Destination Name"
-            fullWidth
-            value={currentDestination.destinationName}
-            onChange={(e) =>
-              setCurrentDestination({
-                ...currentDestination,
-                destinationName: e.target.value,
-              })
-            }
-          />
-          <TextField
-            margin="dense"
-            label="Description"
-            fullWidth
-            value={currentDestination.description}
-            onChange={(e) =>
-              setCurrentDestination({
-                ...currentDestination,
-                description: e.target.value,
-              })
-            }
-          />
-          <TextField
-            margin="dense"
-            label="Weather Condition"
-            fullWidth
-            value={currentDestination.weatherCondition}
-            onChange={(e) =>
-              setCurrentDestination({
-                ...currentDestination,
-                weatherCondition: e.target.value,
-              })
-            }
-          />
-          <TextField
-            margin="dense"
-            label="Location URL"
-            fullWidth
-            value={currentDestination.locationUrl}
-            onChange={(e) =>
-              setCurrentDestination({
-                ...currentDestination,
-                locationUrl: e.target.value,
-              })
-            }
-          />
-          <TextField
-            margin="dense"
-            label="Picture URL"
-            fullWidth
-            value={currentDestination.pictureUrl}
-            onChange={(e) =>
-              setCurrentDestination({
-                ...currentDestination,
-                pictureUrl: e.target.value,
-              })
-            }
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenDialog(false);
-              resetForm();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleAddOrUpdateDestination} color="primary">
-            {isEditing ? "Update" : "Add"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Packages part */}
+      <div>
+        <div className="mb-4 mt-4">
+          <hr />
+        </div>
+        {/* para part */}
+        <div className="mb-4 mt-4">
+          <h1>Package List</h1>
+          <div className="mt-4">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                resetPackageForm();
+                setOpenPackageDialog(true);
+              }}
+            >
+              Add New Package
+            </Button>
+          </div>
+        </div>
 
-      {/* Destinations Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Destination ID</TableCell>
-              <TableCell>Destination Name</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {contents
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((destination) => (
-                <TableRow
-                  key={destination.destination_id}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "#f5f5f5",
-                      cursor: "default",
-                    },
-                  }}
-                >
-                  <TableCell>{destination.destination_id}</TableCell>
-                  <TableCell>{destination.destination_name}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleEdit(destination)}
+        {/* Add/Edit Package Dialog */}
+        <Dialog
+          open={openPackageDialog}
+          onClose={() => {
+            setOpenPackageDialog(false);
+            resetPackageForm();
+          }}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>
+            {isEditingPackage ? "Edit Package" : "Add New Package"}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Package Name"
+              fullWidth
+              value={currentPackage.packageName}
+              onChange={(e) =>
+                setCurrentPackage({
+                  ...currentPackage,
+                  packageName: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Description"
+              fullWidth
+              value={currentPackage.description}
+              onChange={(e) =>
+                setCurrentPackage({
+                  ...currentPackage,
+                  description: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Price"
+              fullWidth
+              value={currentPackage.price}
+              onChange={(e) =>
+                setCurrentPackage({
+                  ...currentPackage,
+                  price: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Duration"
+              fullWidth
+              value={currentPackage.duration}
+              onChange={(e) =>
+                setCurrentPackage({
+                  ...currentPackage,
+                  duration: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Accomodation ID"
+              fullWidth
+              value={currentPackage.accomodationId}
+              onChange={(e) =>
+                setCurrentPackage({
+                  ...currentPackage,
+                  accomodationId: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Destination ID"
+              fullWidth
+              value={currentPackage.destinationId}
+              onChange={(e) =>
+                setCurrentPackage({
+                  ...currentPackage,
+                  destinationId: e.target.value,
+                })
+              }
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setOpenPackageDialog(false);
+                resetPackageForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddOrUpdatePackage} color="primary">
+              {isEditingPackage ? "Update" : "Add"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Destinations Table */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Package ID</TableCell>
+                <TableCell>Package Name</TableCell>
+                <TableCell>Duration</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {packageContents.length > 0 ? (
+                packageContents
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((pkg) => (
+                    <TableRow
+                      key={pkg.package_id}
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: "#f5f5f5",
+                          cursor: "default",
+                        },
+                      }}
                     >
-                      Update
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleRemove(destination.destination_id)}
-                      style={{ marginLeft: "10px" }}
-                    >
-                      Remove
-                    </Button>
+                      <TableCell>{pkg.package_id}</TableCell>
+                      <TableCell>{pkg.package_name}</TableCell>
+                      <TableCell>{pkg.duration}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => handleEditPackage(pkg)}
+                        >
+                          Update
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => handleRemovePackage(pkg.package_id)}
+                          style={{ marginLeft: "10px" }}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    No packages found
                   </TableCell>
                 </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      {/* Pagination */}
-      <TablePagination
-        rowsPerPageOptions={[8, 10, 25]}
-        component="div"
-        count={contents.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-      <div>
-        <h1>Destination List</h1>
+        {/* Pagination */}
+        <TablePagination
+          rowsPerPageOptions={[8, 10, 25]}
+          component="div"
+          count={packageContents.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </div>
     </div>
   );
