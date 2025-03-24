@@ -1,219 +1,254 @@
-// const apiUrl = import.meta.env.VITE_API_URL;
-
-import React, { useState } from 'react';
-import axios from 'axios';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  TextField,
+  Button,
+  FormControlLabel,
+  Checkbox,
+  Typography,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Container,
+  Box,
+} from "@mui/material";
 
 const Events = () => {
-  const [formData, setFormData] = useState({
-    accommodationName: '',
-    locationUrl: '',
-    contactNumber: '',
-    amenities: '',
-    serviceUrl: '',
-    accommodationType: ''
-  });
-  const [updatedAt, setUpdatedAt] = useState(new Date());
-  const [picture, setPicture] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const [formData, setFormData] = useState({
+    accommodationName: "",
+    locationUrl: "",
+    contactNumber: "",
+    amenities: "",
+    serviceUrl: "",
+    accommodationType: "hotel",
+    picture: null,
+    agreeTerms: false,
+  });
+  const [picturePreview, setPicturePreview] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, [e.target.name]: file });
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPicturePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
+
+    if (!formData.agreeTerms) {
+      setModalMessage(
+        "You must agree to the Terms and Conditions before submitting."
+      );
+      setModalOpen(true);
+      return;
+    }
+
+    const formDataToSend = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (formData[key] !== null) {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
 
     try {
-      const data = new FormData();
-      
-      // Append all form data
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value);
-      });
-      
-      // Append the date/time in ISO format
-      data.append('updatedAt', updatedAt.toISOString());
-      
-      // Append file
-      if (picture) {
-        data.append('picture', picture);
-      }
-
-      const response = await axios.post(`${apiUrl}/api/tourists/accommodations`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      const response = await axios.post(
+        `${apiUrl}/api/tourists/accommodations`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
-      });
+      );
 
-      alert('Accommodation added successfully!');
-      // Reset form
-      setFormData({
-        accommodationName: '',
-        locationUrl: '',
-        contactNumber: '',
-        amenities: '',
-        serviceUrl: '',
-        accommodationType: ''
-      });
-      setUpdatedAt(new Date());
-      setPicture(null);
+      setModalMessage(
+        response.data.message || "Accommodation registered successfully!"
+      );
+      setIsSuccess(true);
+      setModalOpen(true);
     } catch (error) {
-      console.error('Error:', error);
-      alert(error.response?.data?.message || 'Error adding accommodation');
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error registering accommodation:", error);
+      setModalMessage(
+        error.response?.data?.message ||
+          "An error occurred during registration."
+      );
+      setIsSuccess(false);
+      setModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    if (isSuccess) {
+      navigate("/contents/destinations");
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>Add New Accommodation</h2>
-      <form onSubmit={handleSubmit}>
-        {/* Text Inputs */}
-        <div className="form-group">
-          <label>Accommodation Name:</label>
-          <input
-            type="text"
-            name="accommodationName"
-            value={formData.accommodationName}
-            onChange={handleChange}
-            required
-          />
-        </div>
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          marginTop: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Register New Accommodation
+        </Typography>
+        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              label="Accommodation Name"
+              name="accommodationName"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
 
-        <div className="form-group">
-          <label>Location URL:</label>
-          <input
-            type="text"
-            name="locationUrl"
-            value={formData.locationUrl}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            <TextField
+              select
+              label="Accommodation Type"
+              name="accommodationType"
+              fullWidth
+              onChange={handleChange}
+              value={formData.accommodationType}
+            >
+              <MenuItem value="hotel">Hotel</MenuItem>
+              <MenuItem value="apartment">Apartment</MenuItem>
+              <MenuItem value="guesthouse">Guesthouse</MenuItem>
+              <MenuItem value="resort">Resort</MenuItem>
+              <MenuItem value="villa">Villa</MenuItem>
+            </TextField>
 
-        <div className="form-group">
-          <label>Contact Number:</label>
-          <input
-            type="tel"
-            name="contactNumber"
-            value={formData.contactNumber}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            <TextField
+              label="Location URL (Google Maps)"
+              name="locationUrl"
+              fullWidth
+              onChange={handleChange}
+              required
+              placeholder="https://maps.google.com/..."
+            />
 
-        <div className="form-group">
-          <label>Amenities:</label>
-          <input
-            type="text"
-            name="amenities"
-            value={formData.amenities}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            <TextField
+              label="Contact Number"
+              name="contactNumber"
+              fullWidth
+              onChange={handleChange}
+              required
+            />
 
-        <div className="form-group">
-          <label>Service URL:</label>
-          <input
-            type="text"
-            name="serviceUrl"
-            value={formData.serviceUrl}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            <TextField
+              label="Amenities (comma separated)"
+              name="amenities"
+              fullWidth
+              onChange={handleChange}
+              multiline
+              rows={3}
+              placeholder="WiFi, Pool, Parking, etc."
+            />
 
-        <div className="form-group">
-          <label>Accommodation Type:</label>
-          <input
-            type="text"
-            name="accommodationType"
-            value={formData.accommodationType}
-            onChange={handleChange}
-            required
-          />
-        </div>
+            <TextField
+              label="Service URL (Booking link)"
+              name="serviceUrl"
+              fullWidth
+              onChange={handleChange}
+              placeholder="https://booking.com/..."
+            />
 
-        {/* Date/Time Picker */}
-        <div className="form-group">
-          <label>Updated At:</label>
-          <DatePicker
-            selected={updatedAt}
-            onChange={(date) => setUpdatedAt(date)}
-            showTimeSelect
-            timeFormat="HH:mm"
-            timeIntervals={15}
-            dateFormat="MMMM d, yyyy h:mm aa"
-            className="date-picker-input"
-          />
-        </div>
+            <Box>
+              <Button variant="contained" component="label">
+                Upload Accommodation Picture
+                <input
+                  type="file"
+                  name="picture"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  hidden
+                />
+              </Button>
+              {picturePreview && (
+                <Box mt={2}>
+                  <Typography variant="caption">Preview:</Typography>
+                  <img
+                    src={picturePreview}
+                    alt="Preview"
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "250px",
+                      marginTop: "8px",
+                      borderRadius: "4px",
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
 
-        {/* File Input */}
-        <div className="form-group">
-          <label>Accommodation Image:</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setPicture(e.target.files[0])}
-            required
-          />
-          <small>Max 5MB (JPEG, JPG, PNG, GIF)</small>
-        </div>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="agreeTerms"
+                  checked={formData.agreeTerms}
+                  onChange={handleChange}
+                />
+              }
+              label="Terms and Conditions"
+            />
 
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Submitting...' : 'Add Accommodation'}
-        </button>
-      </form>
+            <Button type="submit" variant="contained" color="primary" fullWidth>
+              Register Accommodation
+            </Button>
 
-      <style jsx>{`
-        .form-container {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .form-group {
-          margin-bottom: 15px;
-        }
-        label {
-          display: block;
-          margin-bottom: 5px;
-          font-weight: bold;
-        }
-        input, .date-picker-input {
-          width: 100%;
-          padding: 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-        button {
-          background-color: #4CAF50;
-          color: white;
-          padding: 10px 15px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-        button:disabled {
-          background-color: #cccccc;
-          cursor: not-allowed;
-        }
-        small {
-          display: block;
-          color: #666;
-          font-size: 0.8em;
-          margin-top: 5px;
-        }
-      `}</style>
-    </div>
+            <Button
+              variant="outlined"
+              color="primary"
+              fullWidth
+              onClick={() => navigate(-1)}
+            >
+              Back
+            </Button>
+          </Box>
+        </form>
+
+        {/* Modal Dialog for messages */}
+        <Dialog open={modalOpen} onClose={handleCloseModal}>
+          <DialogTitle>{isSuccess ? "Success" : "Error"}</DialogTitle>
+          <DialogContent>
+            <Typography>{modalMessage}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseModal} color="primary">
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Container>
   );
 };
 

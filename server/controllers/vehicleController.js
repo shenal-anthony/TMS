@@ -3,6 +3,7 @@ const {
   getVehiclesByUserId,
   findAllVehicles,
 } = require("../models/vehicleModel");
+
 const { findUserByEmail } = require("../models/userModel");
 const { body, validationResult } = require("express-validator");
 const path = require("path");
@@ -111,6 +112,7 @@ const registerVehicle = async (req, res) => {
 
     res.status(201).json({
       message: "Vehicle registered successfully",
+      data: newVehicle,
     });
   } catch (error) {
     console.error("Vehicle registration error:", error);

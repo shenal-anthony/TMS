@@ -1,7 +1,8 @@
 const tourist = require("../models/destinationModel");
 const package = require("../models/packageModel");
-const accommodation = require("../models/accommodationModel");
-const { body } = require("express-validator");
+const { createAccommodation } = require("../models/accommodationModel");
+const { body, validationResult } = require("express-validator");
+const path = require("path");
 
 // destinations controller
 
@@ -112,36 +113,70 @@ const deletePackage = async (req, res) => {
 // add
 const addAccommodation = async (req, res) => {
   try {
-    const { body } = req;
+    const {
+      accommodationName,
+      locationUrl,
+      contactNumber,
+      amenities,
+      serviceUrl,
+      accommodationType,
+      agreeTerms,
+    } = req.body;
 
-    // File handling (using express-fileupload)
-    if (!req.files?.picture) {
-      return res.status(400).json({
-        success: false,
-        message: "Accommodation image is required",
-      });
+    // Check if the user agreed to the terms
+    if (agreeTerms !== "true") {
+      return res
+        .status(400)
+        .json({ message: "You must agree to the terms and conditions" });
     }
 
-    const picture = req.files.picture;
-    const pictureName = `accom-${Date.now()}-${picture.name}`;
-    const picturePath = `/uploads/accommodations/${pictureName}`;
+    let pictureUrl = null;
 
-    // Save file to public/uploads/accommodations
-    await picture.mv(`./public${picturePath}`);
+    // Handle file upload
+    if (req.files && req.files.picture) {
+      const picture = req.files.picture;
+      const allowedMimeTypes = ["image/jpeg", "image/png"];
 
-    // Create accommodation
-    const newAccommodation = await accommodation.createAccommodation(body);
+      if (!allowedMimeTypes.includes(picture.mimetype)) {
+        return res
+          .status(400)
+          .json({ message: "Only JPEG and PNG images are allowed" });
+      }
 
-    res.status(201).json({
-      success: true,
-      data: newAccommodation,
+      // 16MB limit
+      if (picture.size > 16 * 1024 * 1024) {
+        return res
+          .status(400)
+          .json({ message: "Image size exceeds 16MB limit" });
+      }
+
+      const fileName = `${Date.now()}_${picture.name}`;
+      pictureUrl = `/uploads/accommodations/${fileName}`;
+      await picture.mv(path.join(__dirname, "../public", pictureUrl));
+    }
+
+    // Create accommodation record in database
+    const newAccommodation = await createAccommodation({
+      accommodationName,
+      locationUrl,
+      pictureUrl,
+      contactNumber,
+      amenities: Array.isArray(amenities)
+        ? amenities
+        : amenities.split(",").map((item) => item.trim()),
+      serviceUrl,
+      accommodationType,
+      updatedAt: new Date().toISOString(),
     });
 
+    res.status(201).json({
+      message: "Accommodation registered successfully",
+    });
   } catch (error) {
-    console.error("Error adding accommodation:", error);
+    console.error("Accommodation registration error:", error);
     res.status(500).json({
-      success: false,
-      message: "Server error",
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };

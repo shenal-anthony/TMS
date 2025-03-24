@@ -31,8 +31,9 @@ const createAccommodation = async (accommodationData) => {
   ];
 
   const result = await pool.query(query, values);
-  console.log(result.rows[0]); // Debugging
+  // console.log(result.rows[0]); // Debugging
   return result.rows[0];
 };
+
 
 module.exports = { createAccommodation };
