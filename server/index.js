@@ -16,6 +16,7 @@ const port = process.env.PORT || 8001;
 // Middlewares
 app.use(cors());
 app.use(bodyParser.json());
+
 app.use(fileUpload());
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploaded images
 

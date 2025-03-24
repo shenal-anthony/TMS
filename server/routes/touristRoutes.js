@@ -9,6 +9,7 @@ const {
   addPackage,
   updatePackage,
   deletePackage,
+  addAccommodation,
 } = require("../controllers/touristController");
 
 // destinations routes
@@ -24,6 +25,9 @@ router.get("/packages", getAllPackages);
 router.post("/packages", addPackage);
 router.put("/packages/:id", updatePackage);
 router.delete("/packages/:id", deletePackage);
+
+// accommodations routes
+router.post("/accommodations", addAccommodation);
 
 // reviews routes
 

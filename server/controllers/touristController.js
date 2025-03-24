@@ -1,5 +1,7 @@
 const tourist = require("../models/destinationModel");
 const package = require("../models/packageModel");
+const accommodation = require("../models/accommodationModel");
+const { body } = require("express-validator");
 
 // destinations controller
 
@@ -14,7 +16,6 @@ const getAllDestinations = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
-
 // add
 const addDestination = async (req, res) => {
   const { body } = req;
@@ -27,7 +28,6 @@ const addDestination = async (req, res) => {
       .json({ message: "Error adding destination", error: error.message });
   }
 };
-
 // update
 const updateDestination = async (req, res) => {
   const { id } = req.params;
@@ -41,7 +41,6 @@ const updateDestination = async (req, res) => {
       .json({ message: "Error updating destination", error: error.message });
   }
 };
-
 // delete
 const deleteDestination = async (req, res) => {
   const { id } = req.params;
@@ -68,7 +67,6 @@ const getAllPackages = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
-
 // add
 const addPackage = async (req, res) => {
   const { body } = req;
@@ -81,7 +79,6 @@ const addPackage = async (req, res) => {
       .json({ message: "Error adding destination", error: error.message });
   }
 };
-
 // update
 const updatePackage = async (req, res) => {
   const { id } = req.params;
@@ -95,7 +92,6 @@ const updatePackage = async (req, res) => {
       .json({ message: "Error updating destination", error: error.message });
   }
 };
-
 // delete
 const deletePackage = async (req, res) => {
   const { id } = req.params;
@@ -109,6 +105,47 @@ const deletePackage = async (req, res) => {
   }
 };
 
+// accommodation controller
+
+// get all
+
+// add
+const addAccommodation = async (req, res) => {
+  try {
+    const { body } = req;
+
+    // File handling (using express-fileupload)
+    if (!req.files?.picture) {
+      return res.status(400).json({
+        success: false,
+        message: "Accommodation image is required",
+      });
+    }
+
+    const picture = req.files.picture;
+    const pictureName = `accom-${Date.now()}-${picture.name}`;
+    const picturePath = `/uploads/accommodations/${pictureName}`;
+
+    // Save file to public/uploads/accommodations
+    await picture.mv(`./public${picturePath}`);
+
+    // Create accommodation
+    const newAccommodation = await accommodation.createAccommodation(body);
+
+    res.status(201).json({
+      success: true,
+      data: newAccommodation,
+    });
+
+  } catch (error) {
+    console.error("Error adding accommodation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
   getAllDestinations,
   addDestination,
@@ -118,4 +155,5 @@ module.exports = {
   addPackage,
   updatePackage,
   deletePackage,
+  addAccommodation,
 };
