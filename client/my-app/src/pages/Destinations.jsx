@@ -48,6 +48,8 @@ const Destinations = () => {
     description: "",
     price: "",
     duration: "",
+    accommodationId: "",
+    destinationId: "",
   });
 
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -223,6 +225,8 @@ const Destinations = () => {
       description: pkg.description,
       price: pkg.price,
       duration: pkg.duration,
+      accommodationId: pkg.accommodation_id,
+      destinationId: pkg.destination_id,
     });
     setIsEditingPackage(true);
     setOpenPackageDialog(true);
@@ -245,6 +249,8 @@ const Destinations = () => {
       description: "",
       price: "",
       duration: "",
+      accommodationId: "",
+      destinationId: "",
     });
     setIsEditingPackage(false);
   };
@@ -524,13 +530,13 @@ const Destinations = () => {
             />
             <TextField
               margin="dense"
-              label="Accomodation ID"
+              label="Accommodation ID"
               fullWidth
-              value={currentPackage.accomodationId}
+              value={currentPackage.accommodationId}
               onChange={(e) =>
                 setCurrentPackage({
                   ...currentPackage,
-                  accomodationId: e.target.value,
+                  accommodationId: e.target.value,
                 })
               }
             />

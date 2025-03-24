@@ -10,18 +10,22 @@ const getAllPackages = async () => {
 const addPackage = async (packageData) => {
   const {
     packageName,
-    description, 
-    price, 
-    duration, 
+    description,
+    price,
+    duration,
+    accommodationId,
+    destinationId,
   } = packageData;
 
   const query = `INSERT INTO packages (package_name,
-  description, price, duration) VALUES ($1, $2, $3, $4) RETURNING *;`;
+  description, price, duration, accommodation_id, destination_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`;
   const values = [
     packageName, // $1
     description, // $2
     price, // $3
     duration, // $4
+    accommodationId, // $5
+    destinationId, // $6
   ];
   const result = await pool.query(query, values);
   return result.rows[0];

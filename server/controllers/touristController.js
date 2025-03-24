@@ -181,6 +181,7 @@ const addAccommodation = async (req, res) => {
   }
 };
 
+
 module.exports = {
   getAllDestinations,
   addDestination,
