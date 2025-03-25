@@ -11,6 +11,7 @@ import {
   ExitToApp,
   ExpandMore,
   ExpandLess,
+  Explore,
   FiberManualRecord, // Icon for submenu items
 } from "@mui/icons-material";
 
@@ -133,6 +134,20 @@ const Sidebar = ({ isCollapsed }) => {
           </NavLink>
         </li>
 
+        {/* Guide & Availability */}
+        <li>
+          <NavLink
+            to="/guide-availability"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
+          >
+            <Explore /> {!isCollapsed && "Guide-Availability"}
+          </NavLink>
+        </li>
+
         {/* Contents */}
         <li>
           <div
@@ -178,8 +193,7 @@ const Sidebar = ({ isCollapsed }) => {
                     }`
                   }
                 >
-                  <ChevronRight fontSize="small" />{" "}
-                  {!isCollapsed && "Events"}
+                  <ChevronRight fontSize="small" /> {!isCollapsed && "Events"}
                 </NavLink>
               </li>
             </ul>
