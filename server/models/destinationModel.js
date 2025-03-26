@@ -48,8 +48,8 @@ const updateDestinationById = async (id, destinationData) => {
     id,
   ];
   const result = await pool.query(query, values);
-  console.log(result.rows[0]); // debug
-  console.log("Received data:", destinationData); // debug
+  // console.log(result.rows[0]); // debug
+  // console.log("Received data:", destinationData); // debug
   return result.rows[0];
 };
 

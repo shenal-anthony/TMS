@@ -199,6 +199,7 @@ const updateAccommodation = async (req, res) => {
   try {
     const updatedContent = await accommodation.updateAccommodationById(id, body);
     res.json(updatedContent);
+    console.log("update controller:", updatedContent);
   } catch (error) {
     res
       .status(500)

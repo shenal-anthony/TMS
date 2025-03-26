@@ -46,7 +46,7 @@ const deleteAccommodationById = async (id) => {
   await pool.query(query, [id]);
 };
 
-const updateAccommodationById = async (accommodationData) => {
+const updateAccommodationById = async (id, accommodationData) => {
   const {
     accommodationName,
     locationUrl,
@@ -56,7 +56,6 @@ const updateAccommodationById = async (accommodationData) => {
     updatedAt,
     serviceUrl,
     accommodationType,
-    accommodationId,
   } = accommodationData;
 
   const query = `
@@ -81,10 +80,11 @@ const updateAccommodationById = async (accommodationData) => {
     updatedAt,
     serviceUrl,
     accommodationType,
-    accommodationId,
+    id,
   ];
 
   const result = await pool.query(query, values);
+  console.log("update model:", result.rows[0]); // Debugging
   return result.rows[0];
 };
 
