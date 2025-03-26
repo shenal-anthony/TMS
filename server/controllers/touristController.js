@@ -1,7 +1,8 @@
 const tourist = require("../models/destinationModel");
 const package = require("../models/packageModel");
+const accommodation = require("../models/accommodationModel");
 const { createAccommodation } = require("../models/accommodationModel");
-const { body, validationResult } = require("express-validator");
+// const { body, validationResult } = require("express-validator");
 const path = require("path");
 
 // destinations controller
@@ -109,6 +110,16 @@ const deletePackage = async (req, res) => {
 // accommodation controller
 
 // get all
+const getAllAccommodations = async (req, res) => {
+  try {
+    const contents = await accommodation.getAllAccommodations();
+    res.json(contents);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching accommodations", error: error.message });
+  }
+};
 
 // add
 const addAccommodation = async (req, res) => {
@@ -181,6 +192,34 @@ const addAccommodation = async (req, res) => {
   }
 };
 
+// update
+const updateAccommodation = async (req, res) => {
+  const { id } = req.params;
+  const { body } = req;
+  try {
+    const updatedContent = await accommodation.updateAccommodationById(id, body);
+    res.json(updatedContent);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating accommodation", error: error.message });
+  }
+};
+
+// delete
+const deleteAccommodation = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await accommodation.deleteAccommodationById(id);
+    res.json({ message: "Guide deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting accommodation", error: error.message });
+  }
+};
+
+
 
 module.exports = {
   getAllDestinations,
@@ -192,4 +231,7 @@ module.exports = {
   updatePackage,
   deletePackage,
   addAccommodation,
+  getAllAccommodations,
+  updateAccommodation,
+  deleteAccommodation,
 };

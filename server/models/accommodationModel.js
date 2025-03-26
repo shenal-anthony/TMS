@@ -35,5 +35,62 @@ const createAccommodation = async (accommodationData) => {
   return result.rows[0];
 };
 
+const getAllAccommodations = async () => {
+  const query = `SELECT * FROM accommodations`;
+  const result = await pool.query(query);
+  return result.rows;
+};
 
-module.exports = { createAccommodation };
+const deleteAccommodationById = async (id) => {
+  const query = "DELETE FROM accommodations WHERE accommodation_id = $1";
+  await pool.query(query, [id]);
+};
+
+const updateAccommodationById = async (accommodationData) => {
+  const {
+    accommodationName,
+    locationUrl,
+    pictureUrl,
+    contactNumber,
+    amenities,
+    updatedAt,
+    serviceUrl,
+    accommodationType,
+    accommodationId,
+  } = accommodationData;
+
+  const query = `
+      UPDATE accommodations SET 
+      accommodation_name = $1, 
+      location_url = $2, 
+      picture_url = $3, 
+      contact_number = $4, 
+      amenities = $5, 
+      updated_at = $6, 
+      service_url = $7, 
+      accommodation_type = $8 
+      WHERE accommodation_id = $9
+      RETURNING *`;
+
+  const values = [
+    accommodationName,
+    locationUrl,
+    pictureUrl,
+    contactNumber,
+    amenities,
+    updatedAt,
+    serviceUrl,
+    accommodationType,
+    accommodationId,
+  ];
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
+module.exports = {
+  createAccommodation,
+  getAllAccommodations,
+  deleteAccommodationById,
+  updateAccommodationById,
+};

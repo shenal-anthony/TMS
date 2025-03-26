@@ -183,7 +183,7 @@ const Destinations = () => {
             )
           );
           setOpenDialog(false);
-          resetForm();
+          resetPackageForm();
         })
         .catch((packageError) => {
           setPackageError(
@@ -406,7 +406,7 @@ const Destinations = () => {
                   >
                     <TableCell>{destination.destination_id}</TableCell>
                     <TableCell>{destination.destination_name}</TableCell>
-                    <TableCell>
+                    <TableCell style={{ display: "flex" }}>
                       <Button
                         variant="contained"
                         color="primary"
@@ -596,7 +596,7 @@ const Destinations = () => {
                       <TableCell>{pkg.package_id}</TableCell>
                       <TableCell>{pkg.package_name}</TableCell>
                       <TableCell>{pkg.duration}</TableCell>
-                      <TableCell>
+                      <TableCell style={{ display: "flex" }}>
                         <Button
                           variant="contained"
                           color="primary"
