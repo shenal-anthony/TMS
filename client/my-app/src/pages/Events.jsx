@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   TextField,
@@ -25,10 +24,9 @@ import {
 } from "@mui/material";
 
 const Events = () => {
-  const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Form state
+  // Accommodation Form state
   const [formData, setFormData] = useState({
     accommodationName: "",
     locationUrl: "",
@@ -40,16 +38,38 @@ const Events = () => {
     agreeTerms: false,
   });
 
+  // Event Form state
+  const [eventFormData, setEventFormData] = useState({
+    eventName: "",
+    startDate: "",
+    groupSize: "",
+  });
+
   const [picturePreview, setPicturePreview] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+
   const [modalMessage, setModalMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+
   const [accommodationContents, setAccommodationContents] = useState([]);
+  const [eventContents, setEventContents] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [eventLoading, setEventLoading] = useState(true);
+
   const [error, setError] = useState(null);
+  const [eventError, setEventError] = useState(null);
+
   const [page, setPage] = useState(0);
+  const [eventPage, setEventPage] = useState(0);
+
+
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [eventRowsPerPage, setEventRowsPerPage] = useState(8);
+
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
 
@@ -74,7 +94,7 @@ const Events = () => {
     }
   };
 
-  const resetForm = () => {
+  const resetAccommodationForm = () => {
     setFormData({
       accommodationName: "",
       locationUrl: "",
@@ -86,6 +106,16 @@ const Events = () => {
       agreeTerms: false,
     });
     setPicturePreview("");
+    setCurrentId(null);
+    setIsEditing(false);
+  };
+
+  const resetEventForm = () => {
+    setEventFormData({
+      eventName: "",
+      startDate: "",
+      groupSize: "",
+    });
     setCurrentId(null);
     setIsEditing(false);
   };
@@ -105,8 +135,24 @@ const Events = () => {
     }
   };
 
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/tourists/events`);
+      if (Array.isArray(response.data)) {
+        setEventContents(response.data);
+      } else {
+        setEventError("Response data is not an array");
+      }
+    } catch (err) {
+      setEventError("Error fetching events: " + err.message);
+    } finally {
+      setEventLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAccommodations();
+    fetchEvents();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -149,7 +195,51 @@ const Events = () => {
       setModalOpen(true);
       fetchAccommodations();
       setDialogOpen(false);
-      resetForm();
+      resetAccommodationForm();
+    } catch (error) {
+      console.error("Error:", error);
+      setModalMessage(
+        error.response?.data?.message ||
+          "An error occurred during the operation."
+      );
+      setIsSuccess(false);
+      setModalOpen(true);
+    }
+  };
+
+  const handleEventSubmit = async (e) => {
+    e.preventDefault();
+
+    const formDataToSend = new eventFormData();
+    Object.keys(eventFormData).forEach((key) => {
+      if (eventFormData[key] !== null) {
+        formDataToSend.append(key, eventFormData[key]);
+      }
+    });
+
+    try {
+      const url =
+        isEditing && currentId
+          ? `${apiUrl}/api/tourists/events/${currentId}`
+          : `${apiUrl}/api/tourists/events`;
+
+      const method = isEditing ? "put" : "post";
+
+      const response = await axios[method](url, formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setModalMessage(
+        response.data.message ||
+          `Event ${isEditing ? "updated" : "registered"} successfully!`
+      );
+      setIsSuccess(true);
+      setModalOpen(true);
+      fetchEvents();
+      setEventDialogOpen(false);
+      resetEventForm();
     } catch (error) {
       console.error("Error:", error);
       setModalMessage(
@@ -177,6 +267,20 @@ const Events = () => {
     }
   };
 
+  const handleRemoveEvent = async (id) => {
+    try {
+      await axios.delete(`${apiUrl}/api/tourists/events/${id}`);
+      setEventContents(eventContents.filter((event) => event.event_id !== id));
+      setModalMessage("Event deleted successfully!");
+      setIsSuccess(true);
+      setModalOpen(true);
+    } catch (error) {
+      setModalMessage("Error deleting event: " + error.message);
+      setIsSuccess(false);
+      setModalOpen(true);
+    }
+  };
+
   const handleEditAccommodation = (accommodation) => {
     setFormData({
       accommodationName: accommodation.accommodation_name,
@@ -185,7 +289,7 @@ const Events = () => {
       amenities: accommodation.amenities || "",
       serviceUrl: accommodation.service_url || "",
       accommodationType: accommodation.accommodation_type || "hotel",
-      picture: null,
+      picture: null, // need to change
       agreeTerms: false,
     });
     setCurrentId(accommodation.accommodation_id);
@@ -200,7 +304,7 @@ const Events = () => {
   const handleCloseModal = () => {
     setModalOpen(false);
     if (isSuccess) {
-      resetForm();
+      resetAccommodationForm();
     }
   };
 
@@ -208,17 +312,29 @@ const Events = () => {
     setPage(newPage);
   };
 
+  const handleEventChangePage = (event, newPage) => {
+    setEventPage(newPage);
+  };
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
+  const handleEventChangeRowsPerPage = (event) => {
+    setEventRowsPerPage(parseInt(event.target.value, 10));
+    setEventPage(0);
+  };
+
   if (loading) return <div>Loading...</div>;
+  if (eventLoading) return <div>Event Loading</div>;
   if (error) return <div>{error}</div>;
+  if (eventError) return <div>{eventError}</div>;
 
   return (
-    <Container>
-      <Box my={4}>
+    <div>
+      {/* accommodation part  */}
+      <div>
         <div className="mb-4 mt-4">
           <h1>Accommodation List</h1>
           <div className="mt-4">
@@ -226,7 +342,7 @@ const Events = () => {
               variant="contained"
               color="primary"
               onClick={() => {
-                resetForm();
+                resetAccommodationForm();
                 setDialogOpen(true);
               }}
             >
@@ -301,7 +417,7 @@ const Events = () => {
           open={dialogOpen}
           onClose={() => {
             setDialogOpen(false);
-            resetForm();
+            resetAccommodationForm();
           }}
           maxWidth="md"
           fullWidth
@@ -425,7 +541,7 @@ const Events = () => {
             <Button
               onClick={() => {
                 setDialogOpen(false);
-                resetForm();
+                resetAccommodationForm();
               }}
             >
               Cancel
@@ -448,8 +564,150 @@ const Events = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
-    </Container>
+      </div>
+
+      <hr></hr>
+
+      {/* event part */}
+      <div>
+        <div className="mb-4 mt-4">
+          <h1>Event List</h1>
+          <div className="mt-4">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                resetEventForm();
+                setEventDialogOpen(true);
+              }}
+            >
+              Add New Event
+            </Button>
+          </div>
+        </div>
+        {/* Accommodation Table */}
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Start Date</TableCell>
+                <TableCell>Group size</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {eventContents
+                .slice(eventPage * rowsPerPage, eventPage * rowsPerPage + rowsPerPage)
+                .map((event) => (
+                  <TableRow key={event.event_id} hover>
+                    <TableCell>{event.event_id}</TableCell>
+                    <TableCell>{event.event_id}</TableCell> // change to event name
+                    <TableCell>{event.start_date}</TableCell>
+                    <TableCell>{event.group_size}</TableCell>
+                    <TableCell style={{ display: "flex" }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => handleEditEvent(event)}
+                        sx={{ mr: 1 }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        size="small"
+                        onClick={() => handleRemoveEvent(event.event_id)}
+                      >
+                        Remove
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Pagination */}
+        <TablePagination
+          rowsPerPageOptions={[8, 10, 25]}
+          component="div"
+          count={eventContents.length}
+          rowsPerPage={eventRowsPerPage}
+          page={eventPage}
+          onPageChange={handleEventChangePage}
+          onRowsPerPageChange={handleEventChangeRowsPerPage}
+        />
+
+        {/* Add/Edit Dialog */}
+        <Dialog
+          open={eventDialogOpen}
+          onClose={() => {
+            setEventDialogOpen(false);
+            resetEventForm();
+          }}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            {isEditing ? "Edit Event" : "Add New Event"}
+          </DialogTitle>
+          <DialogContent>
+            <Box component="form" onSubmit={handleEventSubmit} sx={{ mt: 2 }}>
+              <TextField
+                label="Tour Name"
+                name="tourName"
+                value={eventFormData.eventName}
+                onChange={handleChange}
+                fullWidth
+                required
+                margin="normal"
+              />
+
+
+
+              <TextField
+                name="startDate"
+                type="date"
+                value={eventFormData.startDate}
+                onChange={handleChange}
+                fullWidth
+                required
+                margin="normal"
+              />
+
+              <TextField
+                label="Group Size"
+                name="groupSize"
+                value={eventFormData.groupSize}
+                onChange={handleChange}
+                fullWidth
+                required
+                margin="normal"
+              />
+
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setEventDialogOpen(false);
+                resetEventForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEventSubmit} color="primary">
+              {isEditing ? "Update" : "Add"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+      </div>
+    </div>
   );
 };
 

@@ -1,12 +1,11 @@
 const tourist = require("../models/destinationModel");
 const package = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
-const { createAccommodation } = require("../models/accommodationModel");
-// const { body, validationResult } = require("express-validator");
+const event = require("../models/eventModel");
+
 const path = require("path");
 
 // destinations controller
-
 // get all
 const getAllDestinations = async (req, res) => {
   try {
@@ -57,7 +56,6 @@ const deleteDestination = async (req, res) => {
 };
 
 // packages controller
-
 // get all
 const getAllPackages = async (req, res) => {
   try {
@@ -108,7 +106,6 @@ const deletePackage = async (req, res) => {
 };
 
 // accommodation controller
-
 // get all
 const getAllAccommodations = async (req, res) => {
   try {
@@ -120,7 +117,6 @@ const getAllAccommodations = async (req, res) => {
       .json({ message: "Error fetching accommodations", error: error.message });
   }
 };
-
 // add
 const addAccommodation = async (req, res) => {
   try {
@@ -167,7 +163,7 @@ const addAccommodation = async (req, res) => {
     }
 
     // Create accommodation record in database
-    const newAccommodation = await createAccommodation({
+    const newAccommodation = await accommodation.createAccommodation({
       accommodationName,
       locationUrl,
       pictureUrl,
@@ -191,28 +187,29 @@ const addAccommodation = async (req, res) => {
     });
   }
 };
-
 // update
 const updateAccommodation = async (req, res) => {
   const { id } = req.params;
   const { body } = req;
   try {
-    const updatedContent = await accommodation.updateAccommodationById(id, body);
+    const updatedContent = await accommodation.updateAccommodationById(
+      id,
+      body
+    );
     res.json(updatedContent);
-    console.log("update controller:", updatedContent);
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error updating accommodation", error: error.message });
   }
+  console.log("🚀 ~ updateAccommodation ~ updatedContent:", updatedContent);
 };
-
 // delete
 const deleteAccommodation = async (req, res) => {
   const { id } = req.params;
   try {
     await accommodation.deleteAccommodationById(id);
-    res.json({ message: "Guide deleted successfully" });
+    res.json({ message: "Accommodation deleted successfully" });
   } catch (error) {
     res
       .status(500)
@@ -220,7 +217,19 @@ const deleteAccommodation = async (req, res) => {
   }
 };
 
-
+// events controller
+// get all
+const getAllEvents = async (req, res) => {
+  try {
+    const contents = await event.getAllEvents();
+    res.json(contents);
+    console.log("🚀 ~ getAllEvents ~ contents:", contents);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching events", error: error.message });
+  }
+};
 
 module.exports = {
   getAllDestinations,
@@ -235,4 +244,5 @@ module.exports = {
   getAllAccommodations,
   updateAccommodation,
   deleteAccommodation,
+  getAllEvents,
 };

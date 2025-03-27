@@ -13,6 +13,7 @@ const {
   addAccommodation,
   deleteAccommodation,
   updateAccommodation,
+  getAllEvents
 } = require("../controllers/touristController");
 
 // destinations routes
@@ -22,6 +23,10 @@ router.put("/destinations/:id", updateDestination);
 router.delete("/destinations/:id", deleteDestination);
 
 // events routes
+router.get("/events", getAllEvents)
+router.post("/events", );
+router.put("/events/:id", );
+router.delete("/events/:id", );
 
 // packages routes
 router.get("/packages", getAllPackages);
