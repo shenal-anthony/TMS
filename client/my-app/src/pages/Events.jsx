@@ -63,7 +63,6 @@ const Events = () => {
   const [page, setPage] = useState(0);
   const [eventPage, setEventPage] = useState(0);
 
-
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [eventRowsPerPage, setEventRowsPerPage] = useState(8);
 
@@ -78,6 +77,14 @@ const Events = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleEventChange = (e) => {
+    const { name, value } = e.target;
+    setEventFormData((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
 
@@ -210,7 +217,7 @@ const Events = () => {
   const handleEventSubmit = async (e) => {
     e.preventDefault();
 
-    const formDataToSend = new eventFormData();
+    const formDataToSend = new FormData();
     Object.keys(eventFormData).forEach((key) => {
       if (eventFormData[key] !== null) {
         formDataToSend.append(key, eventFormData[key]);
@@ -225,11 +232,7 @@ const Events = () => {
 
       const method = isEditing ? "put" : "post";
 
-      const response = await axios[method](url, formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axios[method](url, formDataToSend);
 
       setModalMessage(
         response.data.message ||
@@ -301,10 +304,22 @@ const Events = () => {
     }
   };
 
+  const handleEditEvent = (event) => {
+    setEventFormData({
+      eventName: event.event_name || "",
+      startDate: event.start_date || "",
+      groupSize: event.group_size || "",
+    });
+    setCurrentId(event.event_id);
+    setIsEditing(true);
+    setEventDialogOpen(true);
+  };
+
   const handleCloseModal = () => {
     setModalOpen(false);
     if (isSuccess) {
       resetAccommodationForm();
+      resetEventForm();
     }
   };
 
@@ -326,8 +341,7 @@ const Events = () => {
     setEventPage(0);
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (eventLoading) return <div>Event Loading</div>;
+  if (loading || eventLoading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
   if (eventError) return <div>{eventError}</div>;
 
@@ -364,39 +378,47 @@ const Events = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {accommodationContents
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((accommodation) => (
-                  <TableRow key={accommodation.accommodation_id} hover>
-                    <TableCell>{accommodation.accommodation_id}</TableCell>
-                    <TableCell>{accommodation.accommodation_name}</TableCell>
-                    <TableCell>{accommodation.accommodation_type}</TableCell>
-                    <TableCell>{accommodation.contact_number}</TableCell>
-                    <TableCell style={{ display: "flex" }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={() => handleEditAccommodation(accommodation)}
-                        sx={{ mr: 1 }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        size="small"
-                        onClick={() =>
-                          handleRemoveAccommodation(
-                            accommodation.accommodation_id
-                          )
-                        }
-                      >
-                        Remove
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {accommodationContents.length > 0 ? (
+                accommodationContents
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((accommodation) => (
+                    <TableRow key={accommodation.accommodation_id} hover>
+                      <TableCell>{accommodation.accommodation_id}</TableCell>
+                      <TableCell>{accommodation.accommodation_name}</TableCell>
+                      <TableCell>{accommodation.accommodation_type}</TableCell>
+                      <TableCell>{accommodation.contact_number}</TableCell>
+                      <TableCell style={{ display: "flex" }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEditAccommodation(accommodation)}
+                          sx={{ mr: 1 }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          size="small"
+                          onClick={() =>
+                            handleRemoveAccommodation(
+                              accommodation.accommodation_id
+                            )
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    No vehicles found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -598,35 +620,47 @@ const Events = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {eventContents
-                .slice(eventPage * rowsPerPage, eventPage * rowsPerPage + rowsPerPage)
-                .map((event) => (
-                  <TableRow key={event.event_id} hover>
-                    <TableCell>{event.event_id}</TableCell>
-                    <TableCell>{event.event_id}</TableCell> // change to event name
-                    <TableCell>{event.start_date}</TableCell>
-                    <TableCell>{event.group_size}</TableCell>
-                    <TableCell style={{ display: "flex" }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={() => handleEditEvent(event)}
-                        sx={{ mr: 1 }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        size="small"
-                        onClick={() => handleRemoveEvent(event.event_id)}
-                      >
-                        Remove
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {eventContents.length > 0 ? (
+                eventContents
+                  .slice(
+                    eventPage * eventRowsPerPage,
+                    eventPage * eventRowsPerPage + eventRowsPerPage
+                  )
+                  .map((event) => (
+                    <TableRow key={event.event_id} hover>
+                      <TableCell>{event.event_id}</TableCell>
+                      <TableCell>{event.event_id}</TableCell>{" "}
+                      {/* change to event name */}
+                      <TableCell>{event.start_date}</TableCell>
+                      <TableCell>{event.group_size}</TableCell>
+                      <TableCell style={{ display: "flex" }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEditEvent(event)}
+                          sx={{ mr: 1 }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          size="small"
+                          onClick={() => handleRemoveEvent(event.event_id)}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    No Events found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -660,20 +694,18 @@ const Events = () => {
               <TextField
                 label="Tour Name"
                 name="tourName"
-                value={eventFormData.eventName}
-                onChange={handleChange}
+                value={eventFormData.tourName}
+                onChange={handleEventChange}
                 fullWidth
                 required
                 margin="normal"
               />
 
-
-
               <TextField
                 name="startDate"
                 type="date"
                 value={eventFormData.startDate}
-                onChange={handleChange}
+                onChange={handleEventChange}
                 fullWidth
                 required
                 margin="normal"
@@ -683,12 +715,11 @@ const Events = () => {
                 label="Group Size"
                 name="groupSize"
                 value={eventFormData.groupSize}
-                onChange={handleChange}
+                onChange={handleEventChange}
                 fullWidth
                 required
                 margin="normal"
               />
-
             </Box>
           </DialogContent>
           <DialogActions>
@@ -705,7 +736,6 @@ const Events = () => {
             </Button>
           </DialogActions>
         </Dialog>
-
       </div>
     </div>
   );

@@ -230,6 +230,32 @@ const getAllEvents = async (req, res) => {
       .json({ message: "Error fetching events", error: error.message });
   }
 };
+// add
+const addEvent = async (req, res) => {
+  const { body } = req;
+  try {
+    const newContent = await event.addEvent(body);
+    res.json(newContent);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error adding event", error: error.message });
+  }
+};
+// update
+
+// delete
+const deleteEvent = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await event.deleteEventById(id);
+    res.json({ message: "Event deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting event", error: error.message });
+  }
+}
 
 module.exports = {
   getAllDestinations,
@@ -245,4 +271,6 @@ module.exports = {
   updateAccommodation,
   deleteAccommodation,
   getAllEvents,
+  addEvent,
+  deleteEvent
 };
