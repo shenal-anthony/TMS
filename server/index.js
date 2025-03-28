@@ -10,6 +10,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const vehicleRoutes = require("./routes/vehicleRoutes");
 const guideRoutes = require("./routes/guideRoutes");
 const touristRoutes = require("./routes/touristRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
+
 const fileUpload = require("express-fileupload");
 const port = process.env.PORT || 8001;
 
@@ -27,6 +29,7 @@ app.use('/api/admins', adminRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/guides', guideRoutes);
 app.use("/api/tourists", touristRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 
 // Console output
