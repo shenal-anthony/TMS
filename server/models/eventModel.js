@@ -9,14 +9,15 @@ const getAllEvents = async () => {
 };
 
 const addEvent = async (eventData) => {
-  const { startDate, groupSize } = eventData;
+  const { startDate, groupSize, description } = eventData;
 
   const query = `INSERT INTO events (start_date,
-  group_size) VALUES ($1, $2) RETURNING *;`;
+  group_size, description) VALUES ($1, $2, $3) RETURNING *;`;
 
   const values = [
     startDate, // $1
     groupSize, // $2
+    description, // $3
   ];
   const result = await pool.query(query, values);
   console.log("🚀 ~ addEvent ~ result:", result)

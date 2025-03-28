@@ -21,7 +21,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  TextareaAutosize,
 } from "@mui/material";
+import { Textarea } from "@mui/joy";
 
 const Events = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -43,6 +45,7 @@ const Events = () => {
     eventName: "",
     startDate: "",
     groupSize: "",
+    description: "",
   });
 
   const [picturePreview, setPicturePreview] = useState("");
@@ -122,6 +125,7 @@ const Events = () => {
       eventName: "",
       startDate: "",
       groupSize: "",
+      description: "",
     });
     setCurrentId(null);
     setIsEditing(false);
@@ -629,7 +633,7 @@ const Events = () => {
                   .map((event) => (
                     <TableRow key={event.event_id} hover>
                       <TableCell>{event.event_id}</TableCell>
-                      <TableCell>{event.event_id}</TableCell>{" "}
+                      <TableCell>{event.event_id}</TableCell>
                       {/* change to event name */}
                       <TableCell>{event.start_date}</TableCell>
                       <TableCell>{event.group_size}</TableCell>
@@ -715,6 +719,18 @@ const Events = () => {
                 label="Group Size"
                 name="groupSize"
                 value={eventFormData.groupSize}
+                onChange={handleEventChange}
+                fullWidth
+                required
+                margin="normal"
+              />
+              <Textarea
+                placeholder="Type in here…"
+                variant="outlined"
+                minRows={3}
+                maxRows={5}
+                name="description"
+                value={eventFormData.description}
                 onChange={handleEventChange}
                 fullWidth
                 required
