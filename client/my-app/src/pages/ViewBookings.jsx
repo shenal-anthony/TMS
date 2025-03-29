@@ -21,21 +21,26 @@ import {
 const ViewBookings = () => {
   const [destinationContents, setDestinationContents] = useState([]);
   const [packageContents, setPackageContents] = useState([]);
+  const [bookingContents, setBookingContents] = useState([]);
 
   const [destinationloading, setDestinationLoading] = useState(true);
   const [packageLoading, setPackageLoading] = useState(true);
+  const [bookingLoading, setBookingLoading] = useState(true);
 
   const [destinationError, setDestinationError] = useState(null);
   const [packageError, setPackageError] = useState(null);
+  const [bookingError, setBookingError] = useState(null);
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
 
   const [openDialog, setOpenDialog] = useState(false);
   const [openPackageDialog, setOpenPackageDialog] = useState(false);
+  const [openBookingDialog, setOpenBookingDialog] = useState(false);
 
   const [isEditingDestination, setIsEditing] = useState(false);
   const [isEditingPackage, setIsEditingPackage] = useState(false);
+  const [isEditingBooking, setIsEditingBooking] = useState(false);
 
   const [currentDestination, setCurrentDestination] = useState({
     destinationName: "",
@@ -52,12 +57,25 @@ const ViewBookings = () => {
     accommodationId: "",
     destinationId: "",
   });
+  const [currentBooking, setCurrentBooking] = useState({
+    bookingDate: "", 
+    headcount: "",
+    checkInDate: "",
+    checkOutDate: "",
+    status: "",
+    touristId: "",
+    tourId: "",
+    userId: "",
+    eventId: "",
+  });
+
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     // fetchDestinations();
-    fetchPackages();
+    // fetchPackages();
+    fectchBookings();
   }, []);
 
   const fetchDestinations = () => {
@@ -98,6 +116,25 @@ const ViewBookings = () => {
       });
   };
 
+  const fectchBookings = () => {
+    axios
+      .get(`${apiUrl}/api/bookings`)
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setBookingContents(response.data);
+        } else {
+          setBookingError("Response data is not an array");
+        }
+        setBookingLoading(false);
+      })
+      .catch((bookingError) => {
+        setBookingError(
+          "Error fetching bookingContents: " + bookingError.message
+        );
+        setBookingLoading(false);
+      });
+  };
+
   const handleRemoveDestination = (id) => {
     axios
       .delete(`${apiUrl}/api/tourists/destinations/${id}`)
@@ -125,6 +162,19 @@ const ViewBookings = () => {
       })
       .catch((packageError) => {
         setPackageError("Error deleting package: " + packageError.message);
+      });
+  };
+
+  const handleRemoveBooking = (id) => {
+    axios
+      .delete(`${apiUrl}/api/tourists/bookings/${id}`)
+      .then(() => {
+        setBookingContents(
+          bookingContents.filter((booking) => booking.booking_id !== id)
+        ); 
+      })
+      .catch((bookingError) => {
+        setBookingError("Error deleting booking: " + bookingError.message);
       });
   };
 
@@ -233,6 +283,23 @@ const ViewBookings = () => {
     setOpenPackageDialog(true);
   };
 
+  const handleEditBooking = (booking) => {
+    setCurrentBooking({
+      booking_id: booking.booking_id,
+      bookingDate: booking.booking_date,
+      headcount: booking.headcount,
+      checkInDate: booking.check_in_date,
+      checkOutDate: booking.check_out_date,
+      status: booking.status,
+      touristId: booking.tourist_id,
+      tourId: booking.tour_id,
+      userId: booking.user_id,
+      eventId: booking.event_id,
+    });
+    setIsEditingBooking(true);
+    setOpenBookingDialog(true);
+  };
+
   const resetForm = () => {
     setCurrentDestination({
       destinationName: "",
@@ -242,6 +309,21 @@ const ViewBookings = () => {
       pictureUrl: "",
     });
     setIsEditing(false);
+  };
+
+  const resetBookingForm = () => {
+    setCurrentBooking({
+      bookingDate: "",
+      headcount: "",
+      checkInDate: "",
+      checkOutDate: "",
+      status: "",
+      touristId: "",
+      tourId: "",
+      userId: "",
+      eventId: "",
+    });
+    setIsEditingBooking(false);
   };
 
   const resetPackageForm = () => {
@@ -282,12 +364,12 @@ const ViewBookings = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {packageContents.length > 0 ? (
-                packageContents
+              {bookingContents.length > 0 ? (
+                bookingContents
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((pkg) => (
+                  .map((booking) => (
                     <TableRow
-                      key={pkg.package_id}
+                      key={booking.booking_id}
                       sx={{
                         "&:hover": {
                           backgroundColor: "#f5f5f5",
@@ -295,22 +377,22 @@ const ViewBookings = () => {
                         },
                       }}
                     >
-                      <TableCell>{pkg.package_id}</TableCell>
-                      <TableCell>{pkg.package_name}</TableCell>
-                      <TableCell>{pkg.duration}</TableCell>
-                      <TableCell>{pkg.duration}</TableCell>
+                      <TableCell>{booking.booking_id}</TableCell>
+                      <TableCell>{booking.headcount}</TableCell>
+                      <TableCell>{booking.checkInDate}</TableCell>
+                      <TableCell>{booking.checkOutDate}</TableCell>
                       <TableCell style={{ display: "flex" }}>
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() => handleEditPackage(pkg)}
+                          onClick={() => handleEditBooking(booking)}
                         >
                           Update
                         </Button>
                         <Button
                           variant="contained"
                           color="secondary"
-                          onClick={() => handleRemovePackage(pkg.package_id)}
+                          onClick={() => handleEditBooking(booking.booking_id)}
                           style={{ marginLeft: "10px" }}
                         >
                           Remove
@@ -320,7 +402,7 @@ const ViewBookings = () => {
                   ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
+                  <TableCell colSpan={5} align="center">
                     No booking found
                   </TableCell>
                 </TableRow>
@@ -333,7 +415,7 @@ const ViewBookings = () => {
         <TablePagination
           rowsPerPageOptions={[8, 10, 25]}
           component="div"
-          count={packageContents.length}
+          count={bookingContents.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

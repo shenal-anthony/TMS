@@ -5,6 +5,7 @@ const getAllAdmins = async (req, res) => {
   try {
     const admins = await user.getAdmins();
     res.json(admins);
+    console.log("🚀 ~ adminController.js:13 ~ getAllAdmins ~ admins:", admins);
   } catch (error) {
     res
       .status(500)

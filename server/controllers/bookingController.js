@@ -6,8 +6,7 @@ const getAllBookings = async (req, res) => {
     const contents = await booking.getAllBookings();
     res.json(contents);
     console.log(
-      "🚀 ~ bookingController.js:15 ~ getAllBookings ~ contents:",
-      contents
+      "🚀 ~ bookingController.js:15 ~ getAllBookings ~ contents:", contents
     );
   } catch (error) {
     res
