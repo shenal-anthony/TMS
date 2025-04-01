@@ -42,7 +42,7 @@ const addPackage = async (packageData) => {
 const updatePackageById = async (id, packageData) => {
   const { packageName, description, price, duration } = packageData;
 
-  const query = `UPDATE packages SET package_name = $1, description = $2, price = $3, duration = $4 WHERE package_id = $6 RETURNING *;`;
+  const query = `UPDATE packages SET package_name = $1, description = $2, price = $3, duration = $4 WHERE package_id = $5 RETURNING *;`;
   const values = [packageName, description, price, duration, id];
   const result = await pool.query(query, values);
   // console.log(result.rows[0]); // debug

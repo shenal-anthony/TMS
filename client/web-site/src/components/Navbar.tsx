@@ -35,7 +35,7 @@ const Navbar = () => {
           <A href="/packages" class="hover:text-blue-600">
             Packages
           </A>
-          <A href="/event" class="hover:text-blue-600">
+          <A href="/events" class="hover:text-blue-600">
             Event
           </A>
           <A href="/about" class="hover:text-blue-600">
