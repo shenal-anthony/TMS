@@ -1,5 +1,5 @@
 const tourist = require("../models/destinationModel");
-const package = require("../models/packageModel");
+const pkg = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 
@@ -17,6 +17,21 @@ const getAllDestinations = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
+// get by id
+const getDestination = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const content = await tourist.getDestinationById(id);
+    if (!content) {
+      return res.status(404).json({ message: "Destination not found" });
+    }
+    res.json(content);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching destination", error: error.message });
+  }
+}
 // add
 const addDestination = async (req, res) => {
   const { body } = req;
@@ -59,7 +74,7 @@ const deleteDestination = async (req, res) => {
 // get all
 const getAllPackages = async (req, res) => {
   try {
-    const contents = await package.getAllPackages();
+    const contents = await pkg.getAllPackages();
     res.json(contents);
   } catch (error) {
     res
@@ -67,11 +82,26 @@ const getAllPackages = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
+// get by id
+const getPackage = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const content = await pkg.getPackageById(id);
+    if (!content) {
+      return res.status(404).json({ message: "package not found" });
+    }
+    res.json(content);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching package", error: error.message });
+  }
+}
 // add
 const addPackage = async (req, res) => {
   const { body } = req;
   try {
-    const newContent = await package.addPackage(body);
+    const newContent = await pkg.addPackage(body);
     res.json(newContent);
   } catch (error) {
     res
@@ -84,7 +114,7 @@ const updatePackage = async (req, res) => {
   const { id } = req.params;
   const { body } = req;
   try {
-    const updatedContent = await package.updatePackageById(id, body);
+    const updatedContent = await pkg.updatePackageById(id, body);
     res.json(updatedContent);
   } catch (error) {
     res
@@ -96,7 +126,7 @@ const updatePackage = async (req, res) => {
 const deletePackage = async (req, res) => {
   const { id } = req.params;
   try {
-    await package.deletePackageById(id);
+    await pkg.deletePackageById(id);
     res.json({ message: "Guide deleted successfully" });
   } catch (error) {
     res
@@ -115,6 +145,21 @@ const getAllAccommodations = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching accommodations", error: error.message });
+  }
+};
+// get by id
+const getAccommodation = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const content = await accommodation.getAccommodationById(id);
+    if (!content) {
+      return res.status(404).json({ message: "Accommodation not found" });
+    }
+    res.json(content);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching accommodation", error: error.message });
   }
 };
 // add
@@ -259,15 +304,18 @@ const deleteEvent = async (req, res) => {
 
 module.exports = {
   getAllDestinations,
+  getDestination,
   addDestination,
   deleteDestination,
   updateDestination,
   getAllPackages,
+  getPackage,
   addPackage,
   updatePackage,
   deletePackage,
   addAccommodation,
   getAllAccommodations,
+  getAccommodation,
   updateAccommodation,
   deleteAccommodation,
   getAllEvents,

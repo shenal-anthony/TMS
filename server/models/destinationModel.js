@@ -7,6 +7,14 @@ const getAllDestinations = async () => {
   return result.rows;
 };
 
+const getDestinationById = async (id) => {
+  const query = `SELECT * FROM destinations WHERE destination_id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  console.log("🚀 ~ destinationModel.js:14 ~ getDestinationById ~ result:", result);  
+  return result.rows[0];
+};
+
 const addDestination = async (destinationData) => {
   const {
     destinationName,
@@ -19,9 +27,9 @@ const addDestination = async (destinationData) => {
   const query = `INSERT INTO destinations (location_url,
   picture_url, description, destination_name, weather_condition) VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
   const values = [
-    locationUrl,    // $1
-    pictureUrl,     // $2
-    description,    // $3
+    locationUrl, // $1
+    pictureUrl, // $2
+    description, // $3
     destinationName, // $4
     weatherCondition, // $5
   ];
@@ -60,6 +68,7 @@ const deleteDestinationById = async (id) => {
 
 module.exports = {
   getAllDestinations,
+  getDestinationById,
   addDestination,
   updateDestinationById,
   deleteDestinationById,

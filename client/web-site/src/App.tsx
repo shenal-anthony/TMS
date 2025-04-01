@@ -4,6 +4,7 @@ import Packages from "./pages/Packages";
 import { Route, Router } from "@solidjs/router";
 import Events from "./pages/Events";
 import About from "./pages/About";
+import DestinationDetail from "./pages/DestinationDetail";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Route path="/" component={Home} />
       <Route path="/home" component={Home} />
       <Route path="/destinations" component={Destinations} />
+      <Route path="/destination/:id" component={DestinationDetail} />
       <Route path="/packages" component={Packages} />
       <Route path="/events" component={Events} />
       <Route path="/about" component={About} />
