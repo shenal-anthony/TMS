@@ -7,6 +7,14 @@ const getAllPackages = async () => {
   return result.rows;
 };
 
+const getPackageById = async (id) => {
+  const query = `SELECT * FROM packages WHERE package_id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  console.log("🚀 ~ packageModel.js:14 ~ getPackageById ~ result:", result);
+  return result.rows[0];
+};
+
 const addPackage = async (packageData) => {
   const {
     packageName,
@@ -52,4 +60,5 @@ module.exports = {
   addPackage,
   updatePackageById,
   deletePackageById,
+  getPackageById,
 };
