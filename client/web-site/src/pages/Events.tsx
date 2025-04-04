@@ -3,10 +3,14 @@ import Footer from "../components/Footer";
 
 function Events() {
   return (
-    <div>
+    <div class="min-h-screen flex flex-col">
       <Navbar />
-      <h1>Events</h1>
-      <p>This is the packages page.</p>
+      <main class="flex-grow pt-16">
+        {" "}
+        <h1>Events</h1>
+        <p>This is the packages page.</p>
+      </main>
+
       <Footer />
     </div>
   );

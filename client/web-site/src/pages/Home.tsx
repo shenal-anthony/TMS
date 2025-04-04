@@ -30,7 +30,7 @@ function Home() {
     <div class="min-h-screen flex flex-col">
       <Navbar />
       
-      <main class="flex-grow">
+      <main class="flex-grow pt-16">
         {/* Hero Section */}
         <section class="bg-blue-50 py-16 px-4 text-center">
           <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Paradise Tours</h1>

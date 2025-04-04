@@ -1,5 +1,5 @@
 import { createResource, Show, createSignal } from "solid-js";
-import { useParams, A } from "@solidjs/router";
+import { useParams, A, useNavigate } from "@solidjs/router";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -14,6 +14,7 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 const PackageDetail = () => {
   const params = useParams();
+  const navigate = useNavigate();
   const [heroLoaded, setHeroLoaded] = createSignal(false);
   const [isBooking, setIsBooking] = createSignal(false);
 
@@ -29,21 +30,38 @@ const PackageDetail = () => {
     }
   });
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     setIsBooking(true);
-    // Simulate booking process
-    setTimeout(() => {
-      // Replace with actual booking logic
-      alert("Booking successful!");
+
+    try {
+      // 1. First check availability by sending package ID
+      const response = await axios.post(
+        `${apiUrl}/api/bookings/check-availability`,
+        {
+          packageId: params.id,
+        }
+      );
+
+      // 2. If available, navigate to booking page
+      if (response.data.available || response.status === 200) {
+        
+        navigate(`/booking/${params.id}`);
+      } else {
+        alert("Package is not available for booking at this time.");
+      }
+    } catch (error) {
+      console.error("Availability check failed:", error);
+      alert("Failed to check availability. Please try again.");
+    } finally {
       setIsBooking(false);
-    }, 1500);
+    }
   };
 
   return (
-    <div class="min-h-screen flex flex-col bg-white">
+    <div class="min-h-screen flex flex-col">
       <Navbar />
 
-      <main class="flex-grow">
+      <main class="flex-grow pt-16">
         <Show
           when={pkg()}
           fallback={
@@ -192,7 +210,6 @@ const PackageDetail = () => {
                     </p>
                     <button
                       onClick={handleBookNow}
-                      disabled={isBooking()}
                       class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-75 disabled:cursor-not-allowed"
                     >
                       {isBooking() ? (

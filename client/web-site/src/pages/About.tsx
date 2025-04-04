@@ -3,10 +3,13 @@ import Footer from "../components/Footer";
 
 function About() {
   return (
-    <div>
+    <div class="min-h-screen flex flex-col">
       <Navbar />
-      <h1>About</h1>
-      <p>This is the packages page.</p>
+
+      <div class="flex pt-16">
+        <h1>About</h1>
+        <p>This is the packages page.</p>
+      </div>
       <Footer />
     </div>
   );

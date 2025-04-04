@@ -40,90 +40,92 @@ const Packages = () => {
   });
 
   return (
-    <div>
+    <div class="min-h-screen flex flex-col">
       <Navbar />
-      <div class="container mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div class="text-center mb-12">
-          <h1 class="text-4xl font-bold mb-4">Look at our Packages</h1>
-          <Filter />
-        </div>
+      <main class="flex-grow pt-16">
+        <div class="container mx-auto px-4 py-8">
+          {/* Header Section */}
+          <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">Look at our Packages</h1>
+            <Filter />
+          </div>
 
-        {/* Packages Grid */}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          <Show
-            when={!packages.loading}
-            fallback={
-              <>
-                {[...Array(6)].map(() => (
-                  <CardSkeleton />
-                ))}
-              </>
-            }
-          >
-            <For each={packages()}>
-              {(pkg) => (
-                <A
-                  href={`/package/${pkg.package_id}`}
-                  class="block h-full" // Important for proper link behavior
-                >
-                  {/* Packages Card */}
-                  <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
-                    <Show
-                      when={pkg.picture_url}
-                      fallback={
-                        <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
-                          <span class="text-gray-500">Loading image...</span>
+          {/* Packages Grid */}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <Show
+              when={!packages.loading}
+              fallback={
+                <>
+                  {[...Array(6)].map(() => (
+                    <CardSkeleton />
+                  ))}
+                </>
+              }
+            >
+              <For each={packages()}>
+                {(pkg) => (
+                  <A
+                    href={`/package/${pkg.package_id}`}
+                    class="block h-full" // Important for proper link behavior
+                  >
+                    {/* Packages Card */}
+                    <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
+                      <Show
+                        when={pkg.picture_url}
+                        fallback={
+                          <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500">Loading image...</span>
+                          </div>
+                        }
+                      >
+                        {/* Image with fixed aspect ratio */}
+                        <div class="h-48 overflow-hidden flex-shrink-0">
+                          <img
+                            src={pkg.package_id}
+                            onLoad={() => setImageLoaded(true)}
+                            classList={{
+                              "opacity-0": !imageLoaded(),
+                              "opacity-100 transition-opacity duration-300":
+                                imageLoaded(),
+                            }}
+                          />
                         </div>
-                      }
-                    >
-                      {/* Image with fixed aspect ratio */}
-                      <div class="h-48 overflow-hidden flex-shrink-0">
-                        <img
-                          src={pkg.package_id}
-                          onLoad={() => setImageLoaded(true)}
-                          classList={{
-                            "opacity-0": !imageLoaded(),
-                            "opacity-100 transition-opacity duration-300":
-                              imageLoaded(),
-                          }}
-                        />
-                      </div>
-                    </Show>
+                      </Show>
 
-                    {/* Card Content */}
-                    <div class="p-6 flex-grow flex flex-col">
-                      <h2 class="text-xl font-bold mb-3 line-clamp-1">
-                        {pkg.package_name || (
-                          <span class="text-gray-400 italic">
-                            Loading title...
+                      {/* Card Content */}
+                      <div class="p-6 flex-grow flex flex-col">
+                        <h2 class="text-xl font-bold mb-3 line-clamp-1">
+                          {pkg.package_name || (
+                            <span class="text-gray-400 italic">
+                              Loading title...
+                            </span>
+                          )}
+                        </h2>
+                        <h3 class="text-gray-600 font-semibold mb-4 line-clamp-1 flex-grow">
+                          {pkg.price || "No price available"}
+                        </h3>
+                        <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
+                          {pkg.description || "No description available"}
+                        </p>
+                        <div class="flex justify-between items-center ">
+                          <span class="text-sm text-gray-500 line-clamp-2">
+                            {pkg.duration || "No weather info"}
                           </span>
-                        )}
-                      </h2>
-                      <h3 class="text-gray-600 font-semibold mb-4 line-clamp-1 flex-grow">
-                        {pkg.price || "No price available"}
-                      </h3>
-                      <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
-                        {pkg.description || "No description available"}
-                      </p>
-                      <div class="flex justify-between items-center ">
-                        <span class="text-sm text-gray-500 line-clamp-2">
-                          {pkg.duration || "No weather info"}
-                        </span>
-                        <button class="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">
-                          Learn More
-                        </button>
+                          <button class="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">
+                            Learn More
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </A>
-              )}
-            </For>
-          </Show>
-        </div>
+                  </A>
+                )}
+              </For>
+            </Show>
+          </div>
 
-        <NewsLetter />
-      </div>
+          <NewsLetter />
+        </div>
+      </main>
       <Footer />
     </div>
   );

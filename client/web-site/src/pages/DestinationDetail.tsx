@@ -22,7 +22,7 @@ const DestinationDetail = () => {
     <div class="min-h-screen flex flex-col">
       <Navbar />
       
-      <main class="flex-grow">
+      <main class="flex-grow pt-16">
         <Show when={destination()} fallback={<div class="text-center py-20">Loading destination...</div>}>
           <div class="container mx-auto px-4 py-8">
             {/* Hero Section */}
