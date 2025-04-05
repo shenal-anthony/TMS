@@ -34,24 +34,35 @@ const PackageDetail = () => {
     setIsBooking(true);
 
     try {
-      // 1. First check availability by sending package ID
       const response = await axios.post(
         `${apiUrl}/api/bookings/check-availability`,
-        {
-          packageId: params.id,
-        }
+        { packageId: params.id }
       );
 
-      // 2. If available, navigate to booking page
-      if (response.data.available || response.status === 200) {
-        
-        navigate(`/booking/${params.id}`);
+      // 2. Check both the status and the response data
+      if (response.data.available && response.status === 200) {
+        navigate(`/booking/${params.id}`, {
+          state: {
+            packageData: response.data,
+          },
+        });
       } else {
-        alert("Package is not available for booking at this time.");
+        alert(
+          response.data.message ||
+            "Package is not available for booking at this time."
+        );
       }
     } catch (error) {
       console.error("Availability check failed:", error);
-      alert("Failed to check availability. Please try again.");
+      if (axios.isAxiosError(error) && error.response) {
+        // Handle specific error messages from the server
+        alert(
+          error.response.data.message ||
+            "Failed to check availability. Please try again."
+        );
+      } else {
+        alert("Network error. Please check your connection and try again.");
+      }
     } finally {
       setIsBooking(false);
     }

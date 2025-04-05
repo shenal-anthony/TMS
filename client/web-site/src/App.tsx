@@ -7,6 +7,7 @@ import About from "./pages/About";
 import DestinationDetail from "./pages/DestinationDetail";
 import PackageDetail from "./pages/PackageDetail";
 import Booking from "./pages/Booking";
+import PaymentForm from "./pages/PaymentForm";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
       <Route path="/packages" component={Packages} />
       <Route path="/package/:id" component={PackageDetail} />
       <Route path="/booking/:id" component={Booking} />
+      <Route path="/checkout" component={PaymentForm} />
       <Route path="/events" component={Events} />
       <Route path="/about" component={About} />
     </Router>

@@ -20,7 +20,7 @@ const {
   getPackage, 
   getAccommodation,
 
-} = require("../controllers/touristController");
+} = require("../controllers/contentController");
 
 
 // destinations routes
