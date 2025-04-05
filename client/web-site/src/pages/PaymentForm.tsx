@@ -363,7 +363,7 @@ function PaymentForm() {
             <Show when={phase() === 2}>
               <h2 class="text-xl font-semibold mb-4">Payment Method</h2>
               <div class="space-y-4">
-                <div class="flex space-x-4 mb-4">
+                <div class="flex space-x-4 mb-4 transition-shadow duration-300">
                   <button
                     type="button"
                     onClick={() =>

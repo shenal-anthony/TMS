@@ -1,6 +1,6 @@
 const pool = require("../db");
 const bcrypt = require("../node_modules/bcryptjs");
-const generateToken = require("../utils/jwtGenerator");
+const generateToken = require("../utils/tokenGenerator");
 const { findUserByEmail, createUser } = require("../models/userModel");
 
 const registerUser = async (req, res) => {

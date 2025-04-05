@@ -31,7 +31,7 @@ const CardSkeleton = () => (
 const Packages = () => {
   const [packages] = createResource(async () => {
     try {
-      const response = await axios.get(`${apiUrl}/api/tourists/packages`);
+      const response = await axios.get(`${apiUrl}/api/contents/packages`);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error("Error fetching packages:", error);

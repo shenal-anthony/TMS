@@ -10,7 +10,7 @@ const DestinationDetail = () => {
   const params = useParams();
   const [destination] = createResource(async () => {
     try {
-      const response = await axios.get(`${apiUrl}/api/tourists/destination/${params.id}`);
+      const response = await axios.get(`${apiUrl}/api/contents/destination/${params.id}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching destination:", error);

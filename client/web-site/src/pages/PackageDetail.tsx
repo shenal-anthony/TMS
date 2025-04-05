@@ -21,7 +21,7 @@ const PackageDetail = () => {
   const [pkg] = createResource(async () => {
     try {
       const response = await axios.get(
-        `${apiUrl}/api/tourists/package/${params.id}`
+        `${apiUrl}/api/contents/package/${params.id}`
       );
       return response.data;
     } catch (error) {
@@ -40,7 +40,11 @@ const PackageDetail = () => {
       );
 
       // 2. Check both the status and the response data
-      if (response.data.available && response.status === 200) {
+      if (
+        response.data.available &&
+        response.status === 200 &&
+        response.data.success
+      ) {
         navigate(`/booking/${params.id}`, {
           state: {
             packageData: response.data,
