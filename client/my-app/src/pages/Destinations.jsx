@@ -61,7 +61,7 @@ const Destinations = () => {
 
   const fetchDestinations = () => {
     axios
-      .get(`${apiUrl}/api/tourists/destinations`)
+      .get(`${apiUrl}/api/contents/destinations`)
       .then((response) => {
         if (Array.isArray(response.data)) {
           setDestinationContents(response.data);
@@ -80,7 +80,7 @@ const Destinations = () => {
 
   const fetchPackages = () => {
     axios
-      .get(`${apiUrl}/api/tourists/packages`)
+      .get(`${apiUrl}/api/contents/packages`)
       .then((response) => {
         if (Array.isArray(response.data)) {
           setPackageContents(response.data);
@@ -99,7 +99,7 @@ const Destinations = () => {
 
   const handleRemoveDestination = (id) => {
     axios
-      .delete(`${apiUrl}/api/tourists/destinations/${id}`)
+      .delete(`${apiUrl}/api/contents/destinations/${id}`)
       .then(() => {
         setDestinationContents(
           destinationContents.filter(
@@ -116,7 +116,7 @@ const Destinations = () => {
 
   const handleRemovePackage = (id) => {
     axios
-      .delete(`${apiUrl}/api/tourists/packages/${id}`)
+      .delete(`${apiUrl}/api/contents/packages/${id}`)
       .then(() => {
         setPackageContents(
           packageContents.filter((pkg) => pkg.package_id !== id)
@@ -132,7 +132,7 @@ const Destinations = () => {
       // Update existing destination
       axios
         .put(
-          `${apiUrl}/api/tourists/destinations/${currentDestination.destination_id}`,
+          `${apiUrl}/api/contents/destinations/${currentDestination.destination_id}`,
           currentDestination
         )
         .then((response) => {
@@ -154,7 +154,7 @@ const Destinations = () => {
     } else {
       // Add new destination
       axios
-        .post(`${apiUrl}/api/tourists/destinations`, currentDestination)
+        .post(`${apiUrl}/api/contents/destinations`, currentDestination)
         .then((response) => {
           setDestinationContents([...destinationContents, response.data]);
           setOpenDialog(false);
@@ -173,7 +173,7 @@ const Destinations = () => {
       // Update existing package
       axios
         .put(
-          `${apiUrl}/api/tourists/packages/${currentPackage.package_id}`,
+          `${apiUrl}/api/contents/packages/${currentPackage.package_id}`,
           currentPackage
         )
         .then((response) => {
@@ -193,7 +193,7 @@ const Destinations = () => {
     } else {
       // Add new package
       axios
-        .post(`${apiUrl}/api/tourists/packages`, currentPackage)
+        .post(`${apiUrl}/api/contents/packages`, currentPackage)
         .then((response) => {
           setPackageContents([...packageContents, response.data]);
           setOpenPackageDialog(false);

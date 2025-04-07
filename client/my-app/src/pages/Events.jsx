@@ -133,7 +133,7 @@ const Events = () => {
 
   const fetchAccommodations = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/api/tourists/accommodations`);
+      const response = await axios.get(`${apiUrl}/api/contents/accommodations`);
       if (Array.isArray(response.data)) {
         setAccommodationContents(response.data);
       } else {
@@ -148,7 +148,7 @@ const Events = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/api/tourists/events`);
+      const response = await axios.get(`${apiUrl}/api/contents/events`);
       if (Array.isArray(response.data)) {
         setEventContents(response.data);
       } else {
@@ -187,8 +187,8 @@ const Events = () => {
     try {
       const url =
         isEditing && currentId
-          ? `${apiUrl}/api/tourists/accommodations/${currentId}`
-          : `${apiUrl}/api/tourists/accommodations`;
+          ? `${apiUrl}/api/contents/accommodations/${currentId}`
+          : `${apiUrl}/api/contents/accommodations`;
 
       const method = isEditing ? "put" : "post";
 
@@ -231,8 +231,8 @@ const Events = () => {
     try {
       const url =
         isEditing && currentId
-          ? `${apiUrl}/api/tourists/events/${currentId}`
-          : `${apiUrl}/api/tourists/events`;
+          ? `${apiUrl}/api/contents/events/${currentId}`
+          : `${apiUrl}/api/contents/events`;
 
       const method = isEditing ? "put" : "post";
 
@@ -260,7 +260,7 @@ const Events = () => {
 
   const handleRemoveAccommodation = async (id) => {
     try {
-      await axios.delete(`${apiUrl}/api/tourists/accommodations/${id}`);
+      await axios.delete(`${apiUrl}/api/contents/accommodations/${id}`);
       setAccommodationContents(
         accommodationContents.filter((acc) => acc.accommodation_id !== id)
       );
@@ -276,7 +276,7 @@ const Events = () => {
 
   const handleRemoveEvent = async (id) => {
     try {
-      await axios.delete(`${apiUrl}/api/tourists/events/${id}`);
+      await axios.delete(`${apiUrl}/api/contents/events/${id}`);
       setEventContents(eventContents.filter((event) => event.event_id !== id));
       setModalMessage("Event deleted successfully!");
       setIsSuccess(true);

@@ -31,7 +31,7 @@ const getDestination = async (req, res) => {
       .status(500)
       .json({ message: "Error fetching destination", error: error.message });
   }
-}
+};
 // add
 const addDestination = async (req, res) => {
   const { body } = req;
@@ -96,7 +96,7 @@ const getPackage = async (req, res) => {
       .status(500)
       .json({ message: "Error fetching package", error: error.message });
   }
-}
+};
 // add
 const addPackage = async (req, res) => {
   const { body } = req;
@@ -300,7 +300,7 @@ const deleteEvent = async (req, res) => {
       .status(500)
       .json({ message: "Error deleting event", error: error.message });
   }
-}
+};
 
 module.exports = {
   getAllDestinations,
@@ -320,5 +320,5 @@ module.exports = {
   deleteAccommodation,
   getAllEvents,
   addEvent,
-  deleteEvent
+  deleteEvent,
 };
