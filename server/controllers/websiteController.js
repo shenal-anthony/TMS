@@ -21,19 +21,19 @@ const generateBookingKey = (packageId, price, duration, accommodation) => {
     return {
       isSuccess: true,
       token: token,
-      error: null
+      error: null,
     };
   } catch (error) {
     return {
       isSuccess: false,
       token: null,
-      error: error.message
+      error: error.message,
     };
   }
 };
 
 // Get package details
-const getPackageDetails = async (req, res) => {
+const getPkgBookingKeyDetails = async (req, res) => {
   const { packageId } = req.body;
 
   try {
@@ -51,7 +51,7 @@ const getPackageDetails = async (req, res) => {
       return res.status(500).json({
         success: false,
         message: "Failed to generate booking key",
-        error: error
+        error: error,
       });
     }
 
@@ -77,9 +77,36 @@ const getPackageDetails = async (req, res) => {
   }
 };
 
+// Get verified booking details from token
+const getVerifiedBookingDetails = async (req, res) => {
+  try {
+    // The token is already verified by the middleware, just get the details
+    const bookingDetails = req.bookingDetails;
 
+    // Optional: Fetch fresh package details from DB if needed
+    const content = await pkg.getPackageById(bookingDetails.pkgId);
 
+    res.json({
+      success: true,
+      packageDetails: {
+        packageId: content.package_id,
+        packageName: content.package_name,
+        accommodation: content.accommodation_id,
+        price: content.price,
+        duration: content.duration,
+      },
+      // Include the original token if needed
+      bookingKey: req.token,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching booking details",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
-  getPackageDetails,
+  getPkgBookingKeyDetails, getVerifiedBookingDetails
 };

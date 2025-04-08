@@ -1,6 +1,5 @@
 import { createResource, createSignal, Show } from "solid-js";
-import { useParams, useNavigate, useLocation } from "@solidjs/router";
-import type { Location } from "@solidjs/router";
+import { useParams, useNavigate, useSearchParams } from "@solidjs/router";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -10,35 +9,41 @@ const apiUrl = import.meta.env.VITE_API_URL;
 function Booking() {
   const params = useParams();
   const navigate = useNavigate();
-  const location = useLocation() as Location & {
-    state?: {
-      packageData?: {
-        packageName: string;
-        duration: number;
-        accommodation: string;
-        price: number;
-      };
-    };
-  };
+  const [searchParams] = useSearchParams();
+
   const [headCount, setHeadCount] = createSignal(1);
   const [acceptedTerms, setAcceptedTerms] = createSignal(false);
+  const [bookingToken, setBookingToken] = createSignal(
+    searchParams.token || ""
+  );
 
-  // Use passed package data or fetch if direct access
+  // Fetch package details using the booking token
   const [packageDetails] = createResource(async () => {
-    // Check if data was passed via navigation state
-    if (location.state?.packageData) {
-      return location.state.packageData;
-    }
+    // if (!bookingToken()) {
+    //   navigate("/", { replace: true }); // Redirect if no token
+    //   return null;
+    // }
 
-    // Fallback to API fetch if no state data
     try {
-      const response = await axios.post(
-        `${apiUrl}/api/bookings/check-availability`,
-        { packageId: params.id }
+      const response = await axios.get(
+        `${apiUrl}/api/bookings/booking-details`,
+        {
+          headers: {
+            "x-booking-key": bookingToken(),
+          },
+        }
       );
-      return response.data;
+
+      return {
+        packageName: response.data.packageDetails.packageName,
+        duration: response.data.packageDetails.duration,
+        accommodation: response.data.packageDetails.accommodation,
+        price: response.data.packageDetails.price,
+        packageId: response.data.packageDetails.packageId,
+      };
     } catch (error) {
-      console.error("Error fetching package:", error);
+      console.error("Error fetching package details:", error);
+      navigate("/packages", { replace: true }); // Redirect on error
       return null;
     }
   });
@@ -49,7 +54,7 @@ function Booking() {
     return headCount() * packageDetails().price;
   };
 
-  const handleSubmit = async (e: SubmitEvent) => {
+  const handleSubmit = async (e: Event) => {
     e.preventDefault();
     if (!acceptedTerms()) {
       alert("Please accept the terms and conditions");
@@ -57,13 +62,25 @@ function Booking() {
     }
 
     try {
-      // const response = await axios.post(`${apiUrl}/api/bookings`, {
-      //   packageId: params.id,
-      //   headCount: headCount(),
-      //   totalPrice: totalPrice(),
-      // });
+      const bookingResponse = await axios.post(
+        `${apiUrl}/api/bookings/configured-booking`,
+        {
+          packageId: packageDetails()?.packageId || params.id,
+          headCount: headCount(),
+          totalPrice: totalPrice(),
+        },
+        {
+          headers: {
+            "x-booking-key": bookingToken(),
+          },
+        }
+      );
+
       navigate("/checkout", {
-        // state: { bookingId: response.data.id },
+        state: {
+          bookingId: bookingResponse.data.id,
+          bookingToken: bookingToken(),
+        },
       });
     } catch (error) {
       console.error("Booking failed:", error);
@@ -86,7 +103,6 @@ function Booking() {
             <h1 class="text-3xl font-bold mb-6">
               Configure your package: {packageDetails().packageName}
             </h1>
-
             <div class="grid md:grid-cols-2 gap-8">
               {/* Package Details */}
               <div>
