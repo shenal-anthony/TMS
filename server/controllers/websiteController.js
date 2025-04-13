@@ -32,6 +32,34 @@ const generateBookingKey = (packageId, price, duration, accommodation) => {
   }
 };
 
+const generateCheckOutKey = (packageId, price, duration, headcount) => {
+  try {
+    const payload = {
+      pkgId: packageId,
+      price: price,
+      duration: duration,
+      headCount: headcount,
+      totalPrice: price * headcount,
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, {
+      expiresIn: "1h", // Token expires in 1 hour
+    });
+
+    return {
+      isSuccess: true,
+      token: token,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      isSuccess: false,
+      token: null,
+      error: error.message,
+    };
+  }
+};
+
 // Get package details
 const getPkgBookingKeyDetails = async (req, res) => {
   const { packageId } = req.body;
@@ -107,6 +135,137 @@ const getVerifiedBookingDetails = async (req, res) => {
   }
 };
 
+const getPkgDetails = async (req, res) => {
+  const { id } = req.params; // Changed from req.body to req.params
+  const bookingKey = req.headers["x-booking-key"]; // Get booking key from headers
+
+  try {
+    // Validate booking key first (if needed)
+    if (!bookingKey) {
+      return res.status(401).json({
+        success: false,
+        message: "Booking key is required",
+      });
+    }
+
+    // Optional: Verify booking key is valid
+    // const isValidKey = await verifyBookingKey(bookingKey);
+    // if (!isValidKey) {...}
+
+    const content = await pkg.getPackageById(id);
+
+    if (!content) {
+      return res.status(404).json({
+        success: false,
+        message: "Package not found",
+      });
+    }
+
+    // Your availability check logic here
+    const isAvailable = true; // Replace with real check
+
+    res.json({
+      success: true,
+      available: isAvailable,
+      packageDetails: {
+        // Changed to nest under packageDetails
+        packageId: content.package_id,
+        packageName: content.package_name,
+        accommodation: content.accommodation_id, // Fix typo if needed
+        price: content.price,
+        duration: content.duration,
+        // Add any other required fields
+      },
+      bookingKey: bookingKey, // Optionally return the key
+    });
+  } catch (error) {
+    console.error("Package details error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching package details",
+      error: error.message,
+    });
+  }
+};
+
+const getVerifiedCheckoutDetails = async (req, res) => {
+  const { headCount, packageId, totalPrice } = req.body;
+
+  try {
+    const content = await pkg.getPackageById(packageId);
+    const isAvailable = true; // Replace with real check
+
+    const { isSuccess, token, error } = generateCheckOutKey(
+      content.package_id,
+      content.price,
+      content.duration,
+      content.headCount
+    );
+
+    if (!isSuccess) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate checkout key",
+        error: error,
+      });
+    }
+
+    res.json({
+      success: true,
+      available: isAvailable,
+      packageId: content.package_id,
+      price: content.price,
+      duration: content.duration,
+      headCount: headCount,
+      totalPrice: totalPrice,
+      checkoutKey: token, // JWT token
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching package details",
+      error: error.message,
+    });
+  }
+};
+
+const payment = async (req, res) => {
+  const { packageId, headCount } = req.body;
+
+  try {
+    const content = await pkg.getPackageById(packageId);
+
+    if (!content) {
+      return res.status(404).json({
+        success: false,
+        message: "Package not found",
+      });
+    }
+
+    const totalPrice = content.price * headCount;
+
+    res.json({
+      success: true,
+      packageId: content.package_id,
+      totalPrice: totalPrice,
+    });
+  } catch (error) {
+    console.error("Payment error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error processing payment",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
-  getPkgBookingKeyDetails, getVerifiedBookingDetails
+  getPkgBookingKeyDetails,
+  getVerifiedBookingDetails,
+  getPkgDetails,
+  generateBookingKey,
+  generateCheckOutKey,
+  getVerifiedCheckoutDetails,
+  payment,
 };

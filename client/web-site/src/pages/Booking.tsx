@@ -1,5 +1,5 @@
 import { createResource, createSignal, Show } from "solid-js";
-import { useParams, useNavigate, useSearchParams } from "@solidjs/router";
+import { useParams, useNavigate, useLocation } from "@solidjs/router";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -9,27 +9,29 @@ const apiUrl = import.meta.env.VITE_API_URL;
 function Booking() {
   const params = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation<{ bookingKey?: string; packageId?: string }>();
+
+  // Get booking key from navigation state
+  const bookingKey = () => {
+    const key = location.state?.bookingKey;
+    if (!key) {
+      navigate(-1);
+      return "";
+    }
+    return key;
+  };
 
   const [headCount, setHeadCount] = createSignal(1);
   const [acceptedTerms, setAcceptedTerms] = createSignal(false);
-  const [bookingToken, setBookingToken] = createSignal(
-    searchParams.token || ""
-  );
 
-  // Fetch package details using the booking token
+  // Fetch package details using the package ID from URL params
   const [packageDetails] = createResource(async () => {
-    // if (!bookingToken()) {
-    //   navigate("/", { replace: true }); // Redirect if no token
-    //   return null;
-    // }
-
     try {
       const response = await axios.get(
-        `${apiUrl}/api/bookings/booking-details`,
+        `${apiUrl}/api/bookings/booking-details/${params.id}`,
         {
           headers: {
-            "x-booking-key": bookingToken(),
+            "x-booking-key": bookingKey(),
           },
         }
       );
@@ -43,7 +45,12 @@ function Booking() {
       };
     } catch (error) {
       console.error("Error fetching package details:", error);
-      navigate("/packages", { replace: true }); // Redirect on error
+      // Try to go back, if that fails (no history) go to packages
+      if (!window.history.state || window.history.length <= 1) {
+        navigate("/packages", { replace: true });
+      } else {
+        navigate(-1);
+      }
       return null;
     }
   });
@@ -51,7 +58,7 @@ function Booking() {
   // Calculate total price
   const totalPrice = () => {
     if (!packageDetails()) return 0;
-    return headCount() * packageDetails().price;
+    return headCount() * (packageDetails()?.price || 0);
   };
 
   const handleSubmit = async (e: Event) => {
@@ -65,13 +72,13 @@ function Booking() {
       const bookingResponse = await axios.post(
         `${apiUrl}/api/bookings/configured-booking`,
         {
-          packageId: packageDetails()?.packageId || params.id,
+          packageId: params.id, // Use the ID from URL params
           headCount: headCount(),
           totalPrice: totalPrice(),
         },
         {
           headers: {
-            "x-booking-key": bookingToken(),
+            "x-booking-key": bookingKey(),
           },
         }
       );
@@ -79,7 +86,9 @@ function Booking() {
       navigate("/checkout", {
         state: {
           bookingId: bookingResponse.data.id,
-          bookingToken: bookingToken(),
+          bookingKey: bookingKey(),
+          totalPrice: totalPrice(),
+          checkoutKey: bookingResponse.data.checkoutKey,
         },
       });
     } catch (error) {
@@ -101,7 +110,8 @@ function Booking() {
         >
           <div class="max-w-4xl mx-auto container px-4 py-8">
             <h1 class="text-3xl font-bold mb-6">
-              Configure your package: {packageDetails().packageName}
+              Configure your package:{" "}
+              {packageDetails()?.packageName || "Loading..."}
             </h1>
             <div class="grid md:grid-cols-2 gap-8">
               {/* Package Details */}
@@ -110,15 +120,15 @@ function Booking() {
                   <h2 class="text-xl font-semibold mb-4">Package Details</h2>
                   <p class="mb-2">
                     <span class="font-medium">Duration:</span>{" "}
-                    {packageDetails().duration}
+                    {packageDetails()?.duration}
                   </p>
                   <p class="mb-2">
                     <span class="font-medium">Accommodation:</span>{" "}
-                    {packageDetails().accommodation}
+                    {packageDetails()?.accommodation}
                   </p>
                   <p class="mb-2">
                     <span class="font-medium">Price per person:</span> $
-                    {packageDetails().price}
+                    {packageDetails()?.price}
                   </p>
                 </div>
 
@@ -169,7 +179,7 @@ function Booking() {
                     <p class="font-medium">Total Price:</p>
                     <p class="text-2xl font-bold">${totalPrice()}</p>
                     <p class="text-sm text-gray-600">
-                      (50% deposit required: ${totalPrice() * 0.5})
+                      (50% deposit required: ${(totalPrice() * 0.5).toFixed(2)})
                     </p>
                   </div>
 

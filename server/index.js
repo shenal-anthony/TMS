@@ -11,7 +11,7 @@ const vehicleRoutes = require("./routes/vehicleRoutes");
 const guideRoutes = require("./routes/guideRoutes");
 const contentRoutes = require("./routes/contentRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
-const touristRoutes = require("./routes/touristRoute");
+const touristRoutes = require("./routes/touristRoutes");
 
 const fileUpload = require("express-fileupload");
 const port = process.env.PORT || 8001;

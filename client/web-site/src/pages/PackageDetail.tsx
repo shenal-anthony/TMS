@@ -39,34 +39,21 @@ const PackageDetail = () => {
         { packageId: params.id }
       );
 
-      // 2. Check both the status and the response data
       if (
         response.data.available &&
         response.status === 200 &&
         response.data.success
       ) {
+        // Navigate to booking page
         navigate(`/booking/${params.id}`, {
-          state: {
-            packageData: response.data,
-          },
+          state: { bookingKey: response.data.bookingKey, packageId: params.id },
         });
       } else {
-        alert(
-          response.data.message ||
-            "Package is not available for booking at this time."
-        );
+        alert(response.data.message || "Package not available");
       }
     } catch (error) {
-      console.error("Availability check failed:", error);
-      if (axios.isAxiosError(error) && error.response) {
-        // Handle specific error messages from the server
-        alert(
-          error.response.data.message ||
-            "Failed to check availability. Please try again."
-        );
-      } else {
-        alert("Network error. Please check your connection and try again.");
-      }
+      console.error("Error:", error);
+      alert("Booking failed. Please try again.");
     } finally {
       setIsBooking(false);
     }

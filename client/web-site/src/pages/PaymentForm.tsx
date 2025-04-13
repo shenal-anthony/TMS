@@ -76,7 +76,7 @@ function PaymentForm() {
           payload = formData().tourist;
           break;
         case 2:
-          endpoint = "/api/payment-method";
+          endpoint = "/api/tourists/payment";
           payload = formData().payment;
           break;
         case 3:

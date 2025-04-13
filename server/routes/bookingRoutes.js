@@ -5,19 +5,20 @@ const {
   addBooking,
   deleteBooking,
 } = require("../controllers/bookingController");
-const { getPkgBookingKeyDetails, getVerifiedBookingDetails } = require("../controllers/websiteController");
+const {
+  getPkgBookingKeyDetails,
+  getVerifiedBookingDetails,
+  getPkgDetails,
+  getVerifiedCheckoutDetails,
+} = require("../controllers/websiteController");
 const verifyBooking = require("../middlewares/verifyBooking");
 
 // Route to get all admins from /api/bookings
 router.get("/", getAllBookings);
 router.post("/", addBooking);
 router.delete("/:id", deleteBooking);
-
 router.post("/check-availability", getPkgBookingKeyDetails);
-
-router.get("/booking-details", verifyBooking, getVerifiedBookingDetails);
-
-
-router.post("/configured-booking", verifyBooking);
+router.get("/booking-details/:id", getPkgDetails);
+router.post("/configured-booking", getVerifiedCheckoutDetails);
 
 module.exports = router;

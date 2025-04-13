@@ -6,10 +6,13 @@ const {
     registerTourist,
     deleteTourist,
 } = require("../controllers/touristController");
+const { payment } = require("../controllers/websiteController");
 
 
 // tourist routes
 router.post("/register", registerTourist);
+router.post("/payment", payment);
+
 
 // router.get("/destination/:id", );
 

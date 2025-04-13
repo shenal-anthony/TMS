@@ -1,21 +1,6 @@
 const tourist = require("../models/touristModel");
+const _ = require("lodash");
 // tourist controller
-
-// Success message templates
-const successMessages = {
-  getAll: "Tourists retrieved successfully",
-  getSingle: "Tourist retrieved successfully",
-  register: "Tourist registered successfully",
-  delete: "Tourist deleted successfully",
-};
-
-// Error message templates
-const errorMessages = {
-  notFound: "Tourist not found",
-  existsEmail: "Tourist already exists with this email",
-  existsNIC: "Tourist already exists with this NIC number",
-  serverError: "Internal server error",
-};
 
 // get all
 const getAllTourists = async (req, res) => {
@@ -34,7 +19,7 @@ const getTourist = async (req, res) => {
   try {
     const content = await tourist.findTouristByEmail();
     if (!content) {
-      return res.status(404).json({ message: "tourist not found" });
+      return res.status(404).json({ message: "Tourist not found" });
     }
     res.json(content);
   } catch (error) {
@@ -46,37 +31,83 @@ const getTourist = async (req, res) => {
 // add
 const registerTourist = async (req, res) => {
   const touristData = req.body;
-  // console.log(
-  // "🚀 ~ touristController.js:33 ~ registerTourist ~ touristData:",
-  // touristData
-  // );
 
   try {
-    const existingTourist = await tourist.findTouristByEmail(touristData.email);
-    const existingTouristByNIC = await tourist.findTouristByNIC(
+    // 1. Get ALL tourists with this NIC (returns array)
+    const existingTourists = await tourist.findTouristByNIC(
       touristData.nicNumber
     );
-    if (existingTourist) {
-      return res
-        .status(400)
-        .json({ success: false, message: errorMessages.existsEmail });
-    }
-    if (existingTouristByNIC) {
-      return res
-        .status(400)
-        .json({ success: false, message: errorMessages.existsNIC });
+
+    // An empty array has length = 0
+    if (existingTourists && existingTourists.length > 0) {
+      // 2. Check if any record has different names -> REJECT
+      const hasDifferentPerson = existingTourists.some(
+        (tourist) =>
+          tourist.first_name.toLowerCase() !==
+            touristData.firstName.toLowerCase() ||
+          tourist.last_name.toLowerCase() !== touristData.lastName.toLowerCase()
+      );
+
+      if (hasDifferentPerson) {
+        return res.status(400).json({
+          success: false,
+          message: "NIC number belongs to a different person",
+        });
+      }
+
+      // 3. Check if ANY existing record has identical details
+      const identicalTourist = existingTourists.find((tourist) =>
+        _.isEqual(
+          {
+            email: tourist.email_address,
+            contactNumber: tourist.contact_number,
+            country: tourist.country,
+            city: tourist.city,
+            postalCode: tourist.postal_code,
+            // addressLine1: tourist.addressline_01,
+            // addressLine2: tourist.addressline_02,
+          },
+          {
+            email: touristData.email,
+            contactNumber: touristData.contactNumber,
+            country: touristData.country,
+            city: touristData.city,
+            postalCode: touristData.postalCode,
+            // addressLine1: touristData.addressLine1,
+            // addressLine2: touristData.addressLine2,
+          }
+        )
+      );
+      console.log("🚀 ~ touristController.js:81 ~ registerTourist ~ identicalTourist:", identicalTourist);
+
+      if (identicalTourist) {
+        return res.status(200).json({
+          success: true,
+          message: "Tourist exists with identical details",
+          data: identicalTourist,
+        });
+      }
+
+      // 4. If same person but new details -> CREATE NEW ENTRY
+      const newTourist = await tourist.addTourist(touristData);
+      return res.status(201).json({
+        success: true,
+        message: "New tourist entry created for existing person",
+        data: newTourist,
+      });
     }
 
+    // 5. If new tourist -> CREATE
     const newTourist = await tourist.addTourist(touristData);
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: successMessages.register,
+      message: "Tourist registered successfully",
       data: newTourist,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: errorMessages.serverError,
+      message: "Internal server error",
       error: error.message,
     });
   }
