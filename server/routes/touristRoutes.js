@@ -6,11 +6,12 @@ const {
     registerTourist,
     deleteTourist,
 } = require("../controllers/touristController");
+const { validateTouristRegistration } = require("../middlewares/touristValidation");
 const { payment } = require("../controllers/websiteController");
 
 
 // tourist routes
-router.post("/register", registerTourist);
+router.post("/register", validateTouristRegistration, registerTourist);
 router.post("/payment", payment);
 
 

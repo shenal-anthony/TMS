@@ -32,20 +32,34 @@ const getTourist = async (req, res) => {
 const registerTourist = async (req, res) => {
   const touristData = req.body;
 
+  // Ensure all string fields are trimmed and lowercased
+  touristData.firstName = touristData.firstName?.trim().toLowerCase();
+  touristData.lastName = touristData.lastName?.trim().toLowerCase();
+  touristData.email = touristData.email?.trim().toLowerCase();
+  touristData.contactNumber = touristData.contactNumber?.trim().toLowerCase();
+  touristData.nicNumber = touristData.nicNumber?.trim().toLowerCase();
+  touristData.country = touristData.country?.trim();
+  touristData.city = touristData.city?.trim().toLowerCase();
+  touristData.postalCode = touristData.postalCode?.trim().toLowerCase();
+  touristData.addressLine01 = touristData.addressLine1?.trim().toLowerCase();
+  touristData.addressLine02 = touristData.addressLine2?.trim().toLowerCase();
+
+  if (touristData.addressLine2 === "") {
+    touristData.addressLine2 = null; // Set to null if empty
+  }
+
   try {
-    // 1. Get ALL tourists with this NIC (returns array)
+    // 1. Get ALL tourists with this NIC
     const existingTourists = await tourist.findTouristByNIC(
       touristData.nicNumber
     );
 
-    // An empty array has length = 0
-    if (existingTourists && existingTourists.length > 0) {
-      // 2. Check if any record has different names -> REJECT
+    if (existingTourists?.length > 0) {
+      // 2. Name validation
       const hasDifferentPerson = existingTourists.some(
-        (tourist) =>
-          tourist.first_name.toLowerCase() !==
-            touristData.firstName.toLowerCase() ||
-          tourist.last_name.toLowerCase() !== touristData.lastName.toLowerCase()
+        (t) =>
+          t.first_name.toLowerCase() !== touristData.firstName.toLowerCase() ||
+          t.last_name.toLowerCase() !== touristData.lastName.toLowerCase()
       );
 
       if (hasDifferentPerson) {
@@ -55,32 +69,49 @@ const registerTourist = async (req, res) => {
         });
       }
 
-      // 3. Check if ANY existing record has identical details
-      const identicalTourist = existingTourists.find((tourist) =>
-        _.isEqual(
-          {
-            email: tourist.email_address,
-            contactNumber: tourist.contact_number,
-            country: tourist.country,
-            city: tourist.city,
-            postalCode: tourist.postal_code,
-            // addressLine1: tourist.addressline_01,
-            // addressLine2: tourist.addressline_02,
-          },
-          {
-            email: touristData.email,
-            contactNumber: touristData.contactNumber,
-            country: touristData.country,
-            city: touristData.city,
-            postalCode: touristData.postalCode,
-            // addressLine1: touristData.addressLine1,
-            // addressLine2: touristData.addressLine2,
-          }
-        )
+      // 3. Detailed comparison with debugging
+      console.log(
+        "Comparing against",
+        existingTourists.length,
+        "existing records"
       );
-      console.log("🚀 ~ touristController.js:81 ~ registerTourist ~ identicalTourist:", identicalTourist);
+
+      const identicalTourist = existingTourists.find((tourist) => {
+        const dbRecord = {
+          email: tourist.email_address,
+          contactNumber: tourist.contact_number,
+          country: tourist.country,
+          city: tourist.city,
+          postalCode: tourist.postal_code,
+          addressLine01: tourist.addressline_01,
+          addressLine02: tourist.addressline_02,
+        };
+
+        const inputData = {
+          email: touristData.email,
+          contactNumber: touristData.contactNumber,
+          country: touristData.country,
+          city: touristData.city,
+          postalCode: touristData.postalCode,
+          addressLine01: touristData.addressLine1,
+          addressLine02: touristData.addressLine2,
+        };
+
+        const isMatch = _.isEqual(dbRecord, inputData);
+
+        if (!isMatch) {
+          console.log("Mismatch found:", {
+            differingFields: getDifferingFields(dbRecord, inputData),
+            dbRecord,
+            inputData,
+          });
+        }
+
+        return isMatch;
+      });
 
       if (identicalTourist) {
+        console.log("Found identical tourist record");
         return res.status(200).json({
           success: true,
           message: "Tourist exists with identical details",
@@ -88,7 +119,7 @@ const registerTourist = async (req, res) => {
         });
       }
 
-      // 4. If same person but new details -> CREATE NEW ENTRY
+      // 4. Create new entry if same person but different details
       const newTourist = await tourist.addTourist(touristData);
       return res.status(201).json({
         success: true,
@@ -97,7 +128,7 @@ const registerTourist = async (req, res) => {
       });
     }
 
-    // 5. If new tourist -> CREATE
+    // 5. Create new tourist if no existing records
     const newTourist = await tourist.addTourist(touristData);
     return res.status(201).json({
       success: true,
@@ -105,13 +136,22 @@ const registerTourist = async (req, res) => {
       data: newTourist,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Registration error:", error);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
       error: error.message,
     });
   }
 };
+
+// Helper function to identify differing fields
+function getDifferingFields(obj1, obj2) {
+  return Object.keys(obj1).filter((key) => {
+    return !_.isEqual(obj1[key], obj2[key]);
+  });
+}
+
 // delete
 const deleteTourist = async (req, res) => {
   const { id } = req.params;

@@ -45,17 +45,22 @@ const addTourist = async (touristData) => {
       RETURNING *;
     `;
 
+    // Process address fields to remove extra spaces and convert to lowercase
+    const processAddress = (address) => {
+      return address ? address.replace(/\s+/g, " ").trim().toLowerCase() : null;
+    };
+
     const values = [
       firstName.toLowerCase(), // Convert to lowercase before storage
       lastName.toLowerCase(), // Convert to lowercase before storage
-      email,
+      email.toLowerCase(),
       contactNumber,
       nicNumber,
-      country.toLowerCase(), // Convert to lowercase before storage
+      country,
       city.toLowerCase(), // Convert to lowercase before storage
       postalCode,
-      addressLine1.toLowerCase(), // Convert to lowercase before storage
-      addressLine2 ? addressLine2.toLowerCase() : null, // Convert to lowercase before storage
+      processAddress(addressLine1), // Process address to remove extra spaces
+      addressLine2 ? processAddress(addressLine2) : null, // Convert to lowercase before storage
     ];
 
     const result = await pool.query(query, values);

@@ -2,9 +2,9 @@ import { createSignal, onMount, Show } from "solid-js";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import CountryDropdown from "../components/CountryDropdown";
 
 const apiUrl = import.meta.env.VITE_API_URL;
-
 
 function PaymentForm() {
   // Storage key
@@ -256,13 +256,19 @@ function PaymentForm() {
                     />
                   </div>
                   <div>
-                    <label class="block text-gray-700 mb-1">Contact Number*</label>
+                    <label class="block text-gray-700 mb-1">
+                      Contact Number*
+                    </label>
                     <input
                       type="tel"
                       required
                       value={formData().tourist.contactNumber}
                       onInput={(e) =>
-                        handleInputChange("tourist", "contactNumber", e.target.value)
+                        handleInputChange(
+                          "tourist",
+                          "contactNumber",
+                          e.target.value
+                        )
                       }
                       class="w-full px-3 py-2 border rounded-md"
                     />
@@ -282,7 +288,8 @@ function PaymentForm() {
                   />
                 </div>
 
-                <div>
+                {/* country */}
+                {/* <div>
                   <label class="block text-gray-700 mb-1">Country*</label>
                   <select
                     required
@@ -294,10 +301,17 @@ function PaymentForm() {
                   >
                     <option value="Sri Lanka">Sri Lanka</option>
                     <option value="India">India</option>
-                    <option value="USA">United States</option>
-                    <option value="UK">United Kingdom</option>
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Wakanda">Wakanda</option> // 😁 for testing
+                    purposes
                   </select>
-                </div>
+                </div> */}
+                <CountryDropdown
+                value={formData().tourist.country}
+                onChange={(value: string) => handleInputChange("tourist", "country", value)}
+                label={"Country*"}
+                />
 
                 <div>
                   <label class="block text-gray-700 mb-1">
@@ -308,7 +322,11 @@ function PaymentForm() {
                     required
                     value={formData().tourist.addressLine1}
                     onInput={(e) =>
-                      handleInputChange("tourist", "addressLine1", e.target.value)
+                      handleInputChange(
+                        "tourist",
+                        "addressLine1",
+                        e.target.value
+                      )
                     }
                     class="w-full px-3 py-2 border rounded-md"
                   />
@@ -320,7 +338,11 @@ function PaymentForm() {
                     type="text"
                     value={formData().tourist.addressLine2}
                     onInput={(e) =>
-                      handleInputChange("tourist", "addressLine2", e.target.value)
+                      handleInputChange(
+                        "tourist",
+                        "addressLine2",
+                        e.target.value
+                      )
                     }
                     class="w-full px-3 py-2 border rounded-md"
                   />
