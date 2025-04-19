@@ -6,7 +6,7 @@ import Events from "./pages/Events";
 import About from "./pages/About";
 import DestinationDetail from "./pages/DestinationDetail";
 import PackageDetail from "./pages/PackageDetail";
-import Booking from "./pages/Booking";
+import Booking from "./pages/BookingConfiguration";
 import PaymentForm from "./pages/PaymentForm";
 import Contact from "./pages/Contact";
 

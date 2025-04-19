@@ -3,13 +3,33 @@ import { useParams, useNavigate, useLocation } from "@solidjs/router";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useCart } from "../util/useCart";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-function Booking() {
+function BookingConfiguration() {
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation<{ bookingKey?: string; packageId?: string }>();
+  const [headCount, setHeadCount] = createSignal(1);
+  const [acceptedTerms, setAcceptedTerms] = createSignal(false);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    if (!packageDetails()) return;
+
+    addToCart({
+      name: packageDetails()!.packageName,
+      price: packageDetails()!.price,
+      headCount: headCount(),
+      date: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD format
+      packageId: packageDetails()!.packageId,
+      duration: packageDetails()!.duration,
+    });
+
+    // Optional: Show a confirmation message
+    alert("Item added to cart!");
+  };
 
   // Get booking key from navigation state
   const bookingKey = () => {
@@ -20,9 +40,6 @@ function Booking() {
     }
     return key;
   };
-
-  const [headCount, setHeadCount] = createSignal(1);
-  const [acceptedTerms, setAcceptedTerms] = createSignal(false);
 
   // Fetch package details using the package ID from URL params
   const [packageDetails] = createResource(async () => {
@@ -45,7 +62,6 @@ function Booking() {
       };
     } catch (error) {
       console.error("Error fetching package details:", error);
-      // Try to go back, if that fails (no history) go to packages
       if (!window.history.state || window.history.length <= 1) {
         navigate("/packages", { replace: true });
       } else {
@@ -72,7 +88,7 @@ function Booking() {
       const bookingResponse = await axios.post(
         `${apiUrl}/api/bookings/configured-booking`,
         {
-          packageId: params.id, // Use the ID from URL params
+          packageId: params.id,
           headCount: headCount(),
           totalPrice: totalPrice(),
         },
@@ -202,12 +218,22 @@ function Booking() {
                   </div>
 
                   {/* Submit Button */}
-                  <button
-                    type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium transition-colors"
-                  >
-                    Checkout
-                  </button>
+                  <div class="space-y-4">
+                    <button
+                      type="submit"
+                      class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium transition-colors"
+                    >
+                      Checkout Now
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-4 rounded-md font-medium transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
@@ -220,4 +246,4 @@ function Booking() {
   );
 }
 
-export default Booking;
+export default BookingConfiguration;

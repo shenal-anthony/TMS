@@ -76,12 +76,41 @@ function PaymentForm() {
           payload = formData().tourist;
           break;
         case 2:
-          endpoint = "/api/tourists/payment";
-          payload = formData().payment;
+          endpoint = `${apiUrl}/api/tourists/payment`;
+          // Create filtered payment payload based on selected method
+          payload = {
+            method: formData().payment.method,
+            ...(formData().payment.method === "credit"
+              ? {
+                  cardNumber: formData().payment.cardNumber,
+                  expiry: formData().payment.expiry,
+                  cvv: formData().payment.cvv,
+                }
+              : {
+                  bankName: formData().payment.bankName,
+                  accountNumber: formData().payment.accountNumber,
+                }),
+          };
           break;
         case 3:
-          endpoint = "/api/confirm-booking";
-          payload = formData();
+          endpoint = `${apiUrl}/api/confirm-booking`;
+          // For final confirmation, send all data but filter payment
+          payload = {
+            tourist: formData().tourist,
+            payment: {
+              method: formData().payment.method,
+              ...(formData().payment.method === "credit"
+                ? {
+                    cardNumber: formData().payment.cardNumber,
+                    expiry: formData().payment.expiry,
+                    cvv: formData().payment.cvv,
+                  }
+                : {
+                    bankName: formData().payment.bankName,
+                    accountNumber: formData().payment.accountNumber,
+                  }),
+            },
+          };
           break;
       }
 
@@ -308,9 +337,11 @@ function PaymentForm() {
                   </select>
                 </div> */}
                 <CountryDropdown
-                value={formData().tourist.country}
-                onChange={(value: string) => handleInputChange("tourist", "country", value)}
-                label={"Country*"}
+                  value={formData().tourist.country}
+                  onChange={(value: string) =>
+                    handleInputChange("tourist", "country", value)
+                  }
+                  label={"Country*"}
                 />
 
                 <div>

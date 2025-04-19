@@ -1,6 +1,5 @@
 import { A } from "@solidjs/router";
 import logo from "../assets/Sign.jpg";
-import menuIcon from "../assets/list.svg";
 import { IoMenu } from "solid-icons/io";
 import { createSignal } from "solid-js";
 import Cart from "../components/Cart";

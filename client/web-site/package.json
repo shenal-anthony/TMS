@@ -9,12 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.7.0",
+    "@solid-primitives/context": "^0.3.0",
     "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.0.17",
     "axios": "^1.8.4",
     "bootstrap": "^5.3.3",
     "countries-list": "^3.1.1",
     "lucide-solid": "^0.487.0",
+    "react-redux": "^9.2.0",
+    "redux": "^5.0.1",
     "solid-bootstrap": "^1.0.21",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.9.5"
