@@ -1,7 +1,9 @@
 import { A } from "@solidjs/router";
 import logo from "../assets/Sign.jpg";
 import menuIcon from "../assets/list.svg";
+import { IoMenu } from "solid-icons/io";
 import { createSignal } from "solid-js";
+import Cart from "../components/Cart";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = createSignal(false);
@@ -15,87 +17,93 @@ const Navbar = () => {
           <span class="ml-2 text-xl font-bold">Ceylonian</span>
         </A>
 
-        {/* Mobile Menu Button */}
-        <button
-          class="md:hidden focus:outline-none p-1.5 rounded transition-colors hover:bg-gray-200
-          "
-          onClick={() => setIsOpen(!isOpen())}
-          aria-label="Menu"
-        >
-          <img 
-            src={menuIcon} 
-            alt="Menu" 
-            class={`h-7 w-7 transition-colors ${isOpen() ? "filter brightness-0 invert-[.5]" : ""}`}
-          />
-        </button>
+        <div class="flex items-center space-x-4">
+          {/* Desktop Navigation */}
+          <div class="hidden md:flex space-x-8">
+            <A href="/home" class="hover:text-blue-600 transition-colors">
+              Home
+            </A>
+            <A
+              href="/destinations"
+              class="hover:text-blue-600 transition-colors"
+            >
+              Destinations
+            </A>
+            <A href="/packages" class="hover:text-blue-600 transition-colors">
+              Packages
+            </A>
+            <A href="/events" class="hover:text-blue-600 transition-colors">
+              Events
+            </A>
+            <A href="/about" class="hover:text-blue-600 transition-colors">
+              About
+            </A>
+            <A href="/contact" class="hover:text-blue-600 transition-colors">
+              Contact
+            </A>
+          </div>
 
-        {/* Desktop Navigation */}
-        <div class="hidden md:flex space-x-8">
-          <A href="/home" class="hover:text-blue-600 transition-colors">
-            Home
-          </A>
-          <A href="/destinations" class="hover:text-blue-600 transition-colors">
-            Destinations
-          </A>
-          <A href="/packages" class="hover:text-blue-600 transition-colors">
-            Packages
-          </A>
-          <A href="/events" class="hover:text-blue-600 transition-colors">
-            Events
-          </A>
-          <A href="/about" class="hover:text-blue-600 transition-colors">
-            About
-          </A>
-          <A href="/contact" class="hover:text-blue-600 transition-colors">
-            Contact
-          </A>
+          {/* Cart Component */}
+          <Cart />
+
+          {/* Mobile Menu Button */}
+          <button
+            class="md:hidden focus:outline-none p-1.5 rounded-md transition-colors hover:bg-gray-100"
+            onClick={() => setIsOpen(!isOpen())}
+          >
+            <IoMenu
+              class={`h-7 w-7 transition-colors ${
+                isOpen() ? "filter brightness-0 invert-[.5]" : ""
+              }`}
+            />
+          </button>
         </div>
       </div>
 
-      {/* Mobile Navigation - moved outside the container div */}
+      {/* Mobile Navigation */}
       <div
         class={`md:hidden bg-white shadow-md transition-all duration-400 ease-in-out overflow-hidden ${
           isOpen() ? "max-h-96 py-4" : "max-h-0 py-0"
         }`}
       >
         <div class="container mx-auto px-4 flex flex-col space-y-3">
-          <A 
-            href="/home" 
+          <A
+            href="/home"
             class="block py-2 hover:text-blue-600 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Home
           </A>
-          <A 
-            href="/destinations" 
+          <A
+            href="/destinations"
             class="block py-2 hover:text-blue-600 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Destinations
           </A>
-          <A 
-            href="/packages" 
+          <A
+            href="/packages"
             class="block py-2 hover:text-blue-600 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Packages
           </A>
-          <A 
-            href="/events" 
+          <A
+            href="/events"
             class="block py-2 hover:text-blue-600 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             Events
           </A>
-          <A 
-            href="/about" 
+          <A
+            href="/about"
             class="block py-2 hover:text-blue-600 transition-colors"
             onClick={() => setIsOpen(false)}
           >
             About
           </A>
-          <A 
-            href="/contact" 
+          <A
+            href="/contact"
             class="block py-2 hover:text-blue-600 transition-colors"
             onClick={() => setIsOpen(false)}
           >
