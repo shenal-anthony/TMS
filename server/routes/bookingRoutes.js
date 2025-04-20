@@ -5,9 +5,11 @@ const {
   addBooking,
   deleteBooking,
 } = require("../controllers/bookingController");
+
 const {
   getPkgBookingKeyDetails,
   getVerifiedBookingDetails,
+  getVerifiedBookingToken,
   getPkgDetails,
   getVerifiedCheckoutDetails,
 } = require("../controllers/websiteController");
@@ -18,7 +20,9 @@ router.get("/", getAllBookings);
 router.post("/", addBooking);
 router.delete("/:id", deleteBooking);
 router.post("/check-availability", getPkgBookingKeyDetails);
-router.get("/booking-details/:id", getPkgDetails);
+router.post("/verify-token", getVerifiedBookingToken);
 router.post("/configured-booking", getVerifiedCheckoutDetails);
+
+// router.get("/booking-details/:id", getPkgDetails);
 
 module.exports = router;

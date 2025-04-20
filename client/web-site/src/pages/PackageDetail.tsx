@@ -32,27 +32,37 @@ const PackageDetail = () => {
 
   const handleBookNow = async () => {
     setIsBooking(true);
+    const bookingDate = Date(); // Replace with actual date selection logic
 
     try {
       const response = await axios.post(
         `${apiUrl}/api/bookings/check-availability`,
-        { packageId: params.id }
+        {
+          packageId: params.id,
+          date: bookingDate,
+        }
       );
 
-      if (
-        response.data.available &&
-        response.status === 200 &&
-        response.data.success
-      ) {
-        // Navigate to booking page
+      if (!response.data.success) {
+        alert(response.data.message || "Package not available");
+        return;
+      }
+
+      if (response.status === 200 && response.data.bookingKey) {
+        sessionStorage.setItem("bookingKey", response.data.bookingKey); // Store booking key in session storage
+        console.log("Booking key stored:", response.data.bookingKey);
+
         navigate(`/booking/${params.id}`, {
-          state: { bookingKey: response.data.bookingKey, packageId: params.id },
+          state: {
+            bookingKey: response.data.bookingKey,
+            packageId: params.id,
+          },
         });
       } else {
-        alert(response.data.message || "Package not available");
+        throw new Error("Failed to create booking session");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Booking error:", error);
       alert("Booking failed. Please try again.");
     } finally {
       setIsBooking(false);

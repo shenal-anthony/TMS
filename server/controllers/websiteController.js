@@ -4,82 +4,171 @@ const jwt = require("jsonwebtoken");
 // Secret key (store in environment variables!)
 const JWT_SECRET = process.env.JWT_SECRET_02 || "your-secret-key";
 
-// Generate a JWT booking key
-const generateBookingKey = (packageId, price, duration, accommodation) => {
+// Generate initial booking token (without headCount)
+function generateBookingToken(data) {
   try {
-    const payload = {
-      pkgId: packageId,
-      price: price,
-      duration: duration,
-      accommodation: accommodation,
+    const token = jwt.sign(data, JWT_SECRET, { expiresIn: "1h" });
+    return { success: true, token };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Token generation failed",
     };
+  }
+}
 
-    const token = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: "1h", // Token expires in 1 hour
-    });
+function updateBookingToken(currentToken, headCount) {
+  try {
+    // Verify token and get decoded payload (including original expiration)
+    const decoded = jwt.verify(currentToken, JWT_SECRET);
+
+    // Create new token with the exact same expiration time
+    const newToken = jwt.sign(
+      {
+        ...decoded,
+        headCount,
+        exp: decoded.exp, // Explicitly set the original expiration
+      },
+      JWT_SECRET
+    );
 
     return {
-      isSuccess: true,
-      token: token,
-      error: null,
+      success: true,
+      token: newToken,
+      expiresAt: new Date(decoded.exp * 1000), // Convert to JS Date
     };
   } catch (error) {
     return {
-      isSuccess: false,
-      token: null,
-      error: error.message,
+      success: false,
+      error: error instanceof Error ? error.message : "Token update failed",
     };
   }
-};
+}
 
-const generateCheckOutKey = (packageId, price, duration, headcount) => {
+// Verify booking token
+function verifyBookingToken(token) {
   try {
-    const payload = {
-      pkgId: packageId,
-      price: price,
-      duration: duration,
-      headCount: headcount,
-      totalPrice: price * headcount,
-    };
-
-    const token = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: "1h", // Token expires in 1 hour
-    });
-
-    return {
-      isSuccess: true,
-      token: token,
-      error: null,
-    };
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return { valid: true, data: decoded };
   } catch (error) {
     return {
-      isSuccess: false,
-      token: null,
-      error: error.message,
+      valid: false,
+      error: error instanceof Error ? error.message : "Invalid token",
     };
+  }
+}
+
+const getVerifiedBookingToken = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: "Token is required",
+    });
+  }
+
+  try {
+    const verification = verifyBookingToken(token);
+
+    if (!verification.valid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+        error: verification.error,
+      });
+    }
+
+    // Token is valid - return the decoded data
+    return res.status(200).json({
+      success: true,
+      pkgId: verification.data.pkgId,
+      pkgName: verification.data.pkgName,
+      price: verification.data.price,
+      duration: verification.data.duration,
+      accommodation: verification.data.accommodation,
+      startDate: verification.data.startDate,
+      initialDate: verification.data.iat,
+      endDate: verification.data.exp,
+    });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during token verification",
+    });
   }
 };
 
-// Get package details
+const getVerifiedCheckoutDetails = async (req, res) => {
+  const { headCount, pkgId, token, price } = req.body;
+
+  try {
+    // Validate required fields
+    if (!token || !pkgId || headCount === undefined) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Missing required fields: token, pkgId, and headCount are all required",
+      });
+    }
+
+    // Update the token with headCount
+    const result = updateBookingToken(token, headCount);
+    if (!result.success) {
+      return res.status(400).json({
+        // Changed to 400 for client error
+        success: false,
+        message: "Invalid booking token",
+        error: result.error,
+      });
+    }
+
+    // Successful response
+    res.json({
+      success: true,
+      headCount,
+      price,
+      expiresIn: result.expiresAt,
+      bookingKey: result.token,
+    });
+  } catch (error) {
+    console.error("Checkout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error processing checkout details",
+      error: error.message,
+    });
+  }
+};
+
+
+
+// --- Controller Methods ---
+
+// Get package details & generate booking key
 const getPkgBookingKeyDetails = async (req, res) => {
-  const { packageId } = req.body;
+  const { packageId, date } = req.body;
+  const startDate = new Date(date).toISOString().split("T")[0]; // Format date to YYYY-MM-DD
 
   try {
     const content = await pkg.getPackageById(packageId);
-    const isAvailable = true; // Replace with real check
+    const isAvailable = true; // Replace with real availability logic
 
-    const { isSuccess, token, error } = generateBookingKey(
-      content.package_id,
-      content.price,
-      content.duration,
-      content.accommodation_id
-    );
+    const { success, token, error } = generateBookingToken({
+      pkgId: content.package_id,
+      pkgName: content.package_name,
+      price: content.price,
+      duration: content.duration,
+      accommodation: content.accommodation_id,
+      startDate: startDate,
+    });
 
-    if (!isSuccess) {
+    if (!success) {
       return res.status(500).json({
         success: false,
         message: "Failed to generate booking key",
-        error: error,
+        error,
       });
     }
 
@@ -87,14 +176,12 @@ const getPkgBookingKeyDetails = async (req, res) => {
       success: true,
       available: isAvailable,
       packageId: content.package_id,
-
       packageName: content.package_name,
       accommodation: content.accommodation_id,
       price: content.price,
       duration: content.duration,
-
-      bookingKey: token, // JWT token
-      // isKeyGenerated: true // Explicit success flag for key generation
+      startDate: startDate,
+      bookingKey: token,
     });
   } catch (error) {
     res.status(500).json({
@@ -105,13 +192,10 @@ const getPkgBookingKeyDetails = async (req, res) => {
   }
 };
 
-// Get verified booking details from token
+// Get verified booking details using decoded token (assumes middleware adds req.bookingDetails & req.token)
 const getVerifiedBookingDetails = async (req, res) => {
   try {
-    // The token is already verified by the middleware, just get the details
     const bookingDetails = req.bookingDetails;
-
-    // Optional: Fetch fresh package details from DB if needed
     const content = await pkg.getPackageById(bookingDetails.pkgId);
 
     res.json({
@@ -123,7 +207,6 @@ const getVerifiedBookingDetails = async (req, res) => {
         price: content.price,
         duration: content.duration,
       },
-      // Include the original token if needed
       bookingKey: req.token,
     });
   } catch (error) {
@@ -135,22 +218,18 @@ const getVerifiedBookingDetails = async (req, res) => {
   }
 };
 
+// Get package details from ID in URL params
 const getPkgDetails = async (req, res) => {
-  const { id } = req.params; // Changed from req.body to req.params
-  const bookingKey = req.headers["x-booking-key"]; // Get booking key from headers
+  const { id } = req.params;
+  const bookingKey = req.headers["x-booking-key"];
 
   try {
-    // Validate booking key first (if needed)
     if (!bookingKey) {
       return res.status(401).json({
         success: false,
         message: "Booking key is required",
       });
     }
-
-    // Optional: Verify booking key is valid
-    // const isValidKey = await verifyBookingKey(bookingKey);
-    // if (!isValidKey) {...}
 
     const content = await pkg.getPackageById(id);
 
@@ -161,22 +240,19 @@ const getPkgDetails = async (req, res) => {
       });
     }
 
-    // Your availability check logic here
-    const isAvailable = true; // Replace with real check
+    const isAvailable = true;
 
     res.json({
       success: true,
       available: isAvailable,
       packageDetails: {
-        // Changed to nest under packageDetails
         packageId: content.package_id,
         packageName: content.package_name,
-        accommodation: content.accommodation_id, // Fix typo if needed
+        accommodation: content.accommodation_id,
         price: content.price,
         duration: content.duration,
-        // Add any other required fields
       },
-      bookingKey: bookingKey, // Optionally return the key
+      bookingKey,
     });
   } catch (error) {
     console.error("Package details error:", error);
@@ -188,49 +264,10 @@ const getPkgDetails = async (req, res) => {
   }
 };
 
-const getVerifiedCheckoutDetails = async (req, res) => {
-  const { headCount, packageId, totalPrice } = req.body;
-
-  try {
-    const content = await pkg.getPackageById(packageId);
-    const isAvailable = true; // Replace with real check
-
-    const { isSuccess, token, error } = generateCheckOutKey(
-      content.package_id,
-      content.price,
-      content.duration,
-      content.headCount
-    );
-
-    if (!isSuccess) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to generate checkout key",
-        error: error,
-      });
-    }
-
-    res.json({
-      success: true,
-      available: isAvailable,
-      packageId: content.package_id,
-      price: content.price,
-      duration: content.duration,
-      headCount: headCount,
-      totalPrice: totalPrice,
-      checkoutKey: token, // JWT token
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching package details",
-      error: error.message,
-    });
-  }
-};
-
-const payment = async (req, res) => {
+// Calculate payment based on packageId & headCount
+const getPaymentDetails = async (req, res) => {
   const { packageId, headCount } = req.body;
+  console.log("🚀 ~ getPaymentDetails ~ req.body:", req.body);
 
   try {
     const content = await pkg.getPackageById(packageId);
@@ -247,7 +284,7 @@ const payment = async (req, res) => {
     res.json({
       success: true,
       packageId: content.package_id,
-      totalPrice: totalPrice,
+      totalPrice,
     });
   } catch (error) {
     console.error("Payment error:", error);
@@ -259,13 +296,12 @@ const payment = async (req, res) => {
   }
 };
 
-
+// Export all controller functions
 module.exports = {
   getPkgBookingKeyDetails,
   getVerifiedBookingDetails,
   getPkgDetails,
-  generateBookingKey,
-  generateCheckOutKey,
   getVerifiedCheckoutDetails,
-  payment,
+  getPaymentDetails,
+  getVerifiedBookingToken,
 };

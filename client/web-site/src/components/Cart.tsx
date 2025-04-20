@@ -72,7 +72,7 @@ const Cart = () => {
                     <li class="group">
                       <div class="flex justify-between items-start p-3 rounded-lg transition-all duration-200 group-hover:bg-amber-100/80 group-hover:shadow-sm">
                         <div class="flex-1">
-                          <h3 class="font-medium">{item.name}</h3>
+                          <h3 class="font-medium">{item.pkgName}</h3>
                           <div class="flex items-center mt-1 text-gray-500 text-sm">
                             <FaSolidCalendarDays class="mr-1.5 h-4 w-4" />
                             <span>
