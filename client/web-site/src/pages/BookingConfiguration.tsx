@@ -23,9 +23,8 @@ function BookingConfiguration() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const cartDate = new Date().toISOString().split("T")[0];
-
   const [state, setState] = createStore({
-    headCount: 1,
+    headcount: 1,
     acceptedTerms: false,
     booking: {
       key: "",
@@ -37,7 +36,7 @@ function BookingConfiguration() {
 
   // Derived value for total price
   const totalPrice = () =>
-    state.booking.details ? state.headCount * state.booking.details.price : 0;
+    state.booking.details ? state.headcount * state.booking.details.price : 0;
 
   // Initialize booking session
   onMount(async () => {
@@ -89,7 +88,7 @@ function BookingConfiguration() {
     addToCart({
       pkgName: state.booking.details.pkgName,
       price: state.booking.details.price,
-      headCount: state.headCount,
+      headcount: state.headcount,
       date: cartDate,
       pkgId: state.booking.details.pkgId,
       duration: state.booking.details.duration,
@@ -110,7 +109,7 @@ function BookingConfiguration() {
         `${apiUrl}/api/bookings/configured-booking`,
         {
           pkgId: params.id,
-          headCount: state.headCount,
+          headcount: state.headcount,
           token: state.booking.key,
           price: state.booking.details?.price,
         }
@@ -214,18 +213,18 @@ function BookingConfiguration() {
                           <button
                             type="button"
                             onClick={() =>
-                              setState("headCount", (c) => Math.max(1, c - 1))
+                              setState("headcount", (c) => Math.max(1, c - 1))
                             }
                             class="bg-gray-200 px-3 py-1 rounded-l-md"
                           >
                             -
                           </button>
                           <span class="bg-gray-100 px-4 py-1 text-center">
-                            {state.headCount}
+                            {state.headcount}
                           </span>
                           <button
                             type="button"
-                            onClick={() => setState("headCount", (c) => c + 1)}
+                            onClick={() => setState("headcount", (c) => c + 1)}
                             class="bg-gray-200 px-3 py-1 rounded-r-md"
                           >
                             +

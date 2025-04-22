@@ -81,11 +81,11 @@ const Cart = () => {
                           </div>
                           <div class="flex items-center justify-between mt-1">
                             <span class="text-gray-500 text-sm">
-                              {item.headCount}{" "}
-                              {item.headCount === 1 ? "person" : "people"}
+                              {item.headcount}{" "}
+                              {item.headcount === 1 ? "person" : "people"}
                             </span>
                             <span class="text-gray-600 font-medium">
-                              ${item.price * item.headCount}
+                              ${item.price * item.headcount}
                             </span>
                           </div>
                         </div>

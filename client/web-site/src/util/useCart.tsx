@@ -5,7 +5,7 @@ type CartItem = {
   pkgId: number;
   pkgName: string;
   price: number;
-  headCount: number;
+  headcount: number;
   date: string;
   duration: string;
 };
@@ -43,7 +43,7 @@ export function useCart() {
 
   const totalPrice = () => {
     return cartItems().reduce(
-      (sum, item) => sum + item.price * item.headCount,
+      (sum, item) => sum + item.price * item.headcount,
       0
     );
   };
@@ -56,7 +56,7 @@ export function useCart() {
     if (newCount < 1) return;
     saveCart(
       cartItems().map((item) =>
-        item.id === id ? { ...item, headCount: newCount } : item
+        item.id === id ? { ...item, headcount: newCount } : item
       )
     );
   };
