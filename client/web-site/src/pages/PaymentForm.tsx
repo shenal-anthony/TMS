@@ -1,15 +1,14 @@
 import { createSignal, onMount, Show } from "solid-js";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CountryDropdown from "../components/CountryDropdown";
+import { useNavigate } from "@solidjs/router";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 function PaymentForm() {
-  // Storage key
-  const STORAGE_KEY = "touristBookingForm";
-  const EXPIRY_HOURS = 12; // Data expires after 12 hours
+  const navigate = useNavigate();
   const [phase, setPhase] = createSignal(1);
   const [formData, setFormData] = createSignal({
     tourist: {
@@ -32,15 +31,81 @@ function PaymentForm() {
       bankName: "",
       accountNumber: "",
     },
-
     _meta: {
       lastSaved: 0,
       expires: 0,
     },
   });
-
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
+  const [verifiedBookingData, setVerifiedBookingData] = createSignal<{
+    price?: number;
+    pkgId?: number;
+    headcount?: number;
+    startDate?: string;
+  }>({});
+  const [encryptedBookingData, setEncryptedBookingData] = createSignal<{
+    token?: string;
+  }>({});
+
+  const steps = [
+    { number: 1, title: "Tourist Details" },
+    { number: 2, title: "Payment Method" },
+    { number: 3, title: "Confirmation" },
+  ];
+
+  onMount(async () => {
+    const token = sessionStorage.getItem("bookingKey");
+
+    if (!token) {
+      navigate("/packages");
+      return;
+    }
+
+    try {
+      const verify = await axios.post(`${apiUrl}/api/bookings/verify-token`, {
+        token,
+      });
+
+      if (!verify.data.success) {
+        throw new Error(verify.data.message || "Invalid token");
+      }
+
+      // Store verified booking data in state
+      setVerifiedBookingData({
+        pkgId: verify.data.pkgId,
+        headcount: verify.data.headcount,
+        startDate: verify.data.startDate,
+      });
+
+      const savedData = loadFormData();
+      if (savedData) {
+        setFormData(savedData);
+      }
+    } catch (err) {
+      console.error("Token verification failed:", err);
+      sessionStorage.removeItem("bookingKey");
+      setError(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || "Invalid booking session"
+          : err instanceof Error
+          ? err.message
+          : "Invalid booking session"
+      );
+      navigate("/packages");
+    }
+  });
+
+  // Save form data to sessionStorage
+  const saveFormData = (data: any) => {
+    sessionStorage.setItem("bookingFormData", JSON.stringify(data));
+  };
+
+  // Load form data from sessionStorage
+  const loadFormData = () => {
+    const saved = sessionStorage.getItem("bookingFormData");
+    return saved ? JSON.parse(saved) : null;
+  };
 
   // Handle input changes
   const handleInputChange = (
@@ -69,16 +134,64 @@ function PaymentForm() {
     try {
       let endpoint = "";
       let payload = {};
+      let response: AxiosResponse<any, any>;
 
       switch (phase()) {
-        case 1:
+        case 1: // Registration
           endpoint = `${apiUrl}/api/tourists/register`;
           payload = formData().tourist;
-          break;
-        case 2:
+
+          try {
+            const regResponse = await axios.post(endpoint, payload);
+
+            if (regResponse.data.success) {
+              alert("Registration successful!");
+
+              // Use verified booking data from state
+              const bookingPayload = {
+                touristId: regResponse.data.touristId,
+                pkgId: verifiedBookingData().pkgId,
+                headcount: verifiedBookingData().headcount,
+                bookingDate: verifiedBookingData().startDate,
+                tourId: 1, // Example tourId, replace with actual
+                userId: 3, // Example userId, replace with actual
+                eventId: 1, // Example eventId, replace with actual
+              };
+
+              const bookingResponse = await axios.post(
+                `${apiUrl}/api/bookings/add`,
+                bookingPayload
+              );
+
+              if (bookingResponse.data.success) {
+                setPhase((prev) => prev + 1);
+                setEncryptedBookingData({
+                  token: bookingResponse.data.token,
+                });
+              } else {
+                throw new Error(
+                  "Booking creation failed: " + bookingResponse.data.message
+                );
+              }
+            } else {
+              throw new Error(
+                "Registration failed: " + regResponse.data.message
+              );
+            }
+          } catch (err) {
+            setError(
+              err instanceof Error
+                ? err.message
+                : "Failed to complete registration process"
+            );
+            return;
+          }
+          return;
+
+        case 2: // Payment
           endpoint = `${apiUrl}/api/tourists/payment`;
-          // Create filtered payment payload based on selected method
           payload = {
+            token: encryptedBookingData().token,
             method: formData().payment.method,
             ...(formData().payment.method === "credit"
               ? {
@@ -91,11 +204,18 @@ function PaymentForm() {
                   accountNumber: formData().payment.accountNumber,
                 }),
           };
-          break;
-        case 3:
+          response = await axios.post(endpoint, payload);
+
+          if (response.data.success) {
+            alert("Payment successful!");
+            setPhase((prev) => prev + 1);
+          }
+          return;
+
+        case 3: // Confirmation
           endpoint = `${apiUrl}/api/confirm-booking`;
-          // For final confirmation, send all data but filter payment
           payload = {
+            // bookingId: formData().bookingId, // Include booking ID
             tourist: formData().tourist,
             payment: {
               method: formData().payment.method,
@@ -111,36 +231,26 @@ function PaymentForm() {
                   }),
             },
           };
-          break;
-      }
+          response = await axios.post(endpoint, payload);
 
-      // Using Axios instead of fetch
-      const response = await axios.post(endpoint, payload);
-
-      // Axios wraps the response data in a data property
-      if (response.data.success) {
-        if (phase() < 3) {
-          setPhase((prev) => prev + 1);
-        } else {
-          alert("Booking confirmed! Check your email for details.");
-          // Redirect or reset form as needed
-        }
-      } else {
-        throw new Error(response.data.message || "Submission failed");
+          if (response.data.success) {
+            alert("Booking confirmed! Check your email for details.");
+            sessionStorage.removeItem("bookingKey");
+            navigate("/home");
+          }
+          return;
       }
     } catch (err) {
-      // Axios error handling
-      if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.message || err.message || "Request failed"
-        );
-      } else {
-        if (err instanceof Error) {
-          setError(err.message || "Submission failed");
-        } else {
-          setError("Submission failed");
-        }
-      }
+      const errorMessage = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message || "Request failed"
+        : err instanceof Error
+        ? err.message
+        : "Submission failed";
+
+      setError(errorMessage);
+
+      // Optional: Log error for debugging
+      console.error("Submission error:", err);
     } finally {
       setLoading(false);
     }
@@ -151,50 +261,6 @@ function PaymentForm() {
     e.preventDefault();
     await submitPhase();
   };
-
-  // Progress steps
-  const steps = [
-    { number: 1, title: "Tourist Details" },
-    { number: 2, title: "Payment Method" },
-    { number: 3, title: "Confirmation" },
-  ];
-
-  // Save to localStorage
-  const saveFormData = (data: ReturnType<typeof formData>) => {
-    const dataToSave = {
-      ...data,
-      _meta: {
-        lastSaved: Date.now(),
-        expires: Date.now() + EXPIRY_HOURS * 60 * 60 * 1000,
-      },
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-  };
-
-  // Load from localStorage
-  const loadFormData = () => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return null;
-
-    try {
-      const parsed = JSON.parse(saved);
-      if (Date.now() > parsed._meta?.expires) {
-        localStorage.removeItem(STORAGE_KEY);
-        return null;
-      }
-      return parsed;
-    } catch (e) {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
-  };
-
-  onMount(() => {
-    const savedData = loadFormData();
-    if (savedData) {
-      setFormData(savedData);
-    }
-  });
 
   return (
     <div class="min-h-screen flex flex-col">
@@ -317,25 +383,6 @@ function PaymentForm() {
                   />
                 </div>
 
-                {/* country */}
-                {/* <div>
-                  <label class="block text-gray-700 mb-1">Country*</label>
-                  <select
-                    required
-                    value={formData().tourist.country}
-                    onInput={(e) =>
-                      handleInputChange("tourist", "country", e.target.value)
-                    }
-                    class="w-full px-3 py-2 border rounded-md"
-                  >
-                    <option value="Sri Lanka">Sri Lanka</option>
-                    <option value="India">India</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Wakanda">Wakanda</option> // 😁 for testing
-                    purposes
-                  </select>
-                </div> */}
                 <CountryDropdown
                   value={formData().tourist.country}
                   onChange={(value: string) =>

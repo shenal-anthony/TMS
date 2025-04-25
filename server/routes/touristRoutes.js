@@ -1,19 +1,15 @@
 const express = require("express");
 const router = express.Router();
+const { registerTourist } = require("../controllers/touristController");
 const {
-    getAllTourists,
-    getTourist,
-    registerTourist,
-    deleteTourist,
-} = require("../controllers/touristController");
-const { validateTouristRegistration } = require("../middlewares/touristValidation");
-const { getPaymentDetails } = require("../controllers/websiteController");
-
+  validateTouristRegistration,
+} = require("../middlewares/touristValidation");
+const { makePayment } = require("../controllers/paymentController");
+const { decryptRequest } = require("../middlewares/encryptResponse");
 
 // tourist routes
 router.post("/register", validateTouristRegistration, registerTourist);
-router.post("/payment", getPaymentDetails);
-
+router.post("/payment", decryptRequest, makePayment);
 
 // router.get("/destination/:id", );
 

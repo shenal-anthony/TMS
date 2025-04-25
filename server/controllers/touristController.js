@@ -13,6 +13,7 @@ const getAllTourists = async (req, res) => {
       .json({ message: "Error fetching tourists", error: error.message });
   }
 };
+
 // get by email
 const getTourist = async (req, res) => {
   const { id } = req.params;
@@ -28,6 +29,7 @@ const getTourist = async (req, res) => {
       .json({ message: "Error fetching tourist", error: error.message });
   }
 };
+
 // add
 const registerTourist = async (req, res) => {
   const touristData = req.body;
@@ -70,11 +72,11 @@ const registerTourist = async (req, res) => {
       }
 
       // 3. Detailed comparison with debugging
-      console.log(
-        "Comparing against",
-        existingTourists.length,
-        "existing records"
-      );
+      // console.log(
+      //   "Comparing against",
+      //   existingTourists.length,
+      //   "existing records"
+      // );
 
       const identicalTourist = existingTourists.find((tourist) => {
         const dbRecord = {
@@ -86,7 +88,6 @@ const registerTourist = async (req, res) => {
           addressLine01: tourist.addressline_01,
           addressLine02: tourist.addressline_02,
         };
-
         const inputData = {
           email: touristData.email,
           contactNumber: touristData.contactNumber,
@@ -98,15 +99,13 @@ const registerTourist = async (req, res) => {
         };
 
         const isMatch = _.isEqual(dbRecord, inputData);
-
         if (!isMatch) {
-          console.log("Mismatch found:", {
-            differingFields: getDifferingFields(dbRecord, inputData),
-            dbRecord,
-            inputData,
-          });
+          // console.log("Mismatch found:", {
+          //   differingFields: getDifferingFields(dbRecord, inputData),
+          //   dbRecord,
+          //   inputData,
+          // });
         }
-
         return isMatch;
       });
 
@@ -115,7 +114,9 @@ const registerTourist = async (req, res) => {
         return res.status(200).json({
           success: true,
           message: "Tourist exists with identical details",
-          data: identicalTourist,
+          touristId: identicalTourist.tourist_id,
+          email: identicalTourist.email_address,
+          contactNumber: identicalTourist.contact_number,
         });
       }
 
@@ -124,7 +125,9 @@ const registerTourist = async (req, res) => {
       return res.status(201).json({
         success: true,
         message: "New tourist entry created for existing person",
-        data: newTourist,
+        touristId: newTourist.tourist_id,
+        email: newTourist.email_address,
+        contactNumber: newTourist.contact_number,
       });
     }
 
@@ -133,7 +136,9 @@ const registerTourist = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Tourist registered successfully",
-      data: newTourist,
+      touristId: newTourist.tourist_id,
+      email: newTourist.email_address,
+      contactNumber: newTourist.contact_number,
     });
   } catch (error) {
     console.error("Registration error:", error);

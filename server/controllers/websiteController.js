@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 // Secret key (store in environment variables!)
 const JWT_SECRET = process.env.JWT_SECRET_02 || "your-secret-key";
 
-// Generate initial booking token (without headCount)
+// Generate initial booking token (without headcount)
 function generateBookingToken(data) {
   try {
     const token = jwt.sign(data, JWT_SECRET, { expiresIn: "1h" });
@@ -17,7 +17,8 @@ function generateBookingToken(data) {
   }
 }
 
-function updateBookingToken(currentToken, headCount) {
+// Update booking token with headcount
+function updateBookingToken(currentToken, headcount) {
   try {
     // Verify token and get decoded payload (including original expiration)
     const decoded = jwt.verify(currentToken, JWT_SECRET);
@@ -26,7 +27,7 @@ function updateBookingToken(currentToken, headCount) {
     const newToken = jwt.sign(
       {
         ...decoded,
-        headCount,
+        headcount,
         exp: decoded.exp, // Explicitly set the original expiration
       },
       JWT_SECRET
@@ -90,6 +91,7 @@ const getVerifiedBookingToken = async (req, res) => {
       startDate: verification.data.startDate,
       initialDate: verification.data.iat,
       endDate: verification.data.exp,
+      headcount: verification.data.headcount,
     });
   } catch (error) {
     console.error("Token verification error:", error);
@@ -101,20 +103,20 @@ const getVerifiedBookingToken = async (req, res) => {
 };
 
 const getVerifiedCheckoutDetails = async (req, res) => {
-  const { headCount, pkgId, token, price } = req.body;
+  const { headcount, pkgId, token, price } = req.body;
 
   try {
     // Validate required fields
-    if (!token || !pkgId || headCount === undefined) {
+    if (!token || !pkgId || headcount === undefined) {
       return res.status(400).json({
         success: false,
         message:
-          "Missing required fields: token, pkgId, and headCount are all required",
+          "Missing required fields: token, pkgId, and headcount are all required",
       });
     }
 
-    // Update the token with headCount
-    const result = updateBookingToken(token, headCount);
+    // Update the token with headcount
+    const result = updateBookingToken(token, headcount);
     if (!result.success) {
       return res.status(400).json({
         // Changed to 400 for client error
@@ -127,7 +129,7 @@ const getVerifiedCheckoutDetails = async (req, res) => {
     // Successful response
     res.json({
       success: true,
-      headCount,
+      headcount,
       price,
       expiresIn: result.expiresAt,
       bookingKey: result.token,
@@ -141,8 +143,6 @@ const getVerifiedCheckoutDetails = async (req, res) => {
     });
   }
 };
-
-
 
 // --- Controller Methods ---
 
@@ -264,37 +264,7 @@ const getPkgDetails = async (req, res) => {
   }
 };
 
-// Calculate payment based on packageId & headCount
-const getPaymentDetails = async (req, res) => {
-  const { packageId, headCount } = req.body;
-  console.log("🚀 ~ getPaymentDetails ~ req.body:", req.body);
 
-  try {
-    const content = await pkg.getPackageById(packageId);
-
-    if (!content) {
-      return res.status(404).json({
-        success: false,
-        message: "Package not found",
-      });
-    }
-
-    const totalPrice = content.price * headCount;
-
-    res.json({
-      success: true,
-      packageId: content.package_id,
-      totalPrice,
-    });
-  } catch (error) {
-    console.error("Payment error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error processing payment",
-      error: error.message,
-    });
-  }
-};
 
 // Export all controller functions
 module.exports = {
@@ -302,6 +272,5 @@ module.exports = {
   getVerifiedBookingDetails,
   getPkgDetails,
   getVerifiedCheckoutDetails,
-  getPaymentDetails,
   getVerifiedBookingToken,
 };

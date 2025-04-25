@@ -33,7 +33,7 @@ const addBooking = async (bookingData) => {
     eventId, // $9
   ];
   const result = await pool.query(query, values);
-  console.log("🚀 ~ bookingModel.js:36 ~ addBooking ~ result:", result);
+  // console.log("🚀 ~ bookingModel.js:36 ~ addBooking ~ result:", result);
   return result.rows[0];
 };
 
