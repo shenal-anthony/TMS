@@ -4,6 +4,9 @@ const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 
 const path = require("path");
+const fs = require("fs");
+
+const baseUrl = process.env.BASE_URL;
 
 // destinations controller
 // get all
@@ -32,18 +35,50 @@ const getDestination = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
+
 // add
 const addDestination = async (req, res) => {
-  const { body } = req;
   try {
-    const newContent = await tourist.addDestination(body);
-    res.json(newContent);
+    const { body, file } = req;
+
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    
+    // OVERRIDE any req.body.folder with "destinations"
+    body.folder = "destinations"; // Force this value
+    
+    const fileUrl = `/uploads/${body.folder}/${file.filename}`;
+    const fullUrl = `${baseUrl}${fileUrl}`;
+    
+    const destinationData = {
+      ...body, // Now includes the forced folder="destinations"
+      pictureUrl: fullUrl,
+      destinationName: body.destination_name || "Unnamed Destination",
+      description: body.description || "",
+    };
+    console.log("🚀 ~ contentController.js:45 ~ addDestination ~ destinationData:", destinationData);
+    
+    const newDestination = await tourist.addDestination(destinationData);
+    console.log("🚀 ~ contentController.js:62 ~ addDestination ~ newDestination:", newDestination);
+
+    res.status(201).json({
+      success: true,
+      message: "Destination created successfully",
+      data: {
+        fileUrl: fullUrl,
+        destination: newDestination,
+      },
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error adding destination", error: error.message });
+    console.error("Error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
   }
 };
+
 // update
 const updateDestination = async (req, res) => {
   const { id } = req.params;
@@ -268,7 +303,7 @@ const getAllEvents = async (req, res) => {
   try {
     const contents = await event.getAllEvents();
     res.json(contents);
-    console.log("🚀 ~ getAllEvents ~ contents:", contents);
+    // console.log("🚀 ~ getAllEvents ~ contents:", contents);
   } catch (error) {
     res
       .status(500)

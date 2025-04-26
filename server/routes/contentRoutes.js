@@ -17,23 +17,22 @@ const {
   getAllEvents,
   addEvent,
   deleteEvent,
-  getPackage, 
+  getPackage,
   getAccommodation,
-
 } = require("../controllers/contentController");
-
+const upload = require("../utils/multerConfig"); // Corrected multer import
 
 // destinations routes
 router.get("/destinations", getAllDestinations);
 router.get("/destination/:id", getDestination);
-router.post("/destinations", addDestination);
+router.post("/destinations", upload.single("file"), addDestination);
 router.put("/destinations/:id", updateDestination);
 router.delete("/destinations/:id", deleteDestination);
 
 // events routes
-router.get("/events", getAllEvents)
+router.get("/events", getAllEvents);
 router.post("/events", addEvent);
-router.put("/events/:id", );
+router.put("/events/:id");
 router.delete("/events/:id", deleteEvent);
 
 // packages routes

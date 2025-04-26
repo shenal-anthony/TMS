@@ -4,7 +4,7 @@ const pool = require("../db");
 const getAllEvents = async () => {
   const query = `SELECT * FROM events`;
   const result = await pool.query(query);
-  console.log("🚀 ~ getAllEvents ~ result:", result)
+  // console.log("🚀 ~ getAllEvents ~ result:", result)
   return result.rows;
 };
 
@@ -20,7 +20,7 @@ const addEvent = async (eventData) => {
     description, // $3
   ];
   const result = await pool.query(query, values);
-  console.log("🚀 ~ addEvent ~ result:", result)
+  // console.log("🚀 ~ addEvent ~ result:", result)
   return result.rows[0];
 };
 

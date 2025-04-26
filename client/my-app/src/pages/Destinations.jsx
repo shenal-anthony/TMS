@@ -27,7 +27,8 @@ const Destinations = () => {
   const [destinationError, setDestinationError] = useState(null);
   const [packageError, setPackageError] = useState(null);
 
-  const [page, setPage] = useState(0);
+  const [destinationPage, setDestinationPage] = useState(0);
+  const [packagePage, setPackagePage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -259,9 +260,18 @@ const Destinations = () => {
     setPage(newPage);
   };
 
+  const handleDestinationPageChange = (event, newPage) => {
+    setDestinationPage(newPage);
+  };
+
+  const handlePackagePageChange = (event, newPage) => {
+    setPackagePage(newPage);
+  };
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setDestinationPage(0);
+    setPackagePage(0);
   };
 
   if (destinationloading) return <div>Loading...</div>;
@@ -353,15 +363,13 @@ const Destinations = () => {
                 })
               }
             />
-            <TextField
-              margin="dense"
-              label="Picture URL"
-              fullWidth
-              value={currentDestination.pictureUrl}
+            <input
+              type="file"
+              accept="image/*"
               onChange={(e) =>
                 setCurrentDestination({
                   ...currentDestination,
-                  pictureUrl: e.target.value,
+                  pictureFile: e.target.files[0], // store the selected file
                 })
               }
             />
@@ -393,7 +401,7 @@ const Destinations = () => {
             </TableHead>
             <TableBody>
               {destinationContents
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .slice(destinationPage * rowsPerPage, destinationPage * rowsPerPage + rowsPerPage)
                 .map((destination) => (
                   <TableRow
                     key={destination.destination_id}
@@ -431,14 +439,14 @@ const Destinations = () => {
           </Table>
         </TableContainer>
 
-        {/* Pagination */}
+        {/* Pagination for Destinations */}
         <TablePagination
           rowsPerPageOptions={[8, 10, 25]}
           component="div"
           count={destinationContents.length}
           rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
+          page={destinationPage}
+          onPageChange={handleDestinationPageChange}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </div>
@@ -582,7 +590,7 @@ const Destinations = () => {
             <TableBody>
               {packageContents.length > 0 ? (
                 packageContents
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .slice(packagePage * rowsPerPage, packagePage * rowsPerPage + rowsPerPage)
                   .map((pkg) => (
                     <TableRow
                       key={pkg.package_id}
@@ -626,14 +634,14 @@ const Destinations = () => {
           </Table>
         </TableContainer>
 
-        {/* Pagination */}
+        {/* Pagination for Packages */}
         <TablePagination
           rowsPerPageOptions={[8, 10, 25]}
           component="div"
           count={packageContents.length}
           rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
+          page={packagePage}
+          onPageChange={handlePackagePageChange}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </div>

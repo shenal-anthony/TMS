@@ -11,7 +11,7 @@ const getDestinationById = async (id) => {
   const query = `SELECT * FROM destinations WHERE destination_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
-  console.log("🚀 ~ destinationModel.js:14 ~ getDestinationById ~ result:", result);  
+  // console.log("🚀 ~ destinationModel.js:14 ~ getDestinationById ~ result:", result);  
   return result.rows[0];
 };
 
