@@ -142,7 +142,6 @@ function PaymentForm() {
     try {
       let endpoint = "";
       let payload = {};
-      let response: any;
       let paymentResponse: AxiosResponse<any, any>;
       let confirmResponse: AxiosResponse<any, any>;
 

@@ -3,24 +3,17 @@ const jwt = require("jsonwebtoken");
 const payment = require("../models/paymentModel");
 const tourist = require("../models/touristModel");
 const nodemailer = require("nodemailer");
-const dotenv = require("dotenv");
-dotenv.config();
-
-// Validate environment variables on startup
-if (
-  !process.env.JWT_SECRET_02 ||
-  !process.env.EMAIL_FROM ||
-  !process.env.EMAIL_USER ||
-  !process.env.APP_PASSWORD
-) {
-  console.error("Missing required environment variables");
-  process.exit(1);
-}
+require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET_02;
 const emailFrom = process.env.EMAIL_FROM;
 const emailUser = process.env.EMAIL_USER;
 const appPassword = process.env.APP_PASSWORD;
+
+if (!process.env.NAME) {
+  console.error("Missing required environment variables");
+  process.exit(1);
+}
 
 // Generate initial booking token (without headcount)
 function generateBookingToken(data) {
