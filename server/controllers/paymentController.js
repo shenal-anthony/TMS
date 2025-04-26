@@ -72,11 +72,6 @@ const makePayment = async (req, res) => {
       paymentDate: new Date(),
       status: "completed", // or "pending" depending on your flow
       bookingId: bookingId,
-      method: method,
-      // Store only the last 4 digits of card/account for security
-      paymentReference: method === "credit" 
-        ? `card-${cardNumber.slice(-4)}` 
-        : `bank-${accountNumber.slice(-4)}`
     };
 
     const newPayment = await payment.addPayment(paymentData);

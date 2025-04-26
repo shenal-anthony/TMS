@@ -3,8 +3,11 @@ import Navbar from "../components/Navbar";
 import Malesiya from "../assets/malesiya.webp";
 import Philippines from "../assets/philippines.jpg";
 import Visayas from "../assets/visayas.webp";
+import { useNavigate } from "@solidjs/router";
+
 
 function Home() {
+  const navigate = useNavigate();
   const destinations = [
     {
       title: "Sunny Lake",
@@ -72,7 +75,9 @@ function Home() {
           <p class="mb-6 max-w-2xl mx-auto">
             Join thousands of satisfied travelers who've experienced the trip of a lifetime with us
           </p>
-          <button class="bg-white text-gray-900 hover:bg-amber-200 px-6 py-3 rounded-lg font-semibold transition-colors">
+          <button 
+          onClick={() => navigate("/packages")}
+          class="bg-white text-gray-900 hover:bg-amber-200 px-6 py-3 rounded-lg font-semibold transition-colors">
             Book Your Tour Today
           </button>
         </section>

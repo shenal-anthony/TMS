@@ -1,8 +1,26 @@
 const pkg = require("../models/packageModel");
 const jwt = require("jsonwebtoken");
+const payment = require("../models/paymentModel");
+const tourist = require("../models/touristModel");
+const nodemailer = require("nodemailer");
+const dotenv = require("dotenv");
+dotenv.config();
 
-// Secret key (store in environment variables!)
-const JWT_SECRET = process.env.JWT_SECRET_02 || "your-secret-key";
+// Validate environment variables on startup
+if (
+  !process.env.JWT_SECRET_02 ||
+  !process.env.EMAIL_FROM ||
+  !process.env.EMAIL_USER ||
+  !process.env.APP_PASSWORD
+) {
+  console.error("Missing required environment variables");
+  process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET_02;
+const emailFrom = process.env.EMAIL_FROM;
+const emailUser = process.env.EMAIL_USER;
+const appPassword = process.env.APP_PASSWORD;
 
 // Generate initial booking token (without headcount)
 function generateBookingToken(data) {
@@ -116,13 +134,13 @@ const getVerifiedCheckoutDetails = async (req, res) => {
     }
 
     // Update the token with headcount
-    const result = updateBookingToken(token, headcount);
-    if (!result.success) {
+    const paymentResult = updateBookingToken(token, headcount);
+    if (!paymentResult.success) {
       return res.status(400).json({
         // Changed to 400 for client error
         success: false,
         message: "Invalid booking token",
-        error: result.error,
+        error: paymentResult.error,
       });
     }
 
@@ -131,8 +149,8 @@ const getVerifiedCheckoutDetails = async (req, res) => {
       success: true,
       headcount,
       price,
-      expiresIn: result.expiresAt,
-      bookingKey: result.token,
+      expiresIn: paymentResult.expiresAt,
+      bookingKey: paymentResult.token,
     });
   } catch (error) {
     console.error("Checkout error:", error);
@@ -264,7 +282,188 @@ const getPkgDetails = async (req, res) => {
   }
 };
 
+const sendEmailToTourist = async (req, res) => {
+  const { bookingId, paymentId, amount, paymentDate, touristId } = req.body;
 
+  try {
+    // Validate required fields
+    if (
+      !bookingId ||
+      !paymentId ||
+      amount === undefined ||
+      !paymentDate ||
+      touristId === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+        missingFields: {
+          bookingId: !bookingId,
+          paymentId: !paymentId,
+          amount: amount === undefined,
+          paymentDate: !paymentDate,
+          touristId: touristId === undefined,
+        },
+      });
+    }
+
+    // Get and validate payment details
+    const paymentResult = await payment.getPaymentById(paymentId);
+    if (!paymentResult) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment record not found",
+      });
+    }
+
+    // Convert dates to consistent format for comparison
+    const submittedDate = new Date(paymentDate).toISOString().split("T")[0];
+    const storedDate = new Date(paymentResult.payment_date)
+      .toISOString()
+      .split("T")[0];
+
+    if (amount !== paymentResult.amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment amount mismatch",
+        submittedAmount: amount,
+        storedAmount: paymentResult.amount,
+      });
+    }
+
+    if (submittedDate !== storedDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment date mismatch",
+        submittedDate,
+        storedDate,
+      });
+    }
+
+    // Get and validate tourist details
+    const touristResult = await tourist.getTouristById(touristId);
+    if (!touristResult || !touristResult.email_address) {
+      return res.status(404).json({
+        success: false,
+        message: "Tourist record not found or missing email",
+      });
+    }
+
+    const {
+      email_address: touristEmail,
+      first_name: touristFirstName,
+      last_name: touristLastName,
+    } = touristResult;
+
+    // Create email transporter with proper error handling
+    let transporter;
+    try {
+      console.log(emailUser, appPassword, emailFrom);
+      transporter = nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: emailUser,
+          pass: appPassword,
+        },
+        tls: {
+          rejectUnauthorized: true,
+        },
+      });
+
+      // Verify connection configuration
+      await transporter.verify();
+    } catch (transportError) {
+      console.error("Email transport creation failed:", transportError);
+      return res.status(500).json({
+        success: false,
+        message: "Email service configuration error",
+        error: "Failed to initialize email service",
+      });
+    }
+
+    // Format dates for display
+    const formattedPaymentDate = new Date(paymentDate).toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    );
+
+    const formattedAmount = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+
+    // Prepare email
+    const mailOptions = {
+      from: `Ceylonian Travel Team <${emailFrom}>`,
+      to: touristEmail,
+      subject: "Your Booking Confirmation",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #2c3e50;">Booking Confirmation</h1>
+          <p>Dear ${touristFirstName} ${touristLastName},</p>
+          <p>Thank you for your booking! Here are your details:</p>
+          
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Booking Summary</h3>
+            <ul style="list-style: none; padding: 0;">
+              <li><strong>Booking ID:</strong> ${bookingId}</li>
+              <li><strong>Payment ID:</strong> ${paymentId}</li>
+              <li><strong>Amount:</strong> ${formattedAmount}</li>
+              <li><strong>Payment Date:</strong> ${formattedPaymentDate}</li>
+            </ul>
+          </div>
+
+          <p>If you have any questions, please contact our support team.</p>
+          <p>Best regards,</p>
+          <p><strong>The Ceylonian Travel Team</strong></p>
+        </div>
+      `,
+      text: `Dear ${touristFirstName} ${touristLastName},\n\nThank you for your booking!\n\nBooking ID: ${bookingId}\nPayment ID: ${paymentId}\nAmount: ${formattedAmount}\nPayment Date: ${formattedPaymentDate}\n\nIf you have any questions, please contact our support team.\n\nBest regards,\nThe Travel Team`,
+      attachments: [], // Add any attachments if needed
+    };
+
+    // Send email with timeout
+    const emailTimeout = setTimeout(() => {
+      throw new Error("Email sending timed out");
+    }, 10000); // 10 seconds timeout
+
+    const emailResult = await transporter.sendMail(mailOptions);
+    clearTimeout(emailTimeout);
+
+    // Log successful email delivery
+    console.log(`Email sent to ${touristEmail}`, {
+      messageId: emailResult.messageId,
+      bookingId,
+      touristId,
+    });
+
+    return res.json({
+      success: true,
+      message: "Confirmation email sent successfully",
+      email: touristEmail,
+    });
+  } catch (error) {
+    console.error("Email sending error:", {
+      error: error.message,
+      stack: error.stack,
+      bookingId,
+      touristId,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send confirmation email",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
 
 // Export all controller functions
 module.exports = {
@@ -273,4 +472,5 @@ module.exports = {
   getPkgDetails,
   getVerifiedCheckoutDetails,
   getVerifiedBookingToken,
+  sendEmailToTourist,
 };

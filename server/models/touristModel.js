@@ -7,6 +7,13 @@ const getTourists = async () => {
   return result.rows;
 };
 
+const getTouristById = async (id) => {
+  const query = `SELECT * FROM tourists WHERE tourist_id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
 const findTouristByEmail = async (email) => {
   const query = "SELECT * FROM tourists WHERE email_address = $1";
   const values = [email];
@@ -82,4 +89,5 @@ module.exports = {
   findTouristByNIC,
   addTourist,
   deleteTouristById,
+  getTouristById,
 };

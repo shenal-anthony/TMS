@@ -46,8 +46,16 @@ function PaymentForm() {
   }>({});
   const [encryptedBookingData, setEncryptedBookingData] = createSignal<{
     token?: string;
+    touristId?: number;
   }>({});
-
+  const [encryptedPaymentData, setEncryptedPaymentData] = createSignal<{
+    token?: string;
+    paymentId?: string;
+    amount?: number;
+    paymentDate?: string;
+    status?: string;
+    bookingId?: number;
+  }>({});
   const steps = [
     { number: 1, title: "Tourist Details" },
     { number: 2, title: "Payment Method" },
@@ -134,7 +142,9 @@ function PaymentForm() {
     try {
       let endpoint = "";
       let payload = {};
-      let response: AxiosResponse<any, any>;
+      let response: any;
+      let paymentResponse: AxiosResponse<any, any>;
+      let confirmResponse: AxiosResponse<any, any>;
 
       switch (phase()) {
         case 1: // Registration
@@ -146,6 +156,8 @@ function PaymentForm() {
 
             if (regResponse.data.success) {
               alert("Registration successful!");
+
+
 
               // Use verified booking data from state
               const bookingPayload = {
@@ -164,10 +176,11 @@ function PaymentForm() {
               );
 
               if (bookingResponse.data.success) {
-                setPhase((prev) => prev + 1);
                 setEncryptedBookingData({
                   token: bookingResponse.data.token,
+                  touristId: regResponse.data.touristId,
                 });
+                setPhase((prev) => prev + 1);
               } else {
                 throw new Error(
                   "Booking creation failed: " + bookingResponse.data.message
@@ -204,36 +217,34 @@ function PaymentForm() {
                   accountNumber: formData().payment.accountNumber,
                 }),
           };
-          response = await axios.post(endpoint, payload);
+          paymentResponse = await axios.post(endpoint, payload);
 
-          if (response.data.success) {
+          if (paymentResponse.data.success) {
             alert("Payment successful!");
+            setEncryptedPaymentData({
+              paymentId: paymentResponse.data.paymentId,
+              amount: paymentResponse.data.amount,
+              paymentDate: paymentResponse.data.paymentDate,
+              status: paymentResponse.data.status,
+              bookingId: paymentResponse.data.bookingId,
+            });
             setPhase((prev) => prev + 1);
           }
           return;
 
         case 3: // Confirmation
-          endpoint = `${apiUrl}/api/confirm-booking`;
+          endpoint = `${apiUrl}/api/tourists/confirm-booking`;
           payload = {
-            // bookingId: formData().bookingId, // Include booking ID
-            tourist: formData().tourist,
-            payment: {
-              method: formData().payment.method,
-              ...(formData().payment.method === "credit"
-                ? {
-                    cardNumber: formData().payment.cardNumber,
-                    expiry: formData().payment.expiry,
-                    cvv: formData().payment.cvv,
-                  }
-                : {
-                    bankName: formData().payment.bankName,
-                    accountNumber: formData().payment.accountNumber,
-                  }),
-            },
+            paymentId: encryptedPaymentData().paymentId,
+            amount: encryptedPaymentData().amount,
+            paymentDate: encryptedPaymentData().paymentDate,
+            status: encryptedPaymentData().status,
+            bookingId: encryptedPaymentData().bookingId,
+            touristId: encryptedBookingData().touristId,
           };
-          response = await axios.post(endpoint, payload);
+          confirmResponse = await axios.post(endpoint, payload);
 
-          if (response.data.success) {
+          if (confirmResponse.data.success) {
             alert("Booking confirmed! Check your email for details.");
             sessionStorage.removeItem("bookingKey");
             navigate("/home");
@@ -602,15 +613,7 @@ function PaymentForm() {
                 </p>
                 <p>Email: {formData().tourist.email}</p>
                 <p>contactNumber: {formData().tourist.contactNumber}</p>
-                <p>NIC/Passport: {formData().tourist.nicNumber}</p>
-                <p>
-                  Address: {formData().tourist.addressLine1},{" "}
-                  {formData().tourist.addressLine2}
-                </p>
-                <p>
-                  {formData().tourist.city}, {formData().tourist.postalCode}
-                </p>
-                <p>Country: {formData().tourist.country}</p>
+                <p>status: {encryptedPaymentData().status}</p>
 
                 <h3 class="font-medium mt-4 mb-2">Payment Details</h3>
                 <Show when={formData().payment.method === "credit"}>

@@ -5,10 +5,10 @@ const getAllBookings = async (req, res) => {
   try {
     const contents = await booking.getAllBookings();
     res.json(contents);
-    console.log(
-      "🚀 ~ bookingController.js:15 ~ getAllBookings ~ contents:",
-      contents
-    );
+    // console.log(
+    //   "🚀 ~ bookingController.js:15 ~ getAllBookings ~ contents:",
+    //   contents
+    // );
   } catch (error) {
     res
       .status(500)

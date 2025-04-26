@@ -8,7 +8,7 @@ const getAllPayments = async () => {
 };
 
 const getPaymentById = async (id) => {
-  const query = `SELECT * FROM packages WHERE package_id = $1`;
+  const query = `SELECT * FROM payments WHERE payment_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
   // console.log("🚀 ~ packageModel.js:14 ~ getPackageById ~ result:", result);
