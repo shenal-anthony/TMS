@@ -40,7 +40,7 @@ const getDestination = async (req, res) => {
 const addDestination = async (req, res) => {
   try {
     const { body, file } = req;
-    console.log("🚀 ~ contentController.js:43 ~ addDestination ~ body:", body);
+    // console.log("🚀 ~ contentController.js:43 ~ addDestination ~ body:", body);
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -60,10 +60,10 @@ const addDestination = async (req, res) => {
       pictureUrl: fullUrl,
       folder: body.folder,
     };
-    console.log(
-      "🚀 ~ contentController.js:45 ~ addDestination ~ destinationData:",
-      destinationData
-    );
+    // console.log(
+    // "🚀 ~ contentController.js:45 ~ addDestination ~ destinationData:",
+    // destinationData
+    // );
 
     const newDestination = await tourist.addDestination(destinationData);
 
@@ -87,19 +87,49 @@ const addDestination = async (req, res) => {
 // update
 const updateDestination = async (req, res) => {
   const { id } = req.params;
-  const { body } = req;
+  const { body, file } = req;
+  // console.log("🚀 ~ contentController.js:91 ~ updateDestination ~ file:", file);
+  // console.log("🚀 ~ contentController.js:92 ~ updateDestination ~ body:", body);
   try {
-    const updatedContent = await tourist.updateDestinationById(id, body);
-    res.json(updatedContent);
+    let updatedData = {
+      destinationName: body.destinationName,
+      description: body.description,
+      weatherCondition: body.weatherCondition,
+      locationUrl: body.locationUrl,
+      pictureUrl: body.pictureUrl,
+    };
+
+    body.folder = "destinations";
+    // If new file is uploaded
+    if (file) {
+      // console.log("🚀 ~ contentController.js:104 ~ updateDestination ~ file:", file);
+      // Force the folder again
+      const fileUrl = `/uploads/${body.folder}/${file.filename}`;
+      const fullUrl = `${baseUrl}${fileUrl}`;
+      updatedData.pictureUrl = fullUrl;
+    }
+
+    if (Object.keys(updatedData).length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No data provided to update" });
+    }
+
+    const updatedContent = await tourist.updateDestinationById(id, updatedData);
+    // console.log("🚀 ~ contentController.js:115 ~ updateDestination ~ updatedContent:", updatedContent);
+
+    res.json({
+      success: true,
+      message: "Destination updated successfully",
+      data: updatedContent,
+    });
   } catch (error) {
+    console.error("Error updating destination:", error);
     res
       .status(500)
       .json({ message: "Error updating destination", error: error.message });
   }
 };
-
-
-
 
 // delete
 const deleteDestination = async (req, res) => {
@@ -291,7 +321,7 @@ const updateAccommodation = async (req, res) => {
       .status(500)
       .json({ message: "Error updating accommodation", error: error.message });
   }
-  console.log("🚀 ~ updateAccommodation ~ updatedContent:", updatedContent);
+  // console.log("🚀 ~ updateAccommodation ~ updatedContent:", updatedContent);
 };
 // delete
 const deleteAccommodation = async (req, res) => {

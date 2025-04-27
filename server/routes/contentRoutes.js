@@ -26,7 +26,7 @@ const upload = require("../utils/multerConfig"); // Corrected multer import
 router.get("/destinations", getAllDestinations);
 router.get("/destination/:id", getDestination);
 router.post("/destinations", upload.single("file"), addDestination);
-router.put("/destinations/:id", updateDestination);
+router.put("/destinations/:id", upload.single("file"), updateDestination);
 router.delete("/destinations/:id", deleteDestination);
 
 // events routes

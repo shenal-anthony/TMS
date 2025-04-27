@@ -154,8 +154,13 @@ const Destinations = () => {
     formData.append("locationUrl", currentDestination.locationUrl);
     formData.append("folder", "destinations"); // Specify the folder for the image
     if (currentDestination.pictureFile) {
+      // If user uploaded a new file
       formData.append("file", currentDestination.pictureFile);
+    } else if (currentDestination.pictureUrl) {
+      // If editing and no new file, pass the old URL
+      formData.append("pictureUrl", currentDestination.pictureUrl);
     }
+
 
     const request = isEditingDestination
       ? axios.put(
