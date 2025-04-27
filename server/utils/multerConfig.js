@@ -7,7 +7,8 @@ const storage = multer.diskStorage({
     let folder = req.body.folder || "others"; // default to "others" if no category sent
 
     const uploadPath = path.join(__dirname, "../public/uploads", folder);
-    console.log("🚀 ~ multerConfig.js:10 ~ folder:", folder); // console log
+
+    console.log("🚀 ~ multerConfig.js:11 ~ folder:", folder); // console log
 
     // Create the folder if it doesn't exist
     fs.mkdirSync(uploadPath, { recursive: true });

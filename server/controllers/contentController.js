@@ -40,27 +40,32 @@ const getDestination = async (req, res) => {
 const addDestination = async (req, res) => {
   try {
     const { body, file } = req;
+    console.log("🚀 ~ contentController.js:43 ~ addDestination ~ body:", body);
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    
+
     // OVERRIDE any req.body.folder with "destinations"
     body.folder = "destinations"; // Force this value
-    
+
     const fileUrl = `/uploads/${body.folder}/${file.filename}`;
     const fullUrl = `${baseUrl}${fileUrl}`;
-    
+
     const destinationData = {
-      ...body, // Now includes the forced folder="destinations"
+      destinationName: body.destinationName,
+      description: body.description,
+      weatherCondition: body.weatherCondition,
+      locationUrl: body.locationUrl,
       pictureUrl: fullUrl,
-      destinationName: body.destination_name || "Unnamed Destination",
-      description: body.description || "",
+      folder: body.folder,
     };
-    console.log("🚀 ~ contentController.js:45 ~ addDestination ~ destinationData:", destinationData);
-    
+    console.log(
+      "🚀 ~ contentController.js:45 ~ addDestination ~ destinationData:",
+      destinationData
+    );
+
     const newDestination = await tourist.addDestination(destinationData);
-    console.log("🚀 ~ contentController.js:62 ~ addDestination ~ newDestination:", newDestination);
 
     res.status(201).json({
       success: true,
@@ -92,6 +97,10 @@ const updateDestination = async (req, res) => {
       .json({ message: "Error updating destination", error: error.message });
   }
 };
+
+
+
+
 // delete
 const deleteDestination = async (req, res) => {
   const { id } = req.params;

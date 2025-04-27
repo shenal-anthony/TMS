@@ -53,12 +53,29 @@ const Destinations = () => {
     destinationId: "",
   });
 
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null); // State to hold the image preview URL
+
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetchDestinations();
     fetchPackages();
   }, []);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result); // Set the preview URL
+        setCurrentDestination({
+          ...currentDestination,
+          pictureFile: file, // Store the file for uploading
+        });
+      };
+      reader.readAsDataURL(file); // Read the file as a data URL
+    }
+  };
 
   const fetchDestinations = () => {
     axios
@@ -129,44 +146,35 @@ const Destinations = () => {
   };
 
   const handleAddOrUpdateDestination = () => {
-    if (isEditingDestination) {
-      // Update existing destination
-      axios
-        .put(
-          `${apiUrl}/api/contents/destinations/${currentDestination.destination_id}`,
-          currentDestination
-        )
-        .then((response) => {
-          setDestinationContents(
-            destinationContents.map((destination) =>
-              destination.destination_id === currentDestination.destination_id
-                ? response.data
-                : destination
-            )
-          );
-          setOpenDialog(false);
-          resetForm();
-        })
-        .catch((destinationError) => {
-          setDestinationError(
-            "Error updating destination: " + destinationError.message
-          );
-        });
-    } else {
-      // Add new destination
-      axios
-        .post(`${apiUrl}/api/contents/destinations`, currentDestination)
-        .then((response) => {
-          setDestinationContents([...destinationContents, response.data]);
-          setOpenDialog(false);
-          resetForm();
-        })
-        .catch((destinationError) => {
-          setDestinationError(
-            "Error adding destination: " + destinationError.message
-          );
-        });
+    const formData = new FormData();
+
+    formData.append("destinationName", currentDestination.destinationName);
+    formData.append("description", currentDestination.description);
+    formData.append("weatherCondition", currentDestination.weatherCondition);
+    formData.append("locationUrl", currentDestination.locationUrl);
+    formData.append("folder", "destinations"); // Specify the folder for the image
+    if (currentDestination.pictureFile) {
+      formData.append("file", currentDestination.pictureFile);
     }
+
+    const request = isEditingDestination
+      ? axios.put(
+          `${apiUrl}/api/contents/destinations/${currentDestination.destination_id}`,
+          formData
+        )
+      : axios.post(`${apiUrl}/api/contents/destinations`, formData);
+
+    request
+      .then((response) => {
+        fetchDestinations(); // Refresh list
+        setOpenDialog(false);
+        resetForm();
+      })
+      .catch((destinationError) => {
+        setDestinationError(
+          "Error saving destination: " + destinationError.message
+        );
+      });
   };
 
   const handleAddOrUpdatePackage = () => {
@@ -183,7 +191,7 @@ const Destinations = () => {
               pkg.package_id === currentPackage.package_id ? response.data : pkg
             )
           );
-          setOpenDialog(false);
+          setOpenPackageDialog(false);
           resetPackageForm();
         })
         .catch((packageError) => {
@@ -215,6 +223,10 @@ const Destinations = () => {
       locationUrl: destination.location_url,
       pictureUrl: destination.picture_url,
     });
+
+    // Set image preview if there is an existing image
+    setImagePreviewUrl(destination.picture_url || null);
+
     setIsEditing(true);
     setOpenDialog(true);
   };
@@ -254,10 +266,6 @@ const Destinations = () => {
       destinationId: "",
     });
     setIsEditingPackage(false);
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
   };
 
   const handleDestinationPageChange = (event, newPage) => {
@@ -363,16 +371,27 @@ const Destinations = () => {
                 })
               }
             />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) =>
-                setCurrentDestination({
-                  ...currentDestination,
-                  pictureFile: e.target.files[0], // store the selected file
-                })
-              }
-            />
+            {/* Image Upload with Preview */}
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              {imagePreviewUrl && (
+                <div style={{ marginTop: "10px" }}>
+                  <img
+                    src={imagePreviewUrl}
+                    alt="Preview"
+                    style={{
+                      maxWidth: "200px",
+                      maxHeight: "200px",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </DialogContent>
           <DialogActions>
             <Button
@@ -401,7 +420,10 @@ const Destinations = () => {
             </TableHead>
             <TableBody>
               {destinationContents
-                .slice(destinationPage * rowsPerPage, destinationPage * rowsPerPage + rowsPerPage)
+                .slice(
+                  destinationPage * rowsPerPage,
+                  destinationPage * rowsPerPage + rowsPerPage
+                )
                 .map((destination) => (
                   <TableRow
                     key={destination.destination_id}
@@ -590,7 +612,10 @@ const Destinations = () => {
             <TableBody>
               {packageContents.length > 0 ? (
                 packageContents
-                  .slice(packagePage * rowsPerPage, packagePage * rowsPerPage + rowsPerPage)
+                  .slice(
+                    packagePage * rowsPerPage,
+                    packagePage * rowsPerPage + rowsPerPage
+                  )
                   .map((pkg) => (
                     <TableRow
                       key={pkg.package_id}
