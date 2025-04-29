@@ -4,9 +4,12 @@ const booking = require("../models/bookingModel");
 // api/guides/
 
 // Get all guides
-const getAllGuide = async (req, res) => {
+const getAllGuides = async (req, res) => {
   try {
     const guides = await user.getGuides();
+    if (!guides || guides.length === 0) {
+      return res.status(404).json({ message: "No guides found" });
+    }
     res.json(guides);
   } catch (error) {
     res
@@ -138,9 +141,38 @@ const deleteGuide = async (req, res) => {
   }
 };
 
+// Change guide status
+const changeGuideStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ["Active", "In Leave"];
+  if (!validStatuses.includes(status)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid status. Must be 'Active' or 'In Leave'." });
+  }
+
+  try {
+    const updated = await user.changeStatusById(id, status);
+    if (!updated) {
+      return res.status(404).json({ message: "Guide not found" });
+    }
+
+    res.json({ message: "Guide status updated successfully" });
+  } catch (error) {
+    console.error("Error updating guide status:", error);
+    res.status(500).json({
+      message: "Error updating guide status",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
-  getAllGuide,
+  getAllGuides,
   deleteGuide,
   getAvailableGuidesByFilter,
   addGuideToBooking,
+  changeGuideStatus,
 };

@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { getAllGuide, deleteGuide } = require("../controllers/guideController");
+const { getAllGuides, deleteGuide, changeGuideStatus } = require("../controllers/guideController");
 
-router.get("/", getAllGuide);
+router.get("/", getAllGuides);
 router.delete("/:id", deleteGuide);
+router.patch("/status/:id", changeGuideStatus);
 
 module.exports = router;

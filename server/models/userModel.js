@@ -1,5 +1,4 @@
 const pool = require("../db");
-const { get } = require("../routes/bookingRoutes");
 
 const createUser = async (userData) => {
   const {
@@ -77,6 +76,14 @@ const getActiveGuides = async () => {
   return result.rows;
 };
 
+const changeStatusById = async (id, status) => {
+  const query = `UPDATE users SET status = $1 WHERE user_id = $2 AND role = 'Guide'`;
+  const values = [status, id];
+  const result = await pool.query(query, values);
+  // console.log("🚀 ~ userModel.js:83 ~ changeStatusById ~ result:", result);
+  return result.rowCount > 0; // returns true if a row was updated
+};
+
 const deleteUserById = async (id) => {
   const query = `DELETE FROM users WHERE user_id = $1`;
   await pool.query(query, [id]);
@@ -90,4 +97,5 @@ module.exports = {
   deleteUserById,
   getGuides,
   getActiveGuides,
+  changeStatusById,
 };
