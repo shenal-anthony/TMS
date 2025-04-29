@@ -1,4 +1,5 @@
 const booking = require("../models/bookingModel");
+const guide = require("../models/assignedGuideModel");
 
 // get all
 const getAllBookings = async (req, res) => {
@@ -76,6 +77,41 @@ const addBooking = async (req, res) => {
 
 // update
 
+// get booking with available guides
+const getPendingBookingsWithGuides = async (req, res) => {
+  try {
+    const pendingBookings = await booking.getPendingBookings();
+
+    const allResults = await Promise.all(
+      pendingBookings.map(async (booking) => {
+        const { booking_id, booking_date } = booking;
+        const leave_date = new Date(booking_date); 
+        leave_date.setDate(leave_date.getDate() + 3); // Adds 3 days to the booking date
+
+        const availableGuides = await guide.getUnassignedGuidesByPeriod(
+          booking_date,
+          leave_date
+        );
+
+        return availableGuides.map((guide) => ({
+          booking_id,
+          guide_id: guide.user_id,
+          first_name: guide.first_name,
+          last_name: guide.last_name,
+        }));
+      })
+    );
+
+    // Flatten the nested arrays
+    const result = allResults.flat();
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching pending bookings with guides:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // delete
 const deleteBooking = async (req, res) => {
   const { id } = req.params;
@@ -89,4 +125,9 @@ const deleteBooking = async (req, res) => {
   }
 };
 
-module.exports = { getAllBookings, addBooking, deleteBooking };
+module.exports = {
+  getAllBookings,
+  addBooking,
+  deleteBooking,
+  getPendingBookingsWithGuides,
+};

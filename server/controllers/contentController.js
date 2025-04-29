@@ -187,6 +187,7 @@ const addPackage = async (req, res) => {
 const updatePackage = async (req, res) => {
   const { id } = req.params;
   const { body } = req;
+  console.log("🚀 ~ contentController.js:190 ~ updatePackage ~ body:", body);
   try {
     const updatedContent = await pkg.updatePackageById(id, body);
     res.json(updatedContent);

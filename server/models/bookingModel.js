@@ -7,6 +7,12 @@ const getAllBookings = async () => {
   return result.rows;
 };
 
+const getPendingBookings = async () => {
+  const query = `SELECT booking_id, booking_date, headcount, check_in_date,tourist_id, tour_id, user_id, event_id FROM bookings WHERE status = 'pending'`;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
 const addBooking = async (bookingData) => {
   const {
     bookingDate,
@@ -33,31 +39,85 @@ const addBooking = async (bookingData) => {
     eventId, // $9
   ];
   const result = await pool.query(query, values);
-  // console.log("🚀 ~ bookingModel.js:36 ~ addBooking ~ result:", result);
+  // // console.log("🚀 ~ bookingModel.js:36 ~ addBooking ~ result:", result);
   return result.rows[0];
 };
 
-const updateDestinationById = async (id, destinationData) => {
-  const {
-    locationUrl,
-    pictureUrl,
-    description,
-    destinationName,
-    weatherCondition,
-  } = destinationData;
-
-  const query = `UPDATE destinations SET location_url = $1, picture_url = $2, description = $3, destination_name = $4, weather_condition = $5 WHERE destination_id = $6 RETURNING *;`;
-  const values = [
-    locationUrl,
-    pictureUrl,
-    description,
-    destinationName,
-    weatherCondition,
-    id,
-  ];
+const getBookingById = async (id) => {
+  const query = `SELECT * FROM bookings WHERE booking_id = $1`;
+  const values = [id];
   const result = await pool.query(query, values);
-  // console.log(result.rows[0]); // debug
-  // console.log("Received data:", destinationData); // debug
+  if (result.rows.length === 0) {
+    throw new Error(`Booking with ID ${id} not found`);
+  }
+  return result.rows[0];
+};
+
+const updateBookingById = async (bookingId, updates) => {
+  const fields = [];
+  const values = [];
+  let index = 1;
+
+  if (updates.booking_date !== undefined) {
+    fields.push(`booking_date = $${index++}`);
+    values.push(updates.booking_date);
+  }
+
+  if (updates.headcount !== undefined) {
+    fields.push(`headcount = $${index++}`);
+    values.push(updates.headcount);
+  }
+
+  if (updates.check_in_date !== undefined) {
+    fields.push(`check_in_date = $${index++}`);
+    values.push(updates.check_in_date);
+  }
+
+  if (updates.check_out_date !== undefined) {
+    fields.push(`check_out_date = $${index++}`);
+    values.push(updates.check_out_date);
+  }
+
+  if (updates.status !== undefined) {
+    fields.push(`status = $${index++}`);
+    values.push(updates.status);
+  }
+
+  if (updates.tourist_id !== undefined) {
+    fields.push(`tourist_id = $${index++}`);
+    values.push(updates.tourist_id);
+  }
+
+  if (updates.tour_id !== undefined) {
+    fields.push(`tour_id = $${index++}`);
+    values.push(updates.tour_id);
+  }
+
+  if (updates.user_id !== undefined) {
+    fields.push(`user_id = $${index++}`);
+    values.push(updates.user_id);
+  }
+
+  if (updates.event_id !== undefined) {
+    fields.push(`event_id = $${index++}`);
+    values.push(updates.event_id);
+  }
+
+  if (fields.length === 0) {
+    throw new Error("No valid fields provided for update.");
+  }
+
+  const query = `
+    UPDATE bookings
+    SET ${fields.join(", ")}
+    WHERE booking_id = $${index}
+    RETURNING *;
+  `;
+
+  values.push(bookingId);
+
+  const result = await pool.query(query, values);
+  console.log("🚀 ~ bookingModel.js:120 ~ updateBookingById ~ result:", result);
   return result.rows[0];
 };
 
@@ -69,5 +129,8 @@ const deleteBookingById = async (id) => {
 module.exports = {
   getAllBookings,
   addBooking,
+  getBookingById,
+  updateBookingById,
   deleteBookingById,
+  getPendingBookings,
 };

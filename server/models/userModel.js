@@ -1,4 +1,5 @@
 const pool = require("../db");
+const { get } = require("../routes/bookingRoutes");
 
 const createUser = async (userData) => {
   const {
@@ -15,6 +16,7 @@ const createUser = async (userData) => {
     touristLicensePath,
   } = userData;
 
+  // here Active needs to be changed to "Active" or "Inactive" based on
   const query = `
     INSERT INTO users 
     (first_name, last_name, email_address, password, nic_number, contact_number, addressline_01, addressline_02, role, profile_picture, tourist_license, status) 
@@ -40,7 +42,7 @@ const createUser = async (userData) => {
 };
 
 const findUserByEmail = async (email) => {
-  const query = "SELECT * FROM users WHERE email_address = $1";
+  const query = `SELECT * FROM users WHERE email_address = $1`;
   const values = [email];
   const result = await pool.query(query, values);
   return result.rows.length > 0 ? result.rows[0] : null;
@@ -53,22 +55,31 @@ const getAllUsers = async () => {
 };
 
 const getAdmins = async () => {
-  const query = "SELECT * FROM users WHERE role = $1";
+  const query = `SELECT * FROM users WHERE role = $1`;
   const values = ["Admin"];
   const result = await pool.query(query, values);
   return result.rows;
 };
 
-const deleteUserById = async (id) => {
-  const query = "DELETE FROM users WHERE user_id = $1";
-  await pool.query(query, [id]);
-};
-
 const getGuides = async () => {
-  const query = "SELECT * FROM users WHERE role = $1";
+  const query = `SELECT * FROM users WHERE role = $1`;
   const values = ["Guide"];
   const result = await pool.query(query, values);
   return result.rows;
+};
+
+const getActiveGuides = async () => {
+  const query = `
+    SELECT user_id, first_name, last_name, contact_number From users
+    WHERE role = $1 AND status = $2`;
+  const values = ["Guide", "Active"];
+  const result = await pool.query(query, values);
+  return result.rows;
+};
+
+const deleteUserById = async (id) => {
+  const query = `DELETE FROM users WHERE user_id = $1`;
+  await pool.query(query, [id]);
 };
 
 module.exports = {
@@ -78,4 +89,5 @@ module.exports = {
   getAdmins,
   deleteUserById,
   getGuides,
+  getActiveGuides,
 };

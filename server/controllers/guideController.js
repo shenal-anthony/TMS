@@ -1,5 +1,9 @@
 const user = require("../models/userModel");
+const guide = require("../models/assignedGuideModel");
+const booking = require("../models/bookingModel");
 
+// api/guides/
+// Get all guides
 const getAllGuide = async (req, res) => {
   try {
     const guides = await user.getGuides();
@@ -8,6 +12,86 @@ const getAllGuide = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching admins", error: error.message });
+  }
+};
+
+// get available guides
+const getAvailableGuides = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    // Validate inputs
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ error: "Start date and end date are required." });
+    }
+
+    const guides = await guide.getUnassignedGuidesByPeriod(startDate, endDate);
+    console.log(
+      "🚀 ~ guideController.js:29 ~ getAvailableGuides ~ guides:",
+      guides
+    );
+    res.status(200).json(guides);
+  } catch (error) {
+    console.error("Error fetching available guides:", error);
+    res
+      .status(500)
+      .json({ error: "Server error while fetching available guides." });
+  }
+};
+
+// add guide to a booking
+const addGuideToBooking = async (req, res) => {
+  const { guideId } = req.body;
+  const bookingId = req.params.bookingId;
+
+  if (!guideId || !bookingId) {
+    return res
+      .status(400)
+      .json({ error: "Guide ID and Booking ID are required." });
+  }
+
+  try {
+    // Fetch booking details
+    const bookingData = await booking.getBookingById(bookingId);
+    if (!bookingData) {
+      return res.status(404).json({ error: "Booking not found." });
+    }
+
+    const startDate = new Date(bookingData.booking_date);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 3); // 3-day duration
+
+    // Assign guide to booking
+    const assignedGuide = await guide.addAssignedGuide({
+      guideId,
+      bookingId,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    });
+
+    // Update booking status and assigned guide
+    const updatedBooking = await booking.updateBookingById(bookingId, {
+      status: "confirmed",
+      user_id: guideId,
+    });
+
+    if (!updatedBooking) {
+      return res
+        .status(500)
+        .json({ error: "Failed to update booking status." });
+    }
+
+    return res.status(201).json({
+      message: "Guide assigned successfully.",
+      data: assignedGuide,
+    });
+  } catch (error) {
+    console.error("Error in addGuideToBooking:", error);
+    return res.status(500).json({
+      error: "Internal server error.",
+      details: error.message || error,
+    });
   }
 };
 
@@ -23,4 +107,9 @@ const deleteGuide = async (req, res) => {
   }
 };
 
-module.exports = { getAllGuide, deleteGuide };
+module.exports = {
+  getAllGuide,
+  deleteGuide,
+  getAvailableGuides,
+  addGuideToBooking,
+};

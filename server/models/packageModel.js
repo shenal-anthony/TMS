@@ -45,8 +45,6 @@ const updatePackageById = async (id, packageData) => {
   const query = `UPDATE packages SET package_name = $1, description = $2, price = $3, duration = $4 WHERE package_id = $5 RETURNING *;`;
   const values = [packageName, description, price, duration, id];
   const result = await pool.query(query, values);
-  // console.log(result.rows[0]); // debug
-  // console.log("Received data:", packageData); // debug
   return result.rows[0];
 };
 
