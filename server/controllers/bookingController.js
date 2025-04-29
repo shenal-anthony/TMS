@@ -80,6 +80,8 @@ const addBooking = async (req, res) => {
 // get booking with available guides
 const getPendingBookingsWithGuides = async (req, res) => {
   try {
+
+    // Get all pending bookings 
     const pendingBookings = await booking.getPendingBookings();
 
     const allResults = await Promise.all(
@@ -88,6 +90,7 @@ const getPendingBookingsWithGuides = async (req, res) => {
         const leave_date = new Date(booking_date); 
         leave_date.setDate(leave_date.getDate() + 3); // Adds 3 days to the booking date
 
+        // by default, fetch available guides for booking period
         const availableGuides = await guide.getUnassignedGuidesByPeriod(
           booking_date,
           leave_date
@@ -95,6 +98,7 @@ const getPendingBookingsWithGuides = async (req, res) => {
 
         return availableGuides.map((guide) => ({
           booking_id,
+          booking_date: booking_date,
           guide_id: guide.user_id,
           first_name: guide.first_name,
           last_name: guide.last_name,
@@ -104,6 +108,7 @@ const getPendingBookingsWithGuides = async (req, res) => {
 
     // Flatten the nested arrays
     const result = allResults.flat();
+    console.log("🚀 ~ bookingController.js:110 ~ getPendingBookingsWithGuides ~ result:", result.length);
 
     res.json(result);
   } catch (error) {

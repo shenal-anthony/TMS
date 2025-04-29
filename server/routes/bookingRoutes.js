@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { encryptResponse } = require("../middlewares/encryptResponse");
 const {
-  getAvailableGuides,
+  getAvailableGuidesByFilter,
   addGuideToBooking,
 } = require("../controllers/guideController");
 const {
@@ -25,7 +25,7 @@ router.post("/check-availability", getPkgBookingKeyDetails);
 router.post("/verify-token", getVerifiedBookingToken);
 router.post("/configured-booking", getVerifiedCheckoutDetails);
 router.get("/pending", getPendingBookingsWithGuides);
-router.post("/filtered-pending", getAvailableGuides);
+router.post("/filtered-pending", getAvailableGuidesByFilter);
 router.put("/:bookingId/assign", addGuideToBooking);
 
 // router.get("/booking-details/:id", getPkgDetails);

@@ -85,7 +85,10 @@ const PendingBookings = () => {
   };
 
   const bookingIds = Object.keys(groupedBookings);
-  const paginatedIds = bookingIds.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+  const paginatedIds = bookingIds.slice(
+    page * rowsPerPage,
+    (page + 1) * rowsPerPage
+  );
 
   return (
     <div>
@@ -138,6 +141,7 @@ const PendingBookings = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Booking ID</TableCell>
+                  <TableCell>Booking Date</TableCell>
                   <TableCell>Guide ID</TableCell>
                   <TableCell>Guide Name</TableCell>
                   <TableCell>Actions</TableCell>
@@ -147,19 +151,19 @@ const PendingBookings = () => {
                 {paginatedIds.map((bookingId) =>
                   groupedBookings[bookingId].map((guide, index) => (
                     <TableRow key={`${bookingId}-${guide.guide_id}`}>
+                      <TableCell>{index === 0 ? bookingId : ""}</TableCell>
                       <TableCell>
-                        {index === 0 ? bookingId : ""}
+                        {dayjs(guide.booking_date).format("YYYY-MM-DD")}
                       </TableCell>
                       <TableCell>{guide.guide_id}</TableCell>
-                      <TableCell>{guide.first_name +" "+ guide.last_name}</TableCell>
+                      <TableCell>
+                        {guide.first_name + " " + guide.last_name}
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="contained"
                           onClick={() =>
-                            handleAssignGuide(
-                              bookingId,
-                              guide.guide_id
-                            )
+                            handleAssignGuide(bookingId, guide.guide_id)
                           }
                         >
                           Assign

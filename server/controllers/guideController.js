@@ -1,8 +1,8 @@
 const user = require("../models/userModel");
 const guide = require("../models/assignedGuideModel");
 const booking = require("../models/bookingModel");
-
 // api/guides/
+
 // Get all guides
 const getAllGuide = async (req, res) => {
   try {
@@ -16,22 +16,53 @@ const getAllGuide = async (req, res) => {
 };
 
 // get available guides
-const getAvailableGuides = async (req, res) => {
+const getAvailableGuidesByFilter = async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
-    // Validate inputs
+
     if (!startDate || !endDate) {
       return res
         .status(400)
         .json({ error: "Start date and end date are required." });
     }
 
-    const guides = await guide.getUnassignedGuidesByPeriod(startDate, endDate);
+    // 1. Get all pending bookings
+    const pendingBookings = await booking.getPendingBookings(); // must include booking_id, booking_date
+    const result = [];
+
+    // 2. For each booking, get guides available during that booking's span
+    for (const booking of pendingBookings) {
+      const bookingStart = new Date(booking.booking_date);
+      const bookingEnd = new Date(bookingStart);
+      bookingEnd.setDate(bookingEnd.getDate() + 3); // booking period
+
+      // Check if booking period is inside the provided filter range
+      if (
+        bookingStart >= new Date(startDate) &&
+        bookingEnd <= new Date(endDate)
+      ) {
+        const availableGuides = await guide.getUnassignedGuidesByPeriod(
+          bookingStart.toISOString().split("T")[0],
+          bookingEnd.toISOString().split("T")[0]
+        );
+
+        availableGuides.forEach((guide) => {
+          result.push({
+            booking_id: booking.booking_id,
+            booking_date: booking.booking_date,
+            guide_id: guide.user_id,
+            first_name: guide.first_name,
+            last_name: guide.last_name,
+          });
+        });
+      }
+    }
     console.log(
-      "🚀 ~ guideController.js:29 ~ getAvailableGuides ~ guides:",
-      guides
+      "🚀 ~ guideController.js:24 ~ getAvailableGuidesByFilter ~ result:",
+      result.length
     );
-    res.status(200).json(guides);
+
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching available guides:", error);
     res
@@ -110,6 +141,6 @@ const deleteGuide = async (req, res) => {
 module.exports = {
   getAllGuide,
   deleteGuide,
-  getAvailableGuides,
+  getAvailableGuidesByFilter,
   addGuideToBooking,
 };
