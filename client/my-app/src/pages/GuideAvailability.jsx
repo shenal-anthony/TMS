@@ -164,31 +164,37 @@ const GuideAvailability = () => {
         <h1>Guide List</h1>
       </div>
 
-      <div className="m-4">
-        <Button
-          variant="contained"
-          color="success"
-          onClick={() => handleBulkStatusChange("Active")}
-          disabled={selectedIds.length === 0}
-        >
-          Set Selected to Active
-        </Button>{" "}
-        <Button
-          variant="contained"
-          color="warning"
-          onClick={() => handleBulkStatusChange("In Leave")}
-          disabled={selectedIds.length === 0}
-        >
-          Set Selected to In Leave
-        </Button>{" "}
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleRemoveSelected}
-          disabled={selectedIds.length === 0}
-        >
-          Remove Selected
-        </Button>
+      <div className="flex flex-row justify-items-start m-4">
+        <div className="m-2">
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => handleBulkStatusChange("Active")}
+            disabled={selectedIds.length === 0}
+          >
+            Set to Active
+          </Button>
+        </div>
+        <div className="m-2">
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => handleBulkStatusChange("In Leave")}
+            disabled={selectedIds.length === 0}
+          >
+            Set to In Leave
+          </Button>
+        </div>
+        <div className="m-2">
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleRemoveSelected}
+            disabled={selectedIds.length === 0}
+          >
+            Remove Selected
+          </Button>
+        </div>
       </div>
 
       <TableContainer component={Paper}>
