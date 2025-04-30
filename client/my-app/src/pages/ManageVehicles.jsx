@@ -191,6 +191,7 @@ const ManageVehicles = () => {
         <Table>
           <TableHead>
             <TableRow>
+              {/* Checkbox for selecting all rows */}
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={
@@ -241,7 +242,7 @@ const ManageVehicles = () => {
                 <Button
                   onClick={() => handleSort("model")}
                   endIcon={
-                    sortConfig.key === "brand" && sortConfig.order === "asc" ? (
+                    sortConfig.key === "model" && sortConfig.order === "asc" ? (
                       <ArrowUpwardIcon fontSize="small" />
                     ) : (
                       <ArrowDownwardIcon fontSize="small" />
