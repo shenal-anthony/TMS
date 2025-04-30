@@ -11,12 +11,19 @@ import {
   Paper,
   Button,
   TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 
 const YourVehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const navigate = useNavigate();
@@ -55,6 +62,16 @@ const YourVehicles = () => {
       });
   }, []);
 
+  const handleViewDetails = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedVehicle(null);
+  };
+
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -81,10 +98,12 @@ const YourVehicles = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Vehicle ID</TableCell>
-              <TableCell>Manufacture</TableCell>
-              <TableCell>Model</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell align="center">#</TableCell>
+              <TableCell align="center">Vehicle ID</TableCell>
+              <TableCell align="center">Manufacture</TableCell>
+              <TableCell align="center">Model</TableCell>
+              <TableCell align="center">Status</TableCell>
+              <TableCell align="center">Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -101,10 +120,32 @@ const YourVehicles = () => {
                       },
                     }}
                   >
-                    <TableCell>{vehicle.vehicle_id}</TableCell>
-                    <TableCell>{vehicle.brand}</TableCell>
-                    <TableCell>{vehicle.model}</TableCell>
-                    <TableCell>{vehicle.air_condition}</TableCell>
+                    {/* serial number */}
+                    <TableCell align="center">
+                      {page * rowsPerPage + (vehicles.indexOf(vehicle) + 1)}
+                    </TableCell>
+                    <TableCell align="center">{vehicle.vehicle_id}</TableCell>
+                    <TableCell align="center">{vehicle.brand}</TableCell>
+                    <TableCell align="center">{vehicle.model}</TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        color:
+                          vehicle.status === "Functional" ? "green" : "orange",
+                      }}
+                    >
+                      {vehicle.status}
+                    </TableCell>
+                    {/* action button for view */}
+                    <TableCell align="center">
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleViewDetails(vehicle)}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
             ) : (
@@ -126,6 +167,61 @@ const YourVehicles = () => {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+      {/* vehicle details dialog  */}
+      {selectedVehicle && (
+        <Dialog
+          open={openDialog}
+          onClose={handleCloseDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Vehicle Details</DialogTitle>
+          <DialogContent dividers>
+            <DialogContentText>
+              <strong>Vehicle ID:</strong> {selectedVehicle.vehicle_id}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Manufacture:</strong> {selectedVehicle.brand}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Model:</strong> {selectedVehicle.model}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Color:</strong> {selectedVehicle.color}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Vehicle Type:</strong> {selectedVehicle.vehicle_type}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Fuel Type:</strong> {selectedVehicle.fuel_type}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Air Condition:</strong>{" "}
+              {selectedVehicle.air_condition ? "Yes" : "No"}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Registration Number:</strong>{" "}
+              {selectedVehicle.registration_number}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Number Plate:</strong> {selectedVehicle.number_plate}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Tourist License Path:</strong>{" "}
+              {selectedVehicle.tourist_license}
+            </DialogContentText>
+            <DialogContentText>
+              <strong>Vehicle Picture Path:</strong>{" "}
+              {selectedVehicle.vehicle_picture}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </div>
   );
 };

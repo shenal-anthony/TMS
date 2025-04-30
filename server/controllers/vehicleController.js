@@ -125,7 +125,7 @@ const registerVehicle = async (req, res) => {
 const getVehiclesForUser = async (req, res) => {
   try {
     const userId = req.user.userId; // From the authenticated token
-    // console.log("User ID:", userId); // Debug
+    console.log("User ID:", userId); // Debug
 
     const vehicles = await getVehiclesByUserId(userId);
     // console.log("Vehicles:", vehicles); // Debug

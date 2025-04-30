@@ -47,8 +47,7 @@ const createVehicle = async (vehicleData) => {
 const getVehiclesByUserId = async (userId) => {
   try {
     const query = `
-      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition,registration_number, number_plate
-      FROM vehicles WHERE user_id = $1;
+      SELECT * FROM vehicles WHERE user_id = $1;
     `;
     const result = await pool.query(query, [userId]);
     return result.rows;
