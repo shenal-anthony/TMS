@@ -1,75 +1,50 @@
 const pool = require("../db");
+// assigned_vehicles table
 
-const createVehicle = async (vehicleData) => {
-  const {
-    userId,
-    brand,
-    model,
-    vehicleColor,
-    vehicleType,
-    fuelType,
-    airCondition,
-    registrationNumber,
-    vehicleNumberPlate,
-    vehiclePicturePath,
-    touristLicensePath,
-  } = vehicleData;
-
-  const query = `
-    INSERT INTO vehicles 
-    (user_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate, vehicle_picture, tourist_license)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *;
-  `;
-
-  const values = [
-    userId,
-    brand,
-    model,
-    vehicleColor,
-    vehicleType,
-    fuelType,
-    airCondition,
-    registrationNumber,
-    vehicleNumberPlate,
-    vehiclePicturePath,
-    touristLicensePath,
-  ];
-
-  try {
-    const result = await pool.query(query, values);
-    return result.rows[0];
-  } catch (error) {
-    throw error;
-  }
+// get all assigned guides
+const getAssignedVehicles = async () => {
+  const query = `SELECT * FROM assigned_vehicles`;
+  const result = await pool.query(query);
+  return result.rows;
 };
 
-const getVehiclesByUserId = async (userId) => {
-  try {
-    const query = `
-      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition,registration_number, number_plate
-      FROM vehicles WHERE user_id = $1;
-    `;
-    const result = await pool.query(query, [userId]);
-    return result.rows;
-  } catch (error) {
-    console.error("Error fetching vehicles by user ID:", error);
-    throw error;
-  }
+// get unassigned guides by start date and end date
+// const getUnassignedGuidesByPeriod = async (startDate, endDate) => {
+//   const query = `
+//       SELECT u.user_id, u.first_name, u.last_name
+//       FROM users u
+//       WHERE u.status = 'Active'
+//         AND u.role = 'Guide'
+//         AND u.user_id NOT IN (
+//           SELECT ag.user_id
+//           FROM assigned_guides ag
+//           WHERE NOT (ag.end_date < $1 OR ag.start_date > $2)
+//         )
+//     `;
+//   const values = [startDate, endDate];
+//   const result = await pool.query(query, values);
+//   return result.rows;
+// };
+
+// add guide to booking
+const addAssignedVehicle = async (assignedVehicleData) => {
+  const { vehicleId, bookingId, startDate, endDate } = assignedVehicleData;
+  const query = `INSERT INTO assigned_vehicles (vehicle_id, booking_id, start_date, end_date) VALUES ($1, $2, $3, $4) RETURNING *`;
+  const values = [vehicleId, bookingId, startDate, endDate];
+  const result = await pool.query(query, values);
+  return result.rows[0];
 };
 
-const findAllVehicles = async () => {
-  try {
-    const query = `
-      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate
-      FROM vehicles;
-    `;
-    const result = await pool.query(query);
-    return result.rows;
-  } catch (error) {
-    console.error("Error fetching all vehicles:", error);
-    throw error;
-  }
+// update assigned vehicle status
+const removeAssignedVehicle = async (id) => {
+  const query = `DELETE FROM assigned_vehicles WHERE id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  return result.rows[0];
 };
 
-module.exports = { createVehicle, getVehiclesByUserId, findAllVehicles };
+module.exports = {
+  getAssignedVehicles,
+  removeAssignedVehicle,
+  addAssignedVehicle,
+};

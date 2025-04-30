@@ -23,7 +23,10 @@ const GuideAvailability = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortConfig, setSortConfig] = useState({
+    key: "user_id",
+    order: "asc",
+  });
   const [selectedIds, setSelectedIds] = useState([]);
 
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -136,15 +139,19 @@ const GuideAvailability = () => {
     }
   };
 
-  const handleSort = () => {
-    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      order: prev.key === key && prev.order === "asc" ? "desc" : "asc",
+    }));
   };
 
   const sortedGuides = [...guides].sort((a, b) => {
-    const valA = a.user_id.toString().toLowerCase();
-    const valB = b.user_id.toString().toLowerCase();
-    if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-    if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+    const valA = a[sortConfig.key]?.toString().toLowerCase();
+    const valB = b[sortConfig.key]?.toString().toLowerCase();
+
+    if (valA < valB) return sortConfig.order === "asc" ? -1 : 1;
+    if (valA > valB) return sortConfig.order === "asc" ? 1 : -1;
     return 0;
   });
 
@@ -163,10 +170,18 @@ const GuideAvailability = () => {
       <div className="m-4">
         <h1>Guide List</h1>
       </div>
-
-      <div className="flex flex-row justify-items-start m-4">
-        <div className="m-2">
+      {/* buttons for bulk actions */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "16px",
+          margin: "16px",
+        }}
+      >
+        <div style={{ minWidth: "150px" }}>
           <Button
+            fullWidth
             variant="contained"
             color="success"
             onClick={() => handleBulkStatusChange("Active")}
@@ -175,8 +190,10 @@ const GuideAvailability = () => {
             Set to Active
           </Button>
         </div>
-        <div className="m-2">
+
+        <div style={{ minWidth: "150px" }}>
           <Button
+            fullWidth
             variant="contained"
             color="warning"
             onClick={() => handleBulkStatusChange("In Leave")}
@@ -185,8 +202,10 @@ const GuideAvailability = () => {
             Set to In Leave
           </Button>
         </div>
-        <div className="m-2">
+
+        <div style={{ minWidth: "164px" }}>
           <Button
+            fullWidth
             variant="contained"
             color="error"
             onClick={handleRemoveSelected}
@@ -214,12 +233,13 @@ const GuideAvailability = () => {
                   onChange={handleSelectAll}
                 />
               </TableCell>
-              <TableCell>#</TableCell>
-              <TableCell>
+              <TableCell align="center">#</TableCell>
+              <TableCell align="center">
                 <Button
                   onClick={() => handleSort("user_id")}
                   endIcon={
-                    sortOrder === "asc" ? (
+                    sortConfig.key === "user_id" &&
+                    sortConfig.order === "asc" ? (
                       <ArrowUpwardIcon fontSize="small" />
                     ) : (
                       <ArrowDownwardIcon fontSize="small" />
@@ -229,12 +249,24 @@ const GuideAvailability = () => {
                   Guide ID
                 </Button>
               </TableCell>
-
-              <TableCell>Guide Name</TableCell>
-              <TableCell>Vehicle</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Toggle</TableCell>
-              <TableCell>Action</TableCell>
+              <TableCell align="center">
+                <Button
+                  onClick={() => handleSort("first_name")}
+                  endIcon={
+                    sortConfig.key === "first_name" &&
+                    sortConfig.order === "asc" ? (
+                      <ArrowUpwardIcon fontSize="small" />
+                    ) : (
+                      <ArrowDownwardIcon fontSize="small" />
+                    )
+                  }
+                >
+                  Guide Name
+                </Button>
+              </TableCell>
+              <TableCell align="center">Vehicle</TableCell>
+              <TableCell align="center">Status</TableCell>
+              <TableCell align="center">Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -252,9 +284,6 @@ const GuideAvailability = () => {
                   <TableCell>{guide.user_id}</TableCell>
                   <TableCell>{`${guide.first_name} ${guide.last_name}`}</TableCell>
                   <TableCell>{guide.email_address}</TableCell>
-                  <TableCell style={{ minWidth: 100 }}>
-                    {guide.status}
-                  </TableCell>
                   <TableCell style={{ minWidth: 150 }}>
                     <FormControlLabel
                       control={
@@ -283,7 +312,6 @@ const GuideAvailability = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
       <TablePagination
         rowsPerPageOptions={[8, 10, 25]}
         component="div"

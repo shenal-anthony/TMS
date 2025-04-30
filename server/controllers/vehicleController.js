@@ -3,6 +3,8 @@ const {
   getVehiclesByUserId,
   findAllVehicles,
 } = require("../models/vehicleModel");
+const vehicle = require("../models/vehicleModel");
+const assignedVehicle = require("../models/assignedVehicleModel");
 
 const { findUserByEmail } = require("../models/userModel");
 const { body, validationResult } = require("express-validator");
@@ -144,7 +146,6 @@ const getVehiclesForUser = async (req, res) => {
 const getAllVehicles = async (req, res) => {
   try {
     const vehicles = await findAllVehicles();
-    // console.log("Vehicles:", vehicles); // Debug
 
     if (vehicles.length === 0) {
       return res.status(404).json({ message: "No vehicles found" });
@@ -157,4 +158,32 @@ const getAllVehicles = async (req, res) => {
   }
 };
 
-module.exports = { registerVehicle, getVehiclesForUser, getAllVehicles };
+// Change vehicle status
+const changeVehicleStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ["Functional", "Suspended"];
+  if (!validStatuses.includes(status)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid status. Valid statuses are: Functional, Suspended" });
+  }
+
+  try {
+    const updated = await vehicle.changeStatusById(id, status);
+    if (!updated) {
+      return res.status(404).json({ message: "vehicle not found" });
+    }
+
+    res.json({ message: "Vehicle status updated successfully" });
+  } catch (error) {
+    console.error("Error updating vehicle status:", error);
+    res.status(500).json({
+      message: "Error updating vehicle status",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { registerVehicle, getVehiclesForUser, getAllVehicles, changeVehicleStatus };

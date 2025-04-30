@@ -61,7 +61,7 @@ const getVehiclesByUserId = async (userId) => {
 const findAllVehicles = async () => {
   try {
     const query = `
-      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate
+      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate, status
       FROM vehicles;
     `;
     const result = await pool.query(query);
@@ -72,4 +72,23 @@ const findAllVehicles = async () => {
   }
 };
 
-module.exports = { createVehicle, getVehiclesByUserId, findAllVehicles };
+const changeStatusById = async (vehicleId, status) => {
+  try {
+    const query = `
+      UPDATE vehicles SET status = $1 WHERE vehicle_id = $2 RETURNING *;
+    `;
+    const values = [status, vehicleId];
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error changing vehicle status:", error);
+    throw error;
+  }
+};
+
+module.exports = {
+  createVehicle,
+  getVehiclesByUserId,
+  findAllVehicles,
+  changeStatusById,
+};
