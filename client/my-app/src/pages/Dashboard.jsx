@@ -130,10 +130,6 @@ const Dashboard = () => {
     // Add logic here
   };
 
-
-
-
-  
   // --- Utilities ---
   const groupedBookings = bookings.reduce((acc, booking) => {
     if (!acc[booking.booking_id]) acc[booking.booking_id] = [];
@@ -142,7 +138,7 @@ const Dashboard = () => {
   }, {});
 
   const bookingIds = Object.keys(groupedBookings);
-  
+
   const sortedBookingIds = [...bookingIds].sort((a, b) => {
     const aDate = dayjs(groupedBookings[a][0][sortField]);
     const bDate = dayjs(groupedBookings[b][0][sortField]);
