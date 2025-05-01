@@ -11,9 +11,19 @@ const getPaymentById = async (id) => {
   const query = `SELECT * FROM payments WHERE payment_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
-  // console.log("🚀 ~ packageModel.js:14 ~ getPackageById ~ result:", result);
+  // // console.log("🚀 ~ packageModel.js:14 ~ getPackageById ~ result:", result);
   return result.rows[0];
 };
+
+const getPaymentsByBookingId = async (id) => {
+  const query = `SELECT * FROM payments WHERE booking_id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  // console.log("🚀 ~ paymentModel.js:22 ~ getPaymentByBookingId ~ result:", result);
+  return result.rows[0];
+};
+
+
 
 const addPayment = async (paymentData) => {
   const { amount, paymentDate, status, bookingId } = paymentData;
@@ -45,4 +55,5 @@ module.exports = {
   addPayment,
   updatePaymentById,
   deletePaymentById,
+  getPaymentsByBookingId,
 };

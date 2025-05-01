@@ -38,6 +38,8 @@ const Admins = () => {
   }, []);
 
   const handleRemove = (id) => {
+    if (!window.confirm("Are you sure you want to remove this guide?")) return;
+
     axios
       .delete(`${apiUrl}/api/admins/${id}`)
       .then(() => {
@@ -62,22 +64,24 @@ const Admins = () => {
 
   return (
     <div>
-      <h1>Admins List</h1>
+      <div className="m-2">
+        <h1>Admins List</h1>
+      </div>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>first name</TableCell>
-              <TableCell>last name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell align="center">#</TableCell>
+              <TableCell align="center">ID</TableCell>
+              <TableCell align="center">Name</TableCell>
+              <TableCell align="center">Email</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {admins
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((admin) => (
+              .map((admin, index) => (
                 <TableRow
                   key={admin.user_id}
                   sx={{
@@ -87,14 +91,16 @@ const Admins = () => {
                     },
                   }}
                 >
-                  <TableCell>{admin.user_id}</TableCell>
-                  <TableCell>{admin.first_name}</TableCell>
-                  <TableCell>{admin.last_name}</TableCell>
-                  <TableCell>{admin.email_address}</TableCell>
-                  <TableCell>
+                  <TableCell align="center">
+                    {index + 1 + page * rowsPerPage}
+                  </TableCell>
+                  <TableCell align="center">{admin.user_id}</TableCell>
+                  <TableCell align="center">{`${admin.first_name} ${admin.last_name}`}</TableCell>
+                  <TableCell align="center">{admin.email_address}</TableCell>
+                  <TableCell align="center">
                     <Button
                       variant="contained"
-                      color="secondary"
+                      color="primary"
                       onClick={() => handleRemove(admin.user_id)}
                     >
                       Remove

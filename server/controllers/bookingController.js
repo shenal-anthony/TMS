@@ -1,15 +1,12 @@
 const booking = require("../models/bookingModel");
 const guide = require("../models/assignedGuideModel");
+const payment = require("../models/paymentModel");
 
 // get all
 const getAllBookings = async (req, res) => {
   try {
     const contents = await booking.getAllBookings();
     res.json(contents);
-    // console.log(
-    //   "🚀 ~ bookingController.js:15 ~ getAllBookings ~ contents:",
-    //   contents
-    // );
   } catch (error) {
     res
       .status(500)
@@ -76,18 +73,131 @@ const addBooking = async (req, res) => {
 };
 
 // update
+const updateBooking = async (req, res) => {
+  const { id } = req.params;
+  const { body } = req;
+
+  try {
+    // Default values for required fields
+    const bookingData = {
+      headcount: body.headcount,
+      checkInDate: body.bookingDate,
+      checkOutDate: body.checkOutDate,
+      status: body.status,
+      touristId: body.touristId,
+      tourId: body.tourId,
+      userId: body.userId,
+      eventId: body.eventId,
+    };
+
+    const updatedBooking = await booking.updateBookingById(id, bookingData);
+    if (!updatedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating booking",
+      error: error.message,
+    });
+  }
+};
+
+// get booking with assigned guides with amount
+const getConfirmedBookingsWithGuides = async (req, res) => {
+  try {
+    const confirmedBookings = await booking.getConfirmedBookings();
+    console.log(
+      "🚀 ~ bookingController.js:116 ~ getConfirmedBookingsWithGuides ~ confirmedBookings:",
+      confirmedBookings.length
+    );
+
+    const result = [];
+
+    for (const booking of confirmedBookings) {
+      const {
+        booking_id,
+        booking_date,
+        headcount,
+        check_in_date,
+        check_out_date,
+        tourist_id,
+        tour_id,
+        event_id,
+      } = booking;
+
+      // Get guides
+      const assignedGuides = await guide.getAssignedGuidesByBookingId(
+        booking_id
+      );
+      console.log(
+        "🚀 ~ bookingController.js:137 ~ getConfirmedBookingsWithGuides ~ assignedGuides:",
+        assignedGuides.length
+      );
+
+      // Get payments
+      const rawPayments = await payment.getPaymentsByBookingId(booking_id);
+
+      // Normalize: wrap single object into array
+      const payments = Array.isArray(rawPayments)
+        ? rawPayments
+        : rawPayments
+        ? [rawPayments]
+        : [];
+
+      let totalAmount = 0;
+      for (const p of payments) {
+        totalAmount += parseFloat(p.amount) || 0;
+      }
+
+      console.log("🚀 ~ Payments:", payments);
+      console.log(
+        "🚀 ~ bookingController.js:151 ~ getConfirmedBookingsWithGuides ~ totalAmount:",
+        totalAmount
+      );
+
+      for (const guide of assignedGuides) {
+        result.push({
+          booking_id,
+          booking_date,
+          headcount,
+          check_in_date,
+          check_out_date,
+          tourist_id,
+          tour_id,
+          event_id,
+          guide_id: guide.user_id,
+          start_date: guide.start_date,
+          end_date: guide.end_date,
+          total_amount: totalAmount,
+          // payments, // Optional: include full payment details if needed
+        });
+      }
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching confirmed bookings with guides:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 // get booking with available guides
 const getPendingBookingsWithGuides = async (req, res) => {
   try {
-
-    // Get all pending bookings 
+    // Get all pending bookings
     const pendingBookings = await booking.getPendingBookings();
 
     const allResults = await Promise.all(
       pendingBookings.map(async (booking) => {
         const { booking_id, booking_date } = booking;
-        const leave_date = new Date(booking_date); 
+        const leave_date = new Date(booking_date);
         leave_date.setDate(leave_date.getDate() + 3); // Adds 3 days to the booking date
 
         // by default, fetch available guides for booking period
@@ -108,7 +218,10 @@ const getPendingBookingsWithGuides = async (req, res) => {
 
     // Flatten the nested arrays
     const result = allResults.flat();
-    console.log("🚀 ~ bookingController.js:110 ~ getPendingBookingsWithGuides ~ result:", result.length);
+    console.log(
+      "🚀 ~ bookingController.js:110 ~ getPendingBookingsWithGuides ~ result:",
+      result.length
+    );
 
     res.json(result);
   } catch (error) {
@@ -135,4 +248,6 @@ module.exports = {
   addBooking,
   deleteBooking,
   getPendingBookingsWithGuides,
+  updateBooking,
+  getConfirmedBookingsWithGuides,
 };

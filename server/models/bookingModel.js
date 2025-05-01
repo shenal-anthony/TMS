@@ -13,6 +13,12 @@ const getPendingBookings = async () => {
   return result.rows;
 };
 
+const getConfirmedBookings = async () => {
+  const query = `SELECT booking_id, booking_date, headcount, check_in_date, tourist_id, tour_id, user_id, event_id FROM bookings WHERE status = 'confirmed'`;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
 const addBooking = async (bookingData) => {
   const {
     bookingDate,
@@ -39,7 +45,7 @@ const addBooking = async (bookingData) => {
     eventId, // $9
   ];
   const result = await pool.query(query, values);
-  // // console.log("🚀 ~ bookingModel.js:36 ~ addBooking ~ result:", result);
+  // // // console.log("🚀 ~ bookingModel.js:36 ~ addBooking ~ result:", result);
   return result.rows[0];
 };
 
@@ -117,7 +123,7 @@ const updateBookingById = async (bookingId, updates) => {
   values.push(bookingId);
 
   const result = await pool.query(query, values);
-  console.log("🚀 ~ bookingModel.js:120 ~ updateBookingById ~ result:", result);
+  // console.log("🚀 ~ bookingModel.js:120 ~ updateBookingById ~ result:", result);
   return result.rows[0];
 };
 
@@ -133,4 +139,5 @@ module.exports = {
   updateBookingById,
   deleteBookingById,
   getPendingBookings,
+  getConfirmedBookings,
 };

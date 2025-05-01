@@ -128,7 +128,6 @@ const getVehiclesForUser = async (req, res) => {
     console.log("User ID:", userId); // Debug
 
     const vehicles = await getVehiclesByUserId(userId);
-    // console.log("Vehicles:", vehicles); // Debug
 
     if (vehicles.length === 0) {
       return res

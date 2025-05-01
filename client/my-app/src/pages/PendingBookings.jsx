@@ -311,7 +311,6 @@ const PendingBookings = () => {
                             1 +
                             page * rowsPerPage}
                         </TableCell>
-
                         <TableCell align="center">{bookingId}</TableCell>
                         <TableCell align="center">
                           {dayjs(booking.booking_date).format("YYYY-MM-DD")}

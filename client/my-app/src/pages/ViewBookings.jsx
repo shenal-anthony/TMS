@@ -16,49 +16,19 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-// import { Table } from "@mui/joy";
+import dayjs from "dayjs";
 
 const ViewBookings = () => {
-  const [destinationContents, setDestinationContents] = useState([]);
-  const [packageContents, setPackageContents] = useState([]);
   const [bookingContents, setBookingContents] = useState([]);
-
-  const [destinationloading, setDestinationLoading] = useState(true);
-  const [packageLoading, setPackageLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(true);
-
-  const [destinationError, setDestinationError] = useState(null);
-  const [packageError, setPackageError] = useState(null);
   const [bookingError, setBookingError] = useState(null);
-
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
-
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openPackageDialog, setOpenPackageDialog] = useState(false);
   const [openBookingDialog, setOpenBookingDialog] = useState(false);
-
-  const [isEditingDestination, setIsEditing] = useState(false);
   const [isEditingPackage, setIsEditingPackage] = useState(false);
   const [isEditingBooking, setIsEditingBooking] = useState(false);
-
-  const [currentDestination, setCurrentDestination] = useState({
-    destinationName: "",
-    description: "",
-    weatherCondition: "",
-    locationUrl: "",
-    pictureUrl: "",
-  });
-  const [currentPackage, setCurrentPackage] = useState({
-    packageName: "",
-    description: "",
-    price: "",
-    duration: "",
-    accommodationId: "",
-    destinationId: "",
-  });
   const [currentBooking, setCurrentBooking] = useState({
-    bookingDate: "", 
+    bookingDate: "",
     headcount: "",
     checkInDate: "",
     checkOutDate: "",
@@ -69,50 +39,20 @@ const ViewBookings = () => {
     eventId: "",
   });
 
-
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    // fetchDestinations();
-    // fetchPackages();
     fectchBookings();
   }, []);
 
-  const fetchDestinations = () => {
+  const handleFinalizeBooking = (bookingId) => {
     axios
-      .get(`${apiUrl}/api/tourists/destinations`)
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          setDestinationContents(response.data);
-        } else {
-          setDestinationError("Response data is not an array");
-        }
-        setDestinationLoading(false);
+      .patch(`${apiUrl}/api/bookings/${bookingId}`, { status: "finalized" })
+      .then(() => {
+        fectchBookings(); // refresh list
       })
-      .catch((destinationError) => {
-        setDestinationError(
-          "Error fetching destinationContents: " + destinationError.message
-        );
-        setDestinationLoading(false);
-      });
-  };
-
-  const fetchPackages = () => {
-    axios
-      .get(`${apiUrl}/api/tourists/packages`)
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          setPackageContents(response.data);
-        } else {
-          setPackageError("Response data is not an array");
-        }
-        setPackageLoading(false);
-      })
-      .catch((packageError) => {
-        setPackageError(
-          "Error fetching destinationContents: " + packageError.message
-        );
-        setPackageLoading(false);
+      .catch((err) => {
+        console.error("Failed to finalize booking", err);
       });
   };
 
@@ -135,154 +75,6 @@ const ViewBookings = () => {
       });
   };
 
-  const handleRemoveDestination = (id) => {
-    axios
-      .delete(`${apiUrl}/api/tourists/destinations/${id}`)
-      .then(() => {
-        setDestinationContents(
-          destinationContents.filter(
-            (destination) => destination.destination_id !== id
-          )
-        );
-      })
-      .catch((destinationError) => {
-        setDestinationError(
-          "Error deleting destination: " + destinationError.message
-        );
-      });
-  };
-
-  const handleRemovePackage = (id) => {
-    axios
-      .delete(`${apiUrl}/api/tourists/packages/${id}`)
-      .then(() => {
-        setPackageContents(
-          packageContents.filter((pkg) => pkg.package_id !== id)
-        );
-      })
-      .catch((packageError) => {
-        setPackageError("Error deleting package: " + packageError.message);
-      });
-  };
-
-  const handleRemoveBooking = (id) => {
-    axios
-      .delete(`${apiUrl}/api/tourists/bookings/${id}`)
-      .then(() => {
-        setBookingContents(
-          bookingContents.filter((booking) => booking.booking_id !== id)
-        ); 
-      })
-      .catch((bookingError) => {
-        setBookingError("Error deleting booking: " + bookingError.message);
-      });
-  };
-
-  const handleAddOrUpdateDestination = () => {
-    if (isEditingDestination) {
-      // Update existing destination
-      axios
-        .put(
-          `${apiUrl}/api/tourists/destinations/${currentDestination.destination_id}`,
-          currentDestination
-        )
-        .then((response) => {
-          setDestinationContents(
-            destinationContents.map((destination) =>
-              destination.destination_id === currentDestination.destination_id
-                ? response.data
-                : destination
-            )
-          );
-          setOpenDialog(false);
-          resetForm();
-        })
-        .catch((destinationError) => {
-          setDestinationError(
-            "Error updating destination: " + destinationError.message
-          );
-        });
-    } else {
-      // Add new destination
-      axios
-        .post(`${apiUrl}/api/tourists/destinations`, currentDestination)
-        .then((response) => {
-          setDestinationContents([...destinationContents, response.data]);
-          setOpenDialog(false);
-          resetForm();
-        })
-        .catch((destinationError) => {
-          setDestinationError(
-            "Error adding destination: " + destinationError.message
-          );
-        });
-    }
-  };
-
-  const handleAddOrUpdatePackage = () => {
-    if (isEditingPackage) {
-      // Update existing package
-      axios
-        .put(
-          `${apiUrl}/api/tourists/packages/${currentPackage.package_id}`,
-          currentPackage
-        )
-        .then((response) => {
-          setPackageContents(
-            packageContents.map((pkg) =>
-              pkg.package_id === currentPackage.package_id ? response.data : pkg
-            )
-          );
-          setOpenDialog(false);
-          resetPackageForm();
-        })
-        .catch((packageError) => {
-          setPackageError(
-            "Error updating destination: " + packageError.message
-          );
-        });
-    } else {
-      // Add new package
-      axios
-        .post(`${apiUrl}/api/tourists/packages`, currentPackage)
-        .then((response) => {
-          setPackageContents([...packageContents, response.data]);
-          setOpenPackageDialog(false);
-          resetPackageForm();
-        })
-        .catch((packageError) => {
-          setPackageError("Error adding destination: " + packageError.message);
-        });
-    }
-  };
-
-  const handleEditDestination = (destination) => {
-    setCurrentDestination({
-      destination_id: destination.destination_id,
-      destinationName: destination.destination_name,
-      description: destination.description,
-      weatherCondition: destination.weather_condition,
-      locationUrl: destination.location_url,
-      pictureUrl: destination.picture_url,
-    });
-    setIsEditing(true);
-    setOpenDialog(true);
-  };
-
-  const handleEditPackage = (pkg) => {
-    setCurrentPackage({
-      package_id: pkg.package_id,
-      packageName: pkg.package_name,
-      description: pkg.description,
-      price: pkg.price,
-      duration: pkg.duration,
-      accommodationId: pkg.accommodation_id,
-      destinationId: pkg.destination_id,
-    });
-    setIsEditingPackage(true);
-    setOpenPackageDialog(true);
-  };
-
   const handleEditBooking = (booking) => {
     setCurrentBooking({
       booking_id: booking.booking_id,
@@ -300,42 +92,28 @@ const ViewBookings = () => {
     setOpenBookingDialog(true);
   };
 
-  const resetForm = () => {
-    setCurrentDestination({
-      destinationName: "",
-      description: "",
-      weatherCondition: "",
-      locationUrl: "",
-      pictureUrl: "",
-    });
-    setIsEditing(false);
+  const handleBookingInputChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentBooking((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const resetBookingForm = () => {
-    setCurrentBooking({
-      bookingDate: "",
-      headcount: "",
-      checkInDate: "",
-      checkOutDate: "",
-      status: "",
-      touristId: "",
-      tourId: "",
-      userId: "",
-      eventId: "",
-    });
-    setIsEditingBooking(false);
-  };
-
-  const resetPackageForm = () => {
-    setCurrentPackage({
-      packageName: "",
-      description: "",
-      price: "",
-      duration: "",
-      accommodationId: "",
-      destinationId: "",
-    });
-    setIsEditingPackage(false);
+  const handleBookingUpdate = () => {
+    axios
+      .put(
+        `${apiUrl}/api/bookings/${currentBooking.booking_id}`,
+        currentBooking
+      )
+      .then(() => {
+        fectchBookings(); // refresh list
+        setOpenBookingDialog(false);
+        resetBookingForm();
+      })
+      .catch((err) => {
+        console.error("Failed to update booking", err);
+      });
   };
 
   const handleChangePage = (event, newPage) => {
@@ -356,18 +134,21 @@ const ViewBookings = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Booking ID</TableCell>
-                <TableCell>Check Out Date</TableCell>
-                <TableCell>Guide</TableCell>
-                <TableCell>Price</TableCell>
-                <TableCell>Action</TableCell>
+                <TableCell align="center">#</TableCell>
+                <TableCell align="center">Booking ID</TableCell>
+                <TableCell align="center">Check In Date</TableCell>
+                <TableCell align="center">Check Out Date</TableCell>
+                <TableCell align="center">Booking Date</TableCell>
+                <TableCell align="center">Guide</TableCell>
+                <TableCell align="center">Price</TableCell>
+                <TableCell align="center">Action</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {bookingContents.length > 0 ? (
                 bookingContents
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((booking) => (
+                  .map((booking, index) => (
                     <TableRow
                       key={booking.booking_id}
                       sx={{
@@ -377,11 +158,31 @@ const ViewBookings = () => {
                         },
                       }}
                     >
-                      <TableCell>{booking.booking_id}</TableCell>
-                      <TableCell>{booking.headcount}</TableCell>
-                      <TableCell>{booking.checkInDate}</TableCell>
-                      <TableCell>{booking.checkOutDate}</TableCell>
-                      <TableCell style={{ display: "flex" }}>
+                      <TableCell align="center">
+                        {index + 1 + page * rowsPerPage}
+                      </TableCell>
+                      <TableCell align="center">{booking.booking_id}</TableCell>
+                      <TableCell align="center">
+                        {dayjs(booking.check_in_date).format("YYYY-MM-DD")}
+                      </TableCell>
+                      <TableCell align="center">
+                        {dayjs(booking.check_out_date).format("YYYY-MM-DD")}
+                      </TableCell>
+                      <TableCell align="center">
+                        {dayjs(booking.booking_date).format("YYYY-MM-DD")}
+                      </TableCell>
+
+                      {/* get the user_id from assigned_guides table */}
+                      <TableCell align="center">
+                        {booking.guide_id ? booking.guide_id : "N/A"}
+                      </TableCell>
+
+                      {/* get the price from packages table */}
+                      <TableCell align="center">
+                        {booking.total_amount ? booking.total_amount : "N/A"}
+                      </TableCell>
+
+                      <TableCell style={{ display: "flex" }} align="center">
                         <Button
                           variant="contained"
                           color="primary"
@@ -391,11 +192,13 @@ const ViewBookings = () => {
                         </Button>
                         <Button
                           variant="contained"
-                          color="secondary"
-                          onClick={() => handleEditBooking(booking.booking_id)}
+                          color="success"
+                          onClick={() =>
+                            handleFinalizeBooking(booking.booking_id)
+                          }
                           style={{ marginLeft: "10px" }}
                         >
-                          Remove
+                          Finalize
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -422,6 +225,61 @@ const ViewBookings = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </div>
+      <Dialog
+        open={openBookingDialog}
+        onClose={() => setOpenBookingDialog(false)}
+      >
+        <DialogTitle>Update Booking</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            name="headcount"
+            label="Headcount"
+            type="number"
+            fullWidth
+            value={currentBooking.headcount}
+            onChange={handleBookingInputChange}
+          />
+          <TextField
+            margin="dense"
+            name="checkInDate"
+            label="Check-In Date"
+            type="date"
+            fullWidth
+            value={dayjs(currentBooking.checkInDate).format("YYYY-MM-DD")}
+            onChange={handleBookingInputChange}
+          />
+          <TextField
+            margin="dense"
+            name="checkOutDate"
+            label="Check-Out Date"
+            type="date"
+            fullWidth
+            value={dayjs(currentBooking.checkOutDate).format("YYYY-MM-DD")}
+            onChange={handleBookingInputChange}
+          />
+          <TextField
+            margin="dense"
+            name="status"
+            label="Status"
+            fullWidth
+            value={currentBooking.status}
+            onChange={handleBookingInputChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenBookingDialog(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleBookingUpdate}
+            color="primary"
+            variant="contained"
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
