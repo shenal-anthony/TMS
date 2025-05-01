@@ -13,6 +13,8 @@ const {
   getPendingBookingsWithGuides,
   updateBooking,
   getConfirmedBookingsWithGuides,
+  getFinalizedBookingsWithGuides,
+  getFinalizedBookingById,
 } = require("../controllers/bookingController");
 const {
   getPkgBookingKeyDetails,
@@ -22,15 +24,20 @@ const {
 
 // Route to get all admins from /api/bookings
 router.get("/", getConfirmedBookingsWithGuides);
+router.get("/finalized", getFinalizedBookingsWithGuides);
+router.get("/finalized/:id", getFinalizedBookingById);
+router.get("/pending", getPendingBookingsWithGuides);
+
+router.put("/:bookingId/assign", addGuideToBooking);
+
 router.post("/add", encryptResponse, addBooking);
-router.delete("/:id", deleteBooking);
 router.post("/check-availability", getPkgBookingKeyDetails);
 router.post("/verify-token", getVerifiedBookingToken);
 router.post("/configured-booking", getVerifiedCheckoutDetails);
-router.get("/pending", getPendingBookingsWithGuides);
 router.post("/filtered-pending", getAvailableGuidesByFilter);
-router.put("/:bookingId/assign", addGuideToBooking);
+
 router.patch("/:id", updateBooking);
-// router.get("/booking-details/:id", getPkgDetails);
+
+router.delete("/:id", deleteBooking);
 
 module.exports = router;

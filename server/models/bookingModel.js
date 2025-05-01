@@ -8,13 +8,19 @@ const getAllBookings = async () => {
 };
 
 const getPendingBookings = async () => {
-  const query = `SELECT booking_id, booking_date, headcount, check_in_date,tourist_id, tour_id, user_id, event_id FROM bookings WHERE status = 'pending'`;
+  const query = `SELECT booking_id, booking_date, headcount, check_in_date, tourist_id, tour_id, event_id FROM bookings WHERE status = 'pending'`;
   const result = await pool.query(query);
   return result.rows;
 };
 
 const getConfirmedBookings = async () => {
-  const query = `SELECT booking_id, booking_date, headcount, check_in_date, tourist_id, tour_id, user_id, event_id FROM bookings WHERE status = 'confirmed'`;
+  const query = `SELECT booking_id, booking_date, headcount, check_in_date, tourist_id, tour_id, event_id FROM bookings WHERE status = 'confirmed'`;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+const getFinalizedBookings = async () => {
+  const query = `SELECT * FROM bookings WHERE status = 'finalized'`;
   const result = await pool.query(query);
   return result.rows;
 };
@@ -140,4 +146,5 @@ module.exports = {
   deleteBookingById,
   getPendingBookings,
   getConfirmedBookings,
+  getFinalizedBookings,
 };

@@ -53,6 +53,14 @@ const getAllUsers = async () => {
   return result.rows;
 };
 
+// get guide by id
+const getGuideById = async (id) => {
+  const query = `SELECT * FROM users WHERE user_id = $1 AND role = 'Guide'`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
 const getAdmins = async () => {
   const query = `SELECT * FROM users WHERE role = $1`;
   const values = ["Admin"];
@@ -98,4 +106,5 @@ module.exports = {
   getGuides,
   getActiveGuides,
   changeStatusById,
+  getGuideById,
 };
