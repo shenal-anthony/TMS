@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Typography,
 } from "@mui/material";
 
 const YourVehicles = () => {
@@ -87,7 +88,10 @@ const YourVehicles = () => {
   return (
     <div>
       <div className="mb-4 mt-4">
-        <h1>View your vehicles here</h1>
+        <Typography variant="h4" color="intial">
+          Your Vehicles
+        </Typography>
+        <h1 className="ml-2">View your vehicles here</h1>
       </div>
       <div className="mb-4">
         <Button variant="contained" color="primary" onClick={handleRegister}>
