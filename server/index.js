@@ -80,4 +80,4 @@ app.use((err, req, res, next) => {
 });
 
 // Server startup
-app.listen(port, () => console.log(`Server running on port ${port}`));
+server.listen(port, () => console.log(`Server running on port ${port}`));

@@ -15,6 +15,7 @@ const {
   getConfirmedBookingsWithGuides,
   getFinalizedBookingsWithGuides,
   getFinalizedBookingById,
+  sendRequestToGuide,
 } = require("../controllers/bookingController");
 const {
   getPkgBookingKeyDetails,
@@ -35,6 +36,7 @@ router.post("/check-availability", getPkgBookingKeyDetails);
 router.post("/verify-token", getVerifiedBookingToken);
 router.post("/configured-booking", getVerifiedCheckoutDetails);
 router.post("/filtered-pending", getAvailableGuidesByFilter);
+router.post("/sendrequest/:id", sendRequestToGuide);
 
 router.patch("/:id", updateBooking);
 

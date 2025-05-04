@@ -177,10 +177,10 @@ const getPendingBookingsWithGuides = async (req, res) => {
 
     // Flatten the nested arrays
     const result = allResults.flat();
-    console.log(
-      "🚀 ~ bookingController.js:110 ~ getPendingBookingsWithGuides ~ result:",
-      result.length
-    );
+    // console.log(
+    // "🚀 ~ bookingController.js:110 ~ getPendingBookingsWithGuides ~ result:",
+    // result.length
+    // );
 
     res.json(result);
   } catch (error) {
@@ -193,10 +193,10 @@ const getPendingBookingsWithGuides = async (req, res) => {
 const getConfirmedBookingsWithGuides = async (req, res) => {
   try {
     const confirmedBookings = await booking.getConfirmedBookings();
-    console.log(
-      "🚀 ~ bookingController.js:116 ~ getConfirmedBookingsWithGuides ~ confirmedBookings:",
-      confirmedBookings.length
-    );
+    // console.log(
+    // "🚀 ~ bookingController.js:116 ~ getConfirmedBookingsWithGuides ~ confirmedBookings:",
+    // confirmedBookings.length
+    // );
 
     const result = [];
 
@@ -216,10 +216,10 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
       const assignedGuides = await guide.getAssignedGuidesByBookingId(
         booking_id
       );
-      console.log(
-        "🚀 ~ bookingController.js:137 ~ getConfirmedBookingsWithGuides ~ assignedGuides:",
-        assignedGuides.length
-      );
+      // console.log(
+      // "🚀 ~ bookingController.js:137 ~ getConfirmedBookingsWithGuides ~ assignedGuides:",
+      // assignedGuides.length
+      // );
 
       // Get payments
       const rawPayments = await payment.getPaymentsByBookingId(booking_id);
@@ -236,11 +236,11 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
         totalAmount += parseFloat(p.amount) || 0;
       }
 
-      console.log("🚀 ~ Payments:", payments);
-      console.log(
-        "🚀 ~ bookingController.js:151 ~ getConfirmedBookingsWithGuides ~ totalAmount:",
-        totalAmount
-      );
+      // console.log("🚀 ~ Payments:", payments);
+      // console.log(
+      // "🚀 ~ bookingController.js:151 ~ getConfirmedBookingsWithGuides ~ totalAmount:",
+      // totalAmount
+      // );
 
       for (const guide of assignedGuides) {
         result.push({
@@ -272,10 +272,10 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
 const getFinalizedBookingsWithGuides = async (req, res) => {
   try {
     const finalizedBookings = await booking.getFinalizedBookings();
-    console.log(
-      "🚀 ~ bookingController.js:237 ~ getFinalizedBookingsWithGuides ~ confirmedBookings:",
-      finalizedBookings.length
-    );
+    // console.log(
+    // "🚀 ~ bookingController.js:237 ~ getFinalizedBookingsWithGuides ~ confirmedBookings:",
+    // finalizedBookings.length
+    // );
 
     const result = [];
 
@@ -296,10 +296,10 @@ const getFinalizedBookingsWithGuides = async (req, res) => {
       const assignedGuides = await guide.getAssignedGuidesByBookingId(
         booking_id
       );
-      console.log(
-        "🚀 ~ bookingController.js:261 ~ getFinalizedBookingsWithGuides ~ assignedGuides:",
-        assignedGuides.length
-      );
+      // console.log(
+      // "🚀 ~ bookingController.js:261 ~ getFinalizedBookingsWithGuides ~ assignedGuides:",
+      // assignedGuides.length
+      // );
 
       // Get payments
       const rawPayments = await payment.getPaymentsByBookingId(booking_id);
@@ -356,6 +356,37 @@ const deleteBooking = async (req, res) => {
   }
 };
 
+
+// Send request to guide
+const sendRequestToGuide = async (req, res) => {
+  const { id } = req.params; // bookingId
+  const { guideId } = req.query;
+
+  try {
+    // Optionally validate booking and guide here...
+
+    // Emit real-time socket event
+    const io = req.app.get("io");
+    io.to(`guide_${guideId}`).emit("new-request", {
+      bookingId: id,
+      guideId,
+      message: "You have a new guide request",
+    });
+
+    res.status(200).json({ message: "Request sent to guide via WebSocket" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to send request",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+
+
 module.exports = {
   getAllBookings,
   addBooking,
@@ -365,4 +396,5 @@ module.exports = {
   getConfirmedBookingsWithGuides,
   getFinalizedBookingsWithGuides,
   getFinalizedBookingById,
+  sendRequestToGuide,
 };

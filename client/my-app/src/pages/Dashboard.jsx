@@ -23,13 +23,11 @@ import {
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
 } from "@mui/icons-material";
-import axios from "axios";
 import dayjs from "dayjs";
-
 import axiosInstance from "../api/axiosInstance";
-
-
 import StatusCard from "../components/StatusCard";
+import io from "socket.io-client";
+import { useRef } from "react";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
@@ -41,9 +39,11 @@ const Dashboard = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [page, setPage] = useState(0);
-
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  // const socket = io(import.meta.env.VITE_SOCKET_URL);
+
+  const socketRef = useRef(null);
 
   const statusCards = [
     {
@@ -69,6 +69,8 @@ const Dashboard = () => {
   ];
 
   useEffect(() => {
+    socketRef.current = io(import.meta.env.VITE_SOCKET_URL);
+
     const token = sessionStorage.getItem("accessToken");
     if (!token) {
       navigate("/login");
@@ -81,7 +83,9 @@ const Dashboard = () => {
         // setUserData(authRes.data);
         // console.log(authRes.data); // Check if the user is an admin
 
-        const bookingRes = await axios.get(`${apiUrl}/api/bookings/pending`);
+        const bookingRes = await axiosInstance.get(
+          `${apiUrl}/api/bookings/pending`
+        );
         setBookings(bookingRes.data);
         setLoading(false);
       } catch (err) {
@@ -94,6 +98,9 @@ const Dashboard = () => {
     };
 
     fetchData();
+    return () => {
+      socketRef.current.disconnect(); // Clean up socket on unmount
+    };
   }, [navigate, apiUrl]);
 
   const handleSort = (field) => {
@@ -126,8 +133,14 @@ const Dashboard = () => {
   };
 
   const handleSendRequest = (bookingId, guideId) => {
-    console.log(`Assigning guide ${guideId} to booking ${bookingId}`);
     // Add logic here
+    const bookingData = {
+      bookingId,
+      guideId,
+      timestamp: new Date(),
+    };
+    socketRef.current.emit("send-guide-request", bookingData);
+    console.log(`Assigning guide ${guideId} to booking ${bookingId}`);
   };
 
   // --- Utilities ---
