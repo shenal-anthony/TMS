@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import axios from "axios";
 
-const ProtectedRoute = ({ allowedRoles }) => {
+const ProtectedRoute = ({ allowedRoles, onAuthSuccess }) => {
   const [isAllowed, setIsAllowed] = useState(null);
 
   useEffect(() => {
@@ -25,8 +25,13 @@ const ProtectedRoute = ({ allowedRoles }) => {
           }
         );
 
-        const userRole = res.data.role;
-        setIsAllowed(allowedRoles.includes(userRole));
+        const { userId, role } = res.data;
+        if (allowedRoles.includes(role)) {
+          onAuthSuccess?.({ userId, role }); // 👈 call the callback
+          setIsAllowed(true);
+        } else {
+          setIsAllowed(false);
+        }
       } catch (err) {
         sessionStorage.removeItem("accessToken");
         setIsAllowed(false);

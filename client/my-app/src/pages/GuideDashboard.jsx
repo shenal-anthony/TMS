@@ -6,16 +6,18 @@ import {
   ListItem,
   ListItemText,
   CircularProgress,
+  Button,
+  Stack,
 } from "@mui/material";
 import axiosInstance from "../api/axiosInstance";
 import io from "socket.io-client";
 
-const GuideDashboard = () => {
+const GuideDashboard = ({ userId }) => {
   const [guides, setGuides] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const guideId = 3;
+  const guideId = userId;
 
   useEffect(() => {
     const socket = io(import.meta.env.VITE_API_URL);
@@ -40,10 +42,7 @@ const GuideDashboard = () => {
 
     socket.on("new-request", (data) => {
       console.log("📡 New guide request received:", data);
-      // Optionally show a toast or notification
-      alert(
-        `New request for you (Guide ${guideId}): Booking ID ${data.bookingId}`
-      );
+      setRequests((prev) => [...prev, data]);
     });
 
     return () => {
@@ -51,12 +50,64 @@ const GuideDashboard = () => {
     };
   }, [guideId]);
 
+  const handleAccept = (bookingId) => {
+    const socket = io(import.meta.env.VITE_API_URL);
+    socket.emit("guide-response", {
+      guideId,
+      bookingId,
+      status: "accepted",
+      timestamp: new Date().toISOString(),
+    });
+
+    // Remove the accepted request from local list
+    setRequests((prev) => prev.filter((req) => req.bookingId !== bookingId));
+  };
+
+  const handleReject = (bookingId) => {
+    setRequests((prev) => prev.filter((req) => req.bookingId !== bookingId));
+  };
+
   return (
-    <Paper
-      sx={{ p: { xs: 2, md: 4 }, textAlign: { xs: "center", md: "left" } }}
-    >
+    <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: { xs: "center", md: "left" } }}>
       <Typography variant="h5">Welcome, Guide</Typography>
-      socket.disconnect();
+
+      <Typography variant="h6" sx={{ mt: 3 }}>
+        Incoming Requests
+      </Typography>
+      {requests.length === 0 ? (
+        <Typography>No requests</Typography>
+      ) : (
+        <List>
+          {requests.map((req, index) => (
+            <ListItem key={index} divider>
+              <ListItemText
+                primary={`Booking ID: ${req.bookingId}`}
+                secondary={`Received at: ${new Date(req.timestamp).toLocaleTimeString()}`}
+              />
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleAccept(req.bookingId)}
+                >
+                  Accept
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleReject(req.bookingId)}
+                >
+                  Reject
+                </Button>
+              </Stack>
+            </ListItem>
+          ))}
+        </List>
+      )}
+
+      <Typography variant="h6" sx={{ mt: 4 }}>
+        Guide List
+      </Typography>
       {loading ? (
         <CircularProgress sx={{ mt: 2 }} />
       ) : error ? (
@@ -75,9 +126,9 @@ const GuideDashboard = () => {
           ))}
         </List>
       )}
-      {/* log out button here */}
+
       <button
-        className="m-2, bg-amber-300"
+        className="m-2 bg-amber-300"
         onClick={() => {
           sessionStorage.removeItem("accessToken");
           window.location.href = "/login";

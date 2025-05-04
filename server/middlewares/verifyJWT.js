@@ -3,7 +3,7 @@ require("dotenv").config();
 
 const verifyJWT = (req, res, next) => {
   // Get the token from Authorization header
-  const accessToken  = req.header("Authorization")?.split(" ")[1];
+  const accessToken = req.header("Authorization")?.split(" ")[1];
 
   // If no token is provided
   if (!accessToken) {

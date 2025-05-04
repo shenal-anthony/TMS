@@ -14,6 +14,8 @@ import {
   TablePagination,
   Button,
   Checkbox,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   DirectionsCar as VehicleIcon,
@@ -31,6 +33,8 @@ import { useRef } from "react";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarError, setSnackbarError] = useState("");
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,7 +45,6 @@ const Dashboard = () => {
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
-  // const socket = io(import.meta.env.VITE_SOCKET_URL);
 
   const socketRef = useRef(null);
 
@@ -133,7 +136,6 @@ const Dashboard = () => {
   };
 
   const handleSendRequest = (bookingId, guideId) => {
-    // Add logic here
     const bookingData = {
       bookingId,
       guideId,
@@ -141,6 +143,35 @@ const Dashboard = () => {
     };
     socketRef.current.emit("send-guide-request", bookingData);
     console.log(`Assigning guide ${guideId} to booking ${bookingId}`);
+    setSnackbarOpen(true); // Show success toast
+  };
+
+  const sendRequestsToAllGuides = () => {
+    try {
+      const requests = selected.flatMap((bookingId) => {
+        const guides = groupedBookings[bookingId] || [];
+        return guides.map((guide) => ({
+          bookingId,
+          guideId: guide.guide_id,
+          timestamp: new Date(),
+        }));
+      });
+
+      if (requests.length === 0) {
+        setSnackbarError("No guides available for selected bookings.");
+        return;
+      }
+
+      requests.forEach((data) => {
+        socketRef.current.emit("send-guide-request", data);
+      });
+
+      console.log(`Sent ${requests.length} guide requests`);
+      setSnackbarOpen(true);
+    } catch (err) {
+      console.error(err);
+      setSnackbarError("Failed to send guide requests.");
+    }
   };
 
   // --- Utilities ---
@@ -214,12 +245,7 @@ const Dashboard = () => {
               variant="contained"
               color="primary"
               disabled={selected.length === 0}
-              onClick={() => {
-                selected.forEach((bookingId) => {
-                  const guide = groupedBookings[bookingId]?.[0];
-                  if (guide) handleSendRequest(bookingId, guide.guide_id);
-                });
-              }}
+              onClick={sendRequestsToAllGuides}
             >
               Send Requests to Selected ({selected.length})
             </Button>
@@ -342,6 +368,37 @@ const Dashboard = () => {
           No pending bookings found.
         </Typography>
       )}
+      {/* Success Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          Guide requests sent successfully!
+        </Alert>
+      </Snackbar>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        open={!!snackbarError}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarError("")}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbarError("")}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {snackbarError}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
