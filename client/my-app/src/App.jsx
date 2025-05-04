@@ -14,8 +14,9 @@ import GuideAvailability from "./pages/GuideAvailability";
 import YourVehicles from "./pages/YourVehicles";
 import ManageVehicles from "./pages/ManageVehicles";
 import EditProfile from "./pages/EditProfile";
-
-// import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
+import GuideLayout from "./layouts/GuideLayout";
+import GuideDashboard from "./pages/GuideDashboard";
 
 const App = () => {
   return (
@@ -28,19 +29,29 @@ const App = () => {
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/vehicleRegisterForm" element={<VehicleRegForm />} />
 
+        {/* Protected Routes  */}
+        <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+          <Route element={<BaseLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/bookings/pending" element={<PendingBookings />} />
+            <Route path="/bookings/confirmed" element={<ViewBookings />} />
+            <Route path="/admins" element={<Admins />} />
+            <Route path="/contents/destinations" element={<Destinations />} />
+            <Route path="/contents/events" element={<Events />} />
+            <Route path="/guide-availability" element={<GuideAvailability />} />
+            <Route path="/vehicles/your-vehicles" element={<YourVehicles />} />
+            <Route path="/vehicles/manage-vehicles" element={<ManageVehicles />}/>
+            <Route path="/reports" element={<Reports />} />
+          </Route>
+        </Route>
 
-        {/* Protected Routes (Wrapped in BaseLayout) */}
-        <Route element={<BaseLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/bookings/pending" element={<PendingBookings />} />
-          <Route path="/bookings/confirmed" element={<ViewBookings />} />
-          <Route path="/admins" element={<Admins />} />
-          <Route path="/contents/destinations" element={<Destinations />} />
-          <Route path="/contents/events" element={<Events />} />
-          <Route path="/guide-availability" element={<GuideAvailability />} />
-          <Route path="/vehicles/your-vehicles" element={<YourVehicles />} />
-          <Route path="/vehicles/manage-vehicles" element={<ManageVehicles />} />
-          <Route path="/reports" element={<Reports />} />
+        <Route element={<ProtectedRoute allowedRoles={["Guide"]} />}>
+          <Route element={<GuideLayout />}>
+            <Route path="/guide-dashboard" element={<GuideDashboard />} />
+            <Route path="/guide-availability" element={<GuideAvailability />} />
+            <Route path="/your-vehicles" element={<YourVehicles />} />
+            <Route path="/manage-vehicles" element={<ManageVehicles />} />
+          </Route>
         </Route>
       </Routes>
     </Router>

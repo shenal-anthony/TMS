@@ -3,6 +3,9 @@ const bcrypt = require("../node_modules/bcryptjs");
 const generateToken = require("../utils/tokenGenerator");
 const { findUserByEmail, createUser } = require("../models/userModel");
 
+const fs = require("fs");
+const path = require("path");
+
 const registerUser = async (req, res) => {
   try {
     const {
@@ -60,7 +63,10 @@ const registerUser = async (req, res) => {
     });
 
     // Generate JWT token
-    const token = generateToken(newUser.user_id);
+    const { accessToken, refreshToken } = generateToken(
+      user.user_id,
+      user.role
+    );
 
     res.status(201).json({
       token,
@@ -79,7 +85,7 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Check if user exists
     const user = await findUserByEmail(email);
     if (!user) {
@@ -93,17 +99,38 @@ const loginUser = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = generateToken(user.user_id);
-    res.status(200).json({ token });
+    const { accessToken, refreshToken } = generateToken(
+      user.user_id,
+      user.role
+    );
 
+    res.status(200).json({ accessToken, refreshToken, role: user.role });
   } catch (error) {
     console.error("Login error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-const fs = require("fs");
-const path = require("path");
+const getAccessToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken)
+    return res.status(401).json({ message: "No refresh token" });
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    const newAccessToken = jwt.sign(
+      { userId: decoded.userId, role: decoded.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+};
 
 const editProfile = async (req, res) => {
   try {
@@ -168,4 +195,4 @@ const editProfile = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, registerUser, editProfile };
+module.exports = { loginUser, registerUser, editProfile, getAccessToken };

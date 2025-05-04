@@ -26,6 +26,9 @@ import {
 import axios from "axios";
 import dayjs from "dayjs";
 
+import axiosInstance from "../api/axiosInstance";
+
+
 import StatusCard from "../components/StatusCard";
 
 const Dashboard = () => {
@@ -66,7 +69,7 @@ const Dashboard = () => {
   ];
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("accessToken");
     if (!token) {
       navigate("/login");
       return;
@@ -74,19 +77,16 @@ const Dashboard = () => {
 
     const fetchData = async () => {
       try {
-        const authRes = await axios.get(`${apiUrl}/api/auth/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUserData(authRes.data);
+        // const authRes = await axiosInstance.get(`${apiUrl}/api/admins/`);
+        // setUserData(authRes.data);
+        // console.log(authRes.data); // Check if the user is an admin
 
-        const bookingRes = await axios.get(`${apiUrl}/api/bookings/pending`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const bookingRes = await axios.get(`${apiUrl}/api/bookings/pending`);
         setBookings(bookingRes.data);
         setLoading(false);
       } catch (err) {
         console.error(err);
-        localStorage.removeItem("token");
+        sessionStorage.removeItem("accessToken");
         setError("Failed to fetch data.");
         setLoading(false);
         navigate("/login");

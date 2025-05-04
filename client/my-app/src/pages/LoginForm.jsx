@@ -18,9 +18,23 @@ const LoginForm = () => {
         password,
       });
 
-      // If login is successful, store the token and navigate
-      localStorage.setItem("token", response.data.token);
-      navigate("/dashboard");
+      const accessToken = response.data.accessToken; // short-lived
+      const refreshToken = response.data.refreshToken; // new
+
+      const role = response.data.role;
+
+      // Store both tokens
+      sessionStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      // Navigate based on role
+      if (role === "Admin") navigate("/dashboard");
+      else if (role === "Guide") navigate("/guide-dashboard");
+      else {
+        sessionStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        navigate("/login");
+      }
     } catch (error) {
       alert(
         error.response?.data?.message || "Invalid login. Please try again."

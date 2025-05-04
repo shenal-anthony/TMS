@@ -4,6 +4,23 @@ const path = require("path");
 const app = express();
 require("dotenv").config();
 
+const http = require("http");
+const { Server } = require("socket.io");
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Or your frontend origin
+    methods: ["GET", "POST"],
+  },
+});
+
+// Import and use socket logic
+require("./socket")(io);
+
+// Store io for later use in routes/controllers if needed
+app.set("io", io);
+
 // Middleware imports
 const bodyParser = require("body-parser");
 

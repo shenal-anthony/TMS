@@ -25,4 +25,6 @@ const deleteAdmin = async (req, res) => {
   }
 };
 
+
+
 module.exports = { getAllAdmins, deleteAdmin };

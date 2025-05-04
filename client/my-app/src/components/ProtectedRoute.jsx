@@ -1,13 +1,43 @@
-import { Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import axios from "axios";
 
-const ProtectedRoute = ({ children }) => {
-    const token = localStorage.getItem("token");
+const ProtectedRoute = ({ allowedRoles }) => {
+  const [isAllowed, setIsAllowed] = useState(null);
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
-    }
+  useEffect(() => {
+    const verify = async () => {
+      const accessToken = sessionStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
 
-    return children;
+      if (!accessToken || !refreshToken) {
+        setIsAllowed(false);
+        return;
+      }
+
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/auth/check-role`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        const userRole = res.data.role;
+        setIsAllowed(allowedRoles.includes(userRole));
+      } catch (err) {
+        sessionStorage.removeItem("accessToken");
+        setIsAllowed(false);
+      }
+    };
+
+    verify();
+  }, []);
+
+  if (isAllowed === null) return <p>Loading...</p>;
+  return isAllowed ? <Outlet /> : <Navigate to="/login" />;
 };
 
 export default ProtectedRoute;
