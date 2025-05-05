@@ -1,36 +1,52 @@
+const { saveGuideRequest, updateGuideResponse } = require("./models/guideResponseModel");
+
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
+    console.log(`✅ Client connected: ${socket.id}`);
 
+    // Join a room specific to a guide
     socket.on("join-room", (room) => {
-      console.log(`Socket ${socket.id} joining room: ${room}`);
       socket.join(room);
+      console.log(`Socket ${socket.id} joined room: ${room}`);
     });
 
-    socket.on("send-guide-request", (data) => {
-      console.log("Guide request received:", data);
+    // Admin sends request to a guide
+    socket.on("send-guide-request", async (data) => {
+      const { guideId, bookingId, sentAt } = data;
 
-      const room = `guide_${data.guideId}`;
-      io.to(room).emit("new-request", data);
+      // Save to DB
+      await saveGuideRequest({ guideId, bookingID: bookingId, sentAt });
+
+      // Emit to guide's room
+      io.to(`guide_${guideId}`).emit("new-request", {
+        bookingId,
+        guideId,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log("📨 Guide request sent:", { guideId, bookingId, sentAt });
     });
 
-    socket.on("guide-response", (data) => {
-      console.log("Guide accepted request:", data);
+    // Guide responds (accept/reject)
+    socket.on("guide-response", async (data) => {
+      const { guideId, bookingId, status } = data;
 
-      const { guideId, bookingId, status, timestamp } = data;
+      // Save response to DB
+      await updateGuideResponse(guideId, bookingId, status);
 
-      // You could store this in a DB or memory (optional)
-      if (status === "accepted") {
-        io.to("admin_room").emit("guide-accepted", {
-          guideId,
-          bookingId,
-          timestamp,
-        });
-      }
+      // Optionally, notify admin room
+      io.to("admin_room").emit("guide-response", {
+        guideId,
+        bookingId,
+        status: status,
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log("📥 Guide responded:", { guideId, bookingId, status });
     });
 
     socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+      console.log(`❌ Client disconnected: ${socket.id}`);
     });
   });
 };

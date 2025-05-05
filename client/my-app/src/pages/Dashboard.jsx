@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -29,10 +29,10 @@ import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
 import StatusCard from "../components/StatusCard";
 import io from "socket.io-client";
-import { useRef } from "react";
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
+  const [guideRequests, setGuideRequests] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarError, setSnackbarError] = useState("");
   const [bookings, setBookings] = useState([]);
@@ -41,6 +41,8 @@ const Dashboard = () => {
   const [selected, setSelected] = useState([]);
   const [sortField, setSortField] = useState("booking_date");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [requestSortField, setRequestSortField] = useState("sent_at");
+  const [requestSortOrder, setRequestSortOrder] = useState("asc");
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
@@ -73,6 +75,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     socketRef.current = io(import.meta.env.VITE_SOCKET_URL);
+    socketRef.current.emit("join-room", "admin_room");
+    socketRef.current.on("guide-response", () => {
+      fetchGuideRequests();
+    });
 
     const token = sessionStorage.getItem("accessToken");
     if (!token) {
@@ -80,11 +86,24 @@ const Dashboard = () => {
       return;
     }
 
+    const fetchGuideRequests = async () => {
+      try {
+        const requestData = await axiosInstance.get(
+          `${apiUrl}/api/bookings/requests`
+        );
+        setGuideRequests(requestData.data);
+      } catch (err) {
+        console.error("Failed to fetch guide requests", err);
+      }
+    };
+
     const fetchData = async () => {
       try {
         // const authRes = await axiosInstance.get(`${apiUrl}/api/admins/`);
         // setUserData(authRes.data);
         // console.log(authRes.data); // Check if the user is an admin
+
+        await fetchGuideRequests(); // Fetch guide requests
 
         const bookingRes = await axiosInstance.get(
           `${apiUrl}/api/bookings/pending`
@@ -102,6 +121,7 @@ const Dashboard = () => {
 
     fetchData();
     return () => {
+      socketRef.current.off("guide-response"); // Clean up event listener
       socketRef.current.disconnect(); // Clean up socket on unmount
     };
   }, [navigate, apiUrl]);
@@ -111,6 +131,36 @@ const Dashboard = () => {
     setSortField(field);
     setSortOrder(order);
   };
+
+  const handleRequestSort = (field) => {
+    const isAsc = requestSortField === field && requestSortOrder === "asc";
+    setRequestSortField(field);
+    setRequestSortOrder(isAsc ? "desc" : "asc");
+  };
+
+  const sortedGuideRequests = guideRequests.slice().sort((a, b) => {
+    const valA = a[requestSortField];
+    const valB = b[requestSortField];
+
+    if (requestSortField === "updated_at") {
+      const isAEmpty = !valA || valA === "Not yet updated";
+      const isBEmpty = !valB || valB === "Not yet updated";
+
+      if (isAEmpty && isBEmpty) return 0;
+      if (isAEmpty) return requestSortOrder === "asc" ? 1 : -1;
+      if (isBEmpty) return requestSortOrder === "asc" ? -1 : 1;
+
+      const dateA = new Date(valA);
+      const dateB = new Date(valB);
+
+      return requestSortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    }
+
+    // default string/number sorting
+    if (valA < valB) return requestSortOrder === "asc" ? -1 : 1;
+    if (valA > valB) return requestSortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -139,7 +189,7 @@ const Dashboard = () => {
     const bookingData = {
       bookingId,
       guideId,
-      timestamp: new Date(),
+      sentAt: new Date().toISOString(),
     };
     socketRef.current.emit("send-guide-request", bookingData);
     console.log(`Assigning guide ${guideId} to booking ${bookingId}`);
@@ -153,7 +203,7 @@ const Dashboard = () => {
         return guides.map((guide) => ({
           bookingId,
           guideId: guide.guide_id,
-          timestamp: new Date(),
+          sentAt: new Date(),
         }));
       });
 
@@ -204,10 +254,8 @@ const Dashboard = () => {
     <div>
       <div>
         <div>
-          <Typography variant="h5" gutterBottom>
-            Dashboard
-          </Typography>
-          <Typography variant="subtitle1" gutterBottom sx={{ mb: 3 }}>
+          <Typography variant="h4">Dashboard</Typography>
+          <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}>
             A quick data overview of the System.
           </Typography>
         </div>
@@ -225,11 +273,147 @@ const Dashboard = () => {
 
         <Divider sx={{ my: 3 }} />
 
+        {/* add request table here  */}
         <div>
-          <Typography variant="h5" gutterBottom>
+          {/* sent guide requests */}
+          <div>
+            {" "}
+            <Typography variant="h5" gutterBottom>
+              Sent Guide Requests
+            </Typography>
+            <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
+              Shows guide requests sent by admin with their status
+            </Typography>
+          </div>
+
+          {guideRequests.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No requests sent yet.
+            </Typography>
+          ) : (
+            <TableContainer
+              component={Paper}
+              sx={{
+                mb: 4,
+                maxHeight: 360, // Adjust based on row height (~8 rows)
+                overflowY: "auto",
+              }}
+            >
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align="center">#</TableCell>
+                    <TableCell align="center">
+                      <Button
+                        onClick={() => handleRequestSort("booking_id")}
+                        endIcon={
+                          requestSortField === "booking_id" ? (
+                            requestSortOrder === "asc" ? (
+                              <ArrowUpwardIcon />
+                            ) : (
+                              <ArrowDownwardIcon />
+                            )
+                          ) : null
+                        }
+                      >
+                        Booking ID
+                      </Button>
+                    </TableCell>
+                    <TableCell align="center">Guide ID</TableCell>
+                    <TableCell align="center">
+                      <Button
+                        onClick={() => handleRequestSort("sent_at")}
+                        endIcon={
+                          requestSortField === "sent_at" ? (
+                            requestSortOrder === "asc" ? (
+                              <ArrowUpwardIcon />
+                            ) : (
+                              <ArrowDownwardIcon />
+                            )
+                          ) : null
+                        }
+                      >
+                        Sent At
+                      </Button>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button
+                        onClick={() => handleRequestSort("updated_at")}
+                        endIcon={
+                          requestSortField === "updated_at" ? (
+                            requestSortOrder === "asc" ? (
+                              <ArrowUpwardIcon />
+                            ) : (
+                              <ArrowDownwardIcon />
+                            )
+                          ) : null
+                        }
+                      >
+                        Updated At
+                      </Button>
+                    </TableCell>
+                    <TableCell align="center">Response</TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {sortedGuideRequests.map((req, index) => (
+                    <TableRow key={`${req.booking_id}-${req.guide_id}`} sx={{ height: 40 }}>
+                      <TableCell align="center">{index + 1}</TableCell>
+                      <TableCell align="center">{req.booking_id}</TableCell>
+                      <TableCell align="center">{req.guide_id}</TableCell>
+                      <TableCell align="center">
+                        {dayjs(req.sent_at).format("YYYY-MM-DD HH:mm")}
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        style={{
+                          color:
+                            req.status === true
+                              ? "royalblue"
+                              : req.status === false
+                              ? "gray"
+                              : "gray",
+                        }}
+                      >
+                        {req.updated_at === null
+                          ? "Not yet updated"
+                          : dayjs(req.updated_at).format("YYYY-MM-DD HH:mm")}
+                      </TableCell>
+                      <TableCell align="center">
+                        <span
+                          style={{
+                            color:
+                              req.status === true
+                                ? "green"
+                                : req.status === false
+                                ? "orange"
+                                : "gray",
+                          }}
+                        >
+                          {req.status === true
+                            ? "Accepted"
+                            : req.status === false
+                            ? "Pending"
+                            : "Pending"}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </div>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* booking status */}
+        <div>
+          <Typography variant="h5">
             Booking Status
           </Typography>
-          <Typography variant="body1" gutterBottom sx={{ mb: 3 }}>
+          <Typography variant="body1" sx={{ mb: 1 }}>
             Date view of pending bookings
           </Typography>
         </div>
@@ -252,7 +436,7 @@ const Dashboard = () => {
           </Box>
 
           <TableContainer component={Paper}>
-            <Table>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   {/* check box  */}

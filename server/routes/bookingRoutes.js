@@ -5,9 +5,10 @@ const {
   getAvailableGuidesByFilter,
   addGuideToBooking,
   changeGuideStatus,
+  getGuideRequests,
+  deleteGuideRequest,
 } = require("../controllers/guideController");
 const {
-  getAllBookings,
   addBooking,
   deleteBooking,
   getPendingBookingsWithGuides,
@@ -16,6 +17,7 @@ const {
   getFinalizedBookingsWithGuides,
   getFinalizedBookingById,
   sendRequestToGuide,
+  getAllGuideRequests,
 } = require("../controllers/bookingController");
 const {
   getPkgBookingKeyDetails,
@@ -28,6 +30,8 @@ router.get("/", getConfirmedBookingsWithGuides);
 router.get("/finalized", getFinalizedBookingsWithGuides);
 router.get("/finalized/:id", getFinalizedBookingById);
 router.get("/pending", getPendingBookingsWithGuides);
+router.get("/requests", getAllGuideRequests);
+router.get("/requests/:id", getGuideRequests);
 
 router.put("/:bookingId/assign", addGuideToBooking);
 
@@ -41,5 +45,7 @@ router.post("/sendrequest/:id", sendRequestToGuide);
 router.patch("/:id", updateBooking);
 
 router.delete("/:id", deleteBooking);
+router.delete("/requests/:bookingId/:guideId", deleteGuideRequest);
+
 
 module.exports = router;

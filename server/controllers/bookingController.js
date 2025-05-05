@@ -2,6 +2,7 @@ const booking = require("../models/bookingModel");
 const guide = require("../models/assignedGuideModel");
 const payment = require("../models/paymentModel");
 const user = require("../models/userModel");
+const msg = require("../models/guideResponseModel");
 
 // get all
 const getAllBookings = async (req, res) => {
@@ -356,7 +357,6 @@ const deleteBooking = async (req, res) => {
   }
 };
 
-
 // Send request to guide
 const sendRequestToGuide = async (req, res) => {
   const { id } = req.params; // bookingId
@@ -382,9 +382,16 @@ const sendRequestToGuide = async (req, res) => {
   }
 };
 
-
-
-
+// get all guide requests (for admin dashboard)
+const getAllGuideRequests = async (req, res) => {
+  try {
+    const guideRequests = await msg.getAllGuideResponses();
+    res.json(guideRequests);
+  } catch (error) {
+    console.error("Error fetching guide requests:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 
 module.exports = {
@@ -397,4 +404,5 @@ module.exports = {
   getFinalizedBookingsWithGuides,
   getFinalizedBookingById,
   sendRequestToGuide,
+  getAllGuideRequests,
 };

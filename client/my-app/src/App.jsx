@@ -18,12 +18,23 @@ import EditProfile from "./pages/EditProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GuideLayout from "./layouts/GuideLayout";
 import GuideDashboard from "./pages/GuideDashboard";
+import { Slide, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const App = () => {
   const [authUser, setAuthUser] = useState(null);
 
   return (
     <Router>
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        newestOnTop
+        draggable
+        pauseOnHover
+        transition={Slide}
+        theme="light"
+      />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LoginForm />} />

@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Typography,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
   CircularProgress,
   Button,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Box,
 } from "@mui/material";
+import dayjs from "dayjs";
+import { toast } from "react-toastify";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import "react-toastify/dist/ReactToastify.css";
 import axiosInstance from "../api/axiosInstance";
 import io from "socket.io-client";
 
@@ -19,8 +27,10 @@ const GuideDashboard = ({ userId }) => {
   const [error, setError] = useState(null);
   const guideId = userId;
 
+  const socketRef = useRef(null);
+
   useEffect(() => {
-    const socket = io(import.meta.env.VITE_API_URL);
+    socketRef.current = io(import.meta.env.VITE_API_URL);
 
     const fetchGuides = async () => {
       try {
@@ -34,80 +44,148 @@ const GuideDashboard = ({ userId }) => {
       }
     };
 
+    const fetchPendingRequests = async () => {
+      try {
+        const res = await axiosInstance.get(
+          `/api/bookings/requests/${guideId}`
+        );
+        const sorted = res.data.sort(
+          (a, b) => new Date(b.sent_at) - new Date(a.sent_at)
+        );
+        setRequests(sorted);
+      } catch (err) {
+        console.error("❌ Failed to fetch pending requests", err);
+      }
+    };
+
     fetchGuides();
+    fetchPendingRequests();
 
     if (guideId) {
-      socket.emit("join-room", `guide_${guideId}`);
+      socketRef.current.emit("join-room", `guide_${guideId}`);
     }
 
-    socket.on("new-request", (data) => {
-      console.log("📡 New guide request received:", data);
-      setRequests((prev) => [...prev, data]);
-    });
+    // Inside your socket event listener
+    socketRef.current.on("new-request", (data) => {
+      toast(
+        <Box>
+          <Box display="flex" alignItems="center" mb={0.5}>
+            <CheckCircleIcon fontSize="small" sx={{ mr: 1 }} />
+            <Typography variant="subtitle1" fontWeight="bold">
+              New Booking Request
+            </Typography>
+          </Box>
+          <Typography variant="body2" sx={{ color: "text.primary" }}>
+            <strong>Booking ID:</strong> {data.bookingId}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.primary" }}>
+            <strong>Sent At:</strong>{" "}
+            {dayjs(data.sentAt).format("YYYY-MM-DD HH:mm:ss")}
+          </Typography>
+        </Box>,
 
+        {
+          position: "top-right",
+          autoClose: 4000,
+          closeOnClick: true,
+          pauseOnHover: true,
+        }
+      );
+
+      fetchPendingRequests();
+    });
     return () => {
-      socket.disconnect(); // Clean up socket on unmount
+      socketRef.current.disconnect();
     };
   }, [guideId]);
 
   const handleAccept = (bookingId) => {
-    const socket = io(import.meta.env.VITE_API_URL);
-    socket.emit("guide-response", {
+    socketRef.current.emit("guide-response", {
       guideId,
       bookingId,
-      status: "accepted",
-      timestamp: new Date().toISOString(),
+      status: "true",
+      updatedAt: new Date().toISOString(),
     });
-
-    // Remove the accepted request from local list
-    setRequests((prev) => prev.filter((req) => req.bookingId !== bookingId));
+    setRequests((prev) => prev.filter((req) => req.booking_id !== bookingId));
   };
 
-  const handleReject = (bookingId) => {
-    setRequests((prev) => prev.filter((req) => req.bookingId !== bookingId));
+  const handleReject = async (bookingId) => {
+    try {
+      const res = await axiosInstance.delete(
+        `/api/bookings/requests/${bookingId}/${guideId}`
+      );
+      console.log("Guide request deleted successfully", res.data);
+
+      setRequests((prev) => prev.filter((req) => req.booking_id !== bookingId));
+    } catch (error) {
+      console.error("Error deleting guide request:", error);
+    }
   };
 
   return (
-    <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: { xs: "center", md: "left" } }}>
-      <Typography variant="h5">Welcome, Guide</Typography>
+    <Paper
+      sx={{ p: { xs: 2, md: 4 }, textAlign: { xs: "center", md: "left" } }}
+    >
+      <Typography variant="h5">Welcome, Guide: {guideId}</Typography>
 
       <Typography variant="h6" sx={{ mt: 3 }}>
         Incoming Requests
       </Typography>
+
       {requests.length === 0 ? (
-        <Typography>No requests</Typography>
+        <Typography>No pending requests</Typography>
       ) : (
-        <List>
-          {requests.map((req, index) => (
-            <ListItem key={index} divider>
-              <ListItemText
-                primary={`Booking ID: ${req.bookingId}`}
-                secondary={`Received at: ${new Date(req.timestamp).toLocaleTimeString()}`}
-              />
-              <Stack direction="row" spacing={1}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleAccept(req.bookingId)}
-                >
-                  Accept
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleReject(req.bookingId)}
-                >
-                  Reject
-                </Button>
-              </Stack>
-            </ListItem>
-          ))}
-        </List>
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <strong>Booking ID</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Received At</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Actions</strong>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {requests.map((req, index) => (
+                <TableRow key={index}>
+                  <TableCell>{req.booking_id}</TableCell>
+                  <TableCell>
+                    {new Date(req.sent_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        onClick={() => handleAccept(req.booking_id)}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleReject(req.booking_id)}
+                      >
+                        Reject
+                      </Button>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       <Typography variant="h6" sx={{ mt: 4 }}>
         Guide List
       </Typography>
+
       {loading ? (
         <CircularProgress sx={{ mt: 2 }} />
       ) : error ? (
@@ -115,27 +193,42 @@ const GuideDashboard = ({ userId }) => {
           {error}
         </Typography>
       ) : (
-        <List sx={{ mt: 2 }}>
-          {guides.map((guide, index) => (
-            <ListItem key={index}>
-              <ListItemText
-                primary={guide.first_name || `Guide ${index + 1}`}
-                secondary={guide.email_address || "No description available"}
-              />
-            </ListItem>
-          ))}
-        </List>
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <strong>Name</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Email</strong>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {guides.map((guide, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    {guide.first_name || `Guide ${index + 1}`}
+                  </TableCell>
+                  <TableCell>{guide.email_address || "N/A"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
-      <button
-        className="m-2 bg-amber-300"
+      <Button
+        variant="contained"
+        sx={{ mt: 4, backgroundColor: "#FFC107", color: "black" }}
         onClick={() => {
           sessionStorage.removeItem("accessToken");
           window.location.href = "/login";
         }}
       >
         Log Out
-      </button>
+      </Button>
     </Paper>
   );
 };

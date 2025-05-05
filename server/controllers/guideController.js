@@ -1,6 +1,7 @@
 const user = require("../models/userModel");
 const guide = require("../models/assignedGuideModel");
 const booking = require("../models/bookingModel");
+const msg = require("../models/guideResponseModel");
 // api/guides/
 
 // Get all guides
@@ -169,10 +170,46 @@ const changeGuideStatus = async (req, res) => {
   }
 };
 
+// get request for guide
+const getGuideRequests = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const requests = await msg.getGuideRequestsByGuideId(id);
+    if (!requests || requests.length === 0) {
+      return res.status(404).json({ message: "No requests found" });
+    }
+    res.json(requests);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching guide requests", error: error.message });
+  }
+};
+
+// delete guide request
+const deleteGuideRequest = async (req, res) => {
+  const { bookingId, guideId } = req.params;
+
+  if (!bookingId || !guideId) {
+    return res.status(400).json({ message: "Missing bookingId or guideId" });
+  }
+
+  try {
+    await msg.deleteGuideRequestByBookingId(bookingId, guideId);
+    res.json({ message: "Guide request deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting booking", error: error.message });
+  }
+};
+
 module.exports = {
   getAllGuides,
   deleteGuide,
   getAvailableGuidesByFilter,
   addGuideToBooking,
   changeGuideStatus,
+  getGuideRequests,
+  deleteGuideRequest,
 };
