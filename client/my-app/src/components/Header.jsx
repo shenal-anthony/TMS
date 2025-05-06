@@ -1,10 +1,18 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu as MenuIcon, Search, AccountCircle } from "@mui/icons-material";
+import { Menu as MenuIcon, AccountCircle } from "@mui/icons-material";
 
-const Header = ({ toggleSidebar }) => {
-  const [search, setSearch] = useState("");
-  const navigate = useNavigate(); // navigation hook
+const Header = ({ toggleSidebar, role }) => {
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    if (role === "Guide") {
+      navigate("/guide/edit-profile");
+    } else if (role === "Admin") {
+      navigate("/edit-profile");
+    } else {
+      navigate("/login"); // fallback
+    }
+  };
 
   return (
     <header className="flex items-center justify-between bg-gray-800 text-white h-auto px-4 py-2">
@@ -13,21 +21,21 @@ const Header = ({ toggleSidebar }) => {
         <MenuIcon fontSize="large" />
       </button>
 
-      {/* Search Bar */}
-      <div className="relative w-1/3 hidden sm:block">
-        <Search className="absolute m-1 text-gray-400" />
-        <input
-          type="text"
-          className="w-full pl-8 pr-4 py-1 rounded bg-gray-700 text-white outline-none"
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div>
+        <h3 className="text-2xl font-bold">Cylonian Travels</h3>
       </div>
 
       {/* Profile Icon (Redirects to Edit Profile Page) */}
-      <div className="cursor-pointer" onClick={() => navigate("/edit-profile")}>
-        <AccountCircle fontSize="large" />
+      {/* Role + Profile Icon */}
+      <div className="flex items-center gap-2">
+        {role && (
+          <span className="text-sm bg-gray-700 px-3 py-1 rounded-sm">
+            {role}
+          </span>
+        )}
+        <div className="cursor-pointer" onClick={handleProfileClick}>
+          <AccountCircle fontSize="large" />
+        </div>
       </div>
     </header>
   );

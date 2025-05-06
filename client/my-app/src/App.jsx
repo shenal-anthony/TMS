@@ -18,6 +18,10 @@ import EditProfile from "./pages/EditProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GuideLayout from "./layouts/GuideLayout";
 import GuideDashboard from "./pages/GuideDashboard";
+import Tours from "./pages/Tours";
+import GuideReports from "./pages/GuideReports";
+import Feedbacks from "./pages/Feedbacks";
+
 import { Slide, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -29,6 +33,7 @@ const App = () => {
       <ToastContainer
         position="top-right"
         autoClose={4000}
+        closeOnClick
         newestOnTop
         draggable
         pauseOnHover
@@ -40,10 +45,9 @@ const App = () => {
         <Route path="/" element={<LoginForm />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/vehicleRegisterForm" element={<VehicleRegForm />} />
 
-        {/* Protected Routes  */}
+        {/* Protected Routes for admin */}
         <Route
           element={
             <ProtectedRoute
@@ -52,7 +56,7 @@ const App = () => {
             />
           }
         >
-          <Route element={<BaseLayout />}>
+          <Route element={<BaseLayout role={authUser?.role} />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/bookings/pending" element={<PendingBookings />} />
             <Route path="/bookings/confirmed" element={<ViewBookings />} />
@@ -66,9 +70,11 @@ const App = () => {
               element={<ManageVehicles />}
             />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
           </Route>
         </Route>
 
+        {/* Protected routes for Guide role */}
         <Route
           element={
             <ProtectedRoute
@@ -77,14 +83,27 @@ const App = () => {
             />
           }
         >
-          <Route element={<GuideLayout />}>
+          <Route element={<GuideLayout role={authUser?.role} />}>
             <Route
               path="/guide-dashboard"
               element={<GuideDashboard userId={authUser?.userId} />}
             />
-            <Route path="/guide-availability" element={<GuideAvailability />} />
-            <Route path="/your-vehicles" element={<YourVehicles />} />
-            <Route path="/manage-vehicles" element={<ManageVehicles />} />
+            <Route
+              path="/Tours"
+              element={<Tours userId={authUser?.userId} />}
+            />
+            <Route
+              path="/Feedbacks"
+              element={<Feedbacks userId={authUser?.userId} />}
+            />
+            <Route
+              path="/your-vehicles"
+              element={<YourVehicles userId={authUser?.userId} />}
+            />
+            <Route
+              path="/guide-reports"
+              element={<GuideReports userId={authUser?.userId} />}
+            />
           </Route>
         </Route>
       </Routes>

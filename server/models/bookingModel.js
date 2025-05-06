@@ -25,6 +25,16 @@ const getFinalizedBookings = async () => {
   return result.rows;
 };
 
+const getFinalizedBookingsByUserId = async (id) => {
+  const query = `SELECT b.booking_id, b.booking_date, b.headcount, ag.start_date, ag.end_date
+  FROM assigned_guides ag
+  LEFT JOIN bookings b ON ag.booking_id = b.booking_id
+  WHERE ag.user_id = $1 AND b.status = 'finalized'`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  return result.rows;
+};
+
 const addBooking = async (bookingData) => {
   const {
     bookingDate,
@@ -147,4 +157,5 @@ module.exports = {
   getPendingBookings,
   getConfirmedBookings,
   getFinalizedBookings,
+  getFinalizedBookingsByUserId,
 };

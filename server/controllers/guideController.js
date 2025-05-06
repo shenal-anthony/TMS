@@ -204,6 +204,39 @@ const deleteGuideRequest = async (req, res) => {
   }
 };
 
+// get guides finalized bookings
+const getGuideFinalizedBookings = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const bookings = await booking.getFinalizedBookingsByUserId(id);
+    // console.log("🚀 ~ guideController.js:212 ~ getGuideFinalizedBookings ~ bookings:", bookings);
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ message: "No bookings found" });
+    }
+    res.json(bookings);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching guide requests", error: error.message });
+  }
+};
+
+// get finalized bookings by id
+const getFinalizedBookingsById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const bookings = await booking.getBookingById(id);
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ message: "No bookings found" });
+    }
+    res.json(bookings);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching finalized bookings", error: error.message });
+  }
+};
+
 module.exports = {
   getAllGuides,
   deleteGuide,
@@ -212,4 +245,6 @@ module.exports = {
   changeGuideStatus,
   getGuideRequests,
   deleteGuideRequest,
+  getGuideFinalizedBookings,
+  getFinalizedBookingsById,
 };
