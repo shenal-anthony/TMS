@@ -2,7 +2,7 @@
 const pool = require("../db");
 
 const getAllPayments = async () => {
-  const query = `SELECT * FROM packages`;
+  const query = `SELECT * FROM payments`;
   const result = await pool.query(query);
   return result.rows;
 };
@@ -23,8 +23,6 @@ const getPaymentsByBookingId = async (id) => {
   return result.rows[0];
 };
 
-
-
 const addPayment = async (paymentData) => {
   const { amount, paymentDate, status, bookingId } = paymentData;
   const query = `INSERT INTO payments (amount, payment_date, status, booking_id) VALUES ($1, $2, $3, $4) RETURNING *;`;
@@ -39,8 +37,6 @@ const updatePaymentById = async (id, paymentData) => {
   const query = `UPDATE packages SET package_name = $1, description = $2, price = $3, duration = $4 WHERE package_id = $5 RETURNING *;`;
   const values = [packageName, description, price, duration, id];
   const result = await pool.query(query, values);
-  // console.log(result.rows[0]); // debug
-  // console.log("Received data:", paymentData); // debug
   return result.rows[0];
 };
 

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axiosInstance from "../api/axiosInstance";
 import {
   Box,
   Typography,
@@ -27,26 +28,41 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const Reports = () => {
-  const [startDate, setStartDate] = useState(dayjs().startOf("month"));
-  const [endDate, setEndDate] = useState(dayjs());
-  const [reportType, setReportType] = useState("Revenue");
+const Reports = ({ userId }) => {
+  const [startDate, setStartDate] = useState(
+    dayjs().startOf("day").subtract(1, "month")
+  );
+  const [endDate, setEndDate] = useState(dayjs().startOf("day"));
+  const [reportType, setReportType] = useState("Bookings");
   const [downloadType, setDownloadType] = useState("PDF");
+  const [chartData, setChartData] = useState([]);
+
+  const adminId = userId; //
+
   const [previousReports, setPreviousReports] = useState([
     { id: "RPT-001", date: "2025-04-25" },
     { id: "RPT-002", date: "2025-04-20" },
     { id: "RPT-003", date: "2025-04-10" },
   ]);
 
-  const dummyData = [
-    { date: "2025-04-01", revenue: 1200, tourists: 10, bookings: 5 },
-    { date: "2025-04-05", revenue: 1500, tourists: 12, bookings: 7 },
-    { date: "2025-04-10", revenue: 800, tourists: 8, bookings: 3 },
-    { date: "2025-04-15", revenue: 2000, tourists: 15, bookings: 9 },
-    { date: "2025-04-20", revenue: 1700, tourists: 13, bookings: 8 },
-  ];
-
   const dataKey = reportType.toLowerCase();
+
+  const fetchChartData = async (adminId) => {
+    try {
+      const response = await axiosInstance.get(
+        `/api/reports/charts/${adminId}`,
+        {
+          params: {
+            startDate: startDate.format("YYYY-MM-DD"),
+            endDate: endDate.format("YYYY-MM-DD"),
+          },
+        }
+      );
+      setChartData(response.data);
+    } catch (error) {
+      console.error("Error fetching chart data:", error);
+    }
+  };
 
   const handleDownload = () => {
     const newId = `RPT-${String(previousReports.length + 1).padStart(3, "0")}`;
@@ -56,8 +72,12 @@ const Reports = () => {
     alert(`Downloaded ${reportType} report as ${downloadType}`);
   };
 
+  useEffect(() => {
+    fetchChartData(adminId);
+  }, [startDate, endDate]);
+
   return (
-    <Box p={3}>
+    <Box>
       {/* Header - Full Width */}
       <div style={{ textAlign: "left", marginBottom: "20px" }}>
         <Typography variant="h4" gutterBottom>
@@ -128,7 +148,7 @@ const Reports = () => {
             {reportType} Report
           </Typography>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dummyData}>
+            <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />

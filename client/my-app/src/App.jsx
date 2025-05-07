@@ -63,7 +63,10 @@ const App = () => {
             />
             <Route path="/bookings/pending" element={<PendingBookings />} />
             <Route path="/bookings/confirmed" element={<ViewBookings />} />
-            <Route path="/admins" element={<Admins />} />
+            <Route
+              path="/admins"
+              element={<Admins userId={authUser?.userId} />}
+            />
             <Route path="/contents/destinations" element={<Destinations />} />
             <Route path="/contents/events" element={<Events />} />
             <Route path="/guide-availability" element={<GuideAvailability />} />
@@ -75,8 +78,14 @@ const App = () => {
               path="/vehicles/manage-vehicles"
               element={<ManageVehicles userId={authUser?.userId} />}
             />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route
+              path="/reports"
+              element={<Reports userId={authUser?.userId} />}
+            />
+            <Route
+              path="/edit-profile"
+              element={<EditProfile userId={authUser?.userId} />}
+            />
           </Route>
         </Route>
 

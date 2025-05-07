@@ -143,7 +143,7 @@ const YourVehicles = ({ userId }) => {
                 ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={6} align="center">
                   No vehicles found
                 </TableCell>
               </TableRow>

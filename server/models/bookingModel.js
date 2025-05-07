@@ -7,6 +7,13 @@ const getAllBookings = async () => {
   return result.rows;
 };
 
+// const getBookingsByDate = async (date) => {
+//   const query = `SELECT * FROM bookings WHERE booking_date = $1`;
+//   const values = [date];
+//   const result = await pool.query(query, values);
+//   return result.rows;
+// };
+
 const getPendingBookings = async () => {
   const query = `SELECT booking_id, booking_date, headcount, check_in_date, tourist_id, tour_id, event_id FROM bookings WHERE status = 'pending'`;
   const result = await pool.query(query);
@@ -163,16 +170,16 @@ const getPendingCount = async () => {
   const values = ["pending"];
   const result = await pool.query(query, values);
   return parseInt(result.rows[0].pending_count, 10); // Convert to a number
-}; 
+};
 
 const getConfirmedCount = async () => {
   const query = `SELECT COUNT(*) AS confirmed_count FROM bookings WHERE status = $1`;
   const values = ["confirmed"];
   const result = await pool.query(query, values);
   return parseInt(result.rows[0].confirmed_count, 10); // Convert to a number
-}; 
+};
 
-const getOngoingCount = async (date) => { 
+const getOngoingCount = async (date) => {
   const query = `
     SELECT COUNT(*) AS ongoing_count 
     FROM bookings 
@@ -183,7 +190,12 @@ const getOngoingCount = async (date) => {
   return parseInt(result.rows[0].ongoing_count, 10);
 };
 
-
+const getFinalizedCount = async () => {
+  const query = `SELECT COUNT(*) AS finalized_count FROM bookings WHERE status = $1`;
+  const values = ["finalized"];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].finalized_count, 10); // Convert to a number
+};
 
 module.exports = {
   getAllBookings,
@@ -199,4 +211,5 @@ module.exports = {
   getPendingCount,
   getConfirmedCount,
   getOngoingCount,
+  getFinalizedCount,
 };

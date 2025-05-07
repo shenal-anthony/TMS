@@ -61,10 +61,10 @@ const getAvailableGuidesByFilter = async (req, res) => {
         });
       }
     }
-    console.log(
-      "🚀 ~ guideController.js:24 ~ getAvailableGuidesByFilter ~ result:",
-      result.length
-    );
+    // console.log(
+    //   "🚀 ~ guideController.js:24 ~ getAvailableGuidesByFilter ~ result:",
+    //   result.length
+    // );
 
     res.status(200).json(result);
   } catch (error) {

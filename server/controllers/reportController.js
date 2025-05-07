@@ -2,6 +2,7 @@
 const user = require("../models/userModel");
 const vehicle = require("../models/vehicleModel");
 const booking = require("../models/bookingModel");
+const payment = require("../models/paymentModel");
 
 const getStatusCardData = async (req, res) => {
   try {
@@ -72,4 +73,128 @@ const deleteAdmin = async (req, res) => {
   }
 };
 
-module.exports = { getStatusCardData };
+const getReportsByFilter = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ error: "Start date and end date are required." });
+    }
+
+    // 1. Get all pending bookings
+    const pendingBookings = await booking.getPendingBookings(); // must include booking_id, booking_date
+    const result = [];
+
+    // 2. For each booking, get guides available during that booking's span
+    for (const booking of pendingBookings) {
+      const bookingStart = new Date(booking.booking_date);
+      const bookingEnd = new Date(bookingStart);
+      bookingEnd.setDate(bookingEnd.getDate() + 3); // booking period
+
+      // Check if booking period is inside the provided filter range
+      if (
+        bookingStart >= new Date(startDate) &&
+        bookingEnd <= new Date(endDate)
+      ) {
+        const availableGuides = await guide.getUnassignedGuidesByPeriod(
+          bookingStart.toISOString().split("T")[0],
+          bookingEnd.toISOString().split("T")[0]
+        );
+
+        availableGuides.forEach((guide) => {
+          result.push({
+            booking_id: booking.booking_id,
+            booking_date: booking.booking_date,
+            guide_id: guide.user_id,
+            first_name: guide.first_name,
+            last_name: guide.last_name,
+          });
+        });
+      }
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching available guides:", error);
+    res
+      .status(500)
+      .json({ error: "Server error while fetching available guides." });
+  }
+};
+
+// get chart data
+const getChartData = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+
+    const bookingData = await booking.getAllBookings();
+    const paymentData = await payment.getAllPayments();
+
+    const chartMap = new Map();
+
+    // Process payments
+    for (const payment of paymentData) {
+      if (!payment.payment_date) continue;
+      const dateObj = new Date(payment.payment_date);
+      console.log("🚀 ~ reportController.js:144 ~ getChartData ~ dateObj:", dateObj);
+      if (start && end && (dateObj < start || dateObj > end)) continue;
+
+      const date = dateObj.toISOString().split("T")[0];
+      if (!chartMap.has(date)) {
+        chartMap.set(date, { date, revenue: 0, tourists: 0, bookings: 0 });
+      }
+      chartMap.get(date).revenue += Number(payment.amount || 0);
+    }
+
+    // Process bookings
+    for (const booking of bookingData) {
+      // Tourist headcount by check-in date
+      if (booking.check_in_date) {
+        const checkInDateObj = new Date(booking.check_in_date);
+        if (start && end && (checkInDateObj < start || checkInDateObj > end))
+          continue;
+
+        const date = checkInDateObj.toISOString().split("T")[0];
+        if (!chartMap.has(date)) {
+          chartMap.set(date, { date, revenue: 0, tourists: 0, bookings: 0 });
+        }
+        chartMap.get(date).tourists += Number(booking.headcount || 0);
+      }
+
+      // Booking count by booking_date
+      if (booking.booking_date) {
+        const bookingDateObj = new Date(booking.booking_date);
+        if (start && end && (bookingDateObj < start || bookingDateObj > end))
+          continue;
+
+        const date = bookingDateObj.toISOString().split("T")[0];
+        if (!chartMap.has(date)) {
+          chartMap.set(date, { date, revenue: 0, tourists: 0, bookings: 0 });
+        }
+        chartMap.get(date).bookings += 1;
+      }
+    }
+
+    const chartData = Array.from(chartMap.values()).sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    res.status(200).json(chartData);
+    console.log("🚀 ~ reportController.js:191 ~ getChartData ~ chartData:", chartData);
+  } catch (error) {
+    console.error("Error fetching chart data:", error);
+    res.status(500).json({ error: "Server error while fetching chart data." });
+  }
+};
+
+module.exports = {
+  getStatusCardData,
+  deleteAdmin,
+  getReportsByFilter,
+  getChartData,
+};
