@@ -43,7 +43,7 @@ const Dashboard = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [requestSortField, setRequestSortField] = useState("sent_at");
   const [requestSortOrder, setRequestSortOrder] = useState("asc");
-  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [rowsPerPage, setRowsPerPage] = useState(3);
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -80,8 +80,8 @@ const Dashboard = () => {
       fetchGuideRequests();
     });
 
-    const token = sessionStorage.getItem("accessToken");
-    if (!token) {
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (!accessToken) {
       navigate("/login");
       return;
     }
@@ -358,7 +358,10 @@ const Dashboard = () => {
 
                 <TableBody>
                   {sortedGuideRequests.map((req, index) => (
-                    <TableRow key={`${req.booking_id}-${req.guide_id}`} sx={{ height: 40 }}>
+                    <TableRow
+                      key={`${req.booking_id}-${req.guide_id}`}
+                      sx={{ height: 40 }}
+                    >
                       <TableCell align="center">{index + 1}</TableCell>
                       <TableCell align="center">{req.booking_id}</TableCell>
                       <TableCell align="center">{req.guide_id}</TableCell>
@@ -410,9 +413,7 @@ const Dashboard = () => {
 
         {/* booking status */}
         <div>
-          <Typography variant="h5">
-            Booking Status
-          </Typography>
+          <Typography variant="h5">Booking Status</Typography>
           <Typography variant="body1" sx={{ mb: 1 }}>
             Date view of pending bookings
           </Typography>
@@ -495,6 +496,15 @@ const Dashboard = () => {
                       <TableRow
                         key={`${bookingId}-${booking.guide_id}`}
                         selected={isSelected(bookingId)}
+                        sx={{
+                          backgroundColor:
+                            (paginatedIds.indexOf(bookingId) +
+                              page * rowsPerPage) %
+                              2 ===
+                            0
+                              ? "#f7f8f8" // light gray for even rows
+                              : "inherit",
+                        }}
                       >
                         <TableCell align="center" padding="checkbox">
                           {index === 0 && (
@@ -536,7 +546,7 @@ const Dashboard = () => {
           </TableContainer>
 
           <TablePagination
-            rowsPerPageOptions={[8, 10, 25]}
+            rowsPerPageOptions={[3, 5, 8]}
             component="div"
             count={bookingIds.length}
             rowsPerPage={rowsPerPage}

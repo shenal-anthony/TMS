@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -18,8 +17,9 @@ import {
   DialogActions,
   Typography,
 } from "@mui/material";
+import axiosInstance from "../api/axiosInstance";
 
-const YourVehicles = () => {
+const YourVehicles = ({ userId }) => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,26 +29,15 @@ const YourVehicles = () => {
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const Id = userId;
 
   const handleRegister = () => {
     navigate("/vehicleRegisterForm");
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // Get the token from local storage
-
-    if (!token) {
-      setError("No token found");
-      setLoading(false);
-      return;
-    }
-
-    axios
-      .get(`${apiUrl}/api/vehicles`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    axiosInstance
+      .get(`${apiUrl}/api/vehicles/${Id}`)
       .then((response) => {
         setVehicles(response.data);
         setLoading(false);
@@ -99,7 +88,7 @@ const YourVehicles = () => {
         </Button>
       </div>
       <TableContainer component={Paper}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell align="center">#</TableCell>

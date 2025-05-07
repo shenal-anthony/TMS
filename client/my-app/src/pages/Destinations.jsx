@@ -415,7 +415,7 @@ const Destinations = () => {
 
         {/* Destinations Table */}
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell>Destination ID</TableCell>
@@ -605,7 +605,7 @@ const Destinations = () => {
 
         {/* Destinations Table */}
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell>Package ID</TableCell>

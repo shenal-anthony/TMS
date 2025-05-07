@@ -4,7 +4,7 @@ const {
   findAllVehicles,
 } = require("../models/vehicleModel");
 const vehicle = require("../models/vehicleModel");
-const assignedVehicle = require("../models/assignedVehicleModel");
+const user = require("../models/userModel");
 
 const { findUserByEmail } = require("../models/userModel");
 const { body, validationResult } = require("express-validator");
@@ -123,36 +123,52 @@ const registerVehicle = async (req, res) => {
 };
 
 const getVehiclesForUser = async (req, res) => {
+  const { Id } = req.params;
   try {
-    const userId = req.user.userId; // From the authenticated token
-    console.log("User ID:", userId); // Debug
-
-    const vehicles = await getVehiclesByUserId(userId);
-
+    const vehicles = await getVehiclesByUserId(Id);
     if (vehicles.length === 0) {
       return res
-        .status(404)
+        .status(200)
         .json({ message: "No vehicles found for this user" });
     }
 
     res.status(200).json(vehicles);
   } catch (error) {
-    console.error("Error retrieving vehicles:", error);
+    console.error("Error retrieving vehicles for user:", error);
     res.status(500).json({ message: "Error retrieving vehicles" });
   }
 };
 
 const getAllVehicles = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const admin = await user.getUserById(id);
+    // console.log("🚀 ~ vehicleController.js:148 ~ getAllVehicles ~ admin:", admin);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+    if (admin.role !== "Admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+  } catch (error) {
+    console.error("Error retrieving admin:", error);
+    return res.status(500).json({ message: "Error retrieving admin" });
+  }
+
   try {
     const vehicles = await findAllVehicles();
-
+    // console.log(
+    //   "🚀 ~ vehicleController.js:145 ~ getAllVehicles ~ vehicles:",
+    //   vehicles
+    // );
     if (vehicles.length === 0) {
-      return res.status(404).json({ message: "No vehicles found" });
+      return res.status(200).json({ message: "No vehicles found" });
     }
 
     res.status(200).json(vehicles);
   } catch (error) {
-    console.error("Error retrieving vehicles:", error);
+    console.error("Error retrieving all vehicles:", error);
     res.status(500).json({ message: "Error retrieving vehicles" });
   }
 };
@@ -164,9 +180,9 @@ const changeVehicleStatus = async (req, res) => {
 
   const validStatuses = ["Functional", "Suspended"];
   if (!validStatuses.includes(status)) {
-    return res
-      .status(400)
-      .json({ message: "Invalid status. Valid statuses are: Functional, Suspended" });
+    return res.status(400).json({
+      message: "Invalid status. Valid statuses are: Functional, Suspended",
+    });
   }
 
   try {
@@ -185,4 +201,9 @@ const changeVehicleStatus = async (req, res) => {
   }
 };
 
-module.exports = { registerVehicle, getVehiclesForUser, getAllVehicles, changeVehicleStatus };
+module.exports = {
+  registerVehicle,
+  getVehiclesForUser,
+  getAllVehicles,
+  changeVehicleStatus,
+};

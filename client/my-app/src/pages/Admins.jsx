@@ -68,7 +68,7 @@ const Admins = () => {
         <h1>Admins List</h1>
       </div>
       <TableContainer component={Paper}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell align="center">#</TableCell>

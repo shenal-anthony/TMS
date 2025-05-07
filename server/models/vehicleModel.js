@@ -64,6 +64,7 @@ const findAllVehicles = async () => {
       FROM vehicles;
     `;
     const result = await pool.query(query);
+    // console.log("🚀 ~ vehicleModel.js:67 ~ findAllVehicles ~ result:", result);
     return result.rows;
   } catch (error) {
     console.error("Error fetching all vehicles:", error);

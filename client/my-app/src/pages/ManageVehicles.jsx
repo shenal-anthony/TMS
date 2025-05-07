@@ -16,8 +16,9 @@ import {
 } from "@mui/material";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import axiosInstance from "../api/axiosInstance";
 
-const ManageVehicles = () => {
+const ManageVehicles = ({ userId }) => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,34 +29,23 @@ const ManageVehicles = () => {
     order: "asc",
   });
   const [selectedIds, setSelectedIds] = useState([]);
-
   const apiUrl = import.meta.env.VITE_API_URL;
+  const adminId = userId;;
 
   useEffect(() => {
-    const token = localStorage.getItem("token"); // Get the token from local storage
-
-    if (!token) {
-      setError("No token found");
-      setLoading(false);
-      return;
-    }
-
-    axios
-      .get(`${apiUrl}/api/vehicles/manage`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    axiosInstance
+      .get(`${apiUrl}/api/vehicles/manage/${adminId}`)
       .then((response) => {
-        setVehicles(response.data);
+        if (Array.isArray(response.data)) {
+          setVehicles(response.data);
+        } else {
+          setVehicles([]);
+          setError(response.data.message || "Unexpected response structure");
+        }
         setLoading(false);
       })
       .catch((error) => {
-        if (error.response && error.response.status === 404) {
-          setVehicles([]);
-        } else {
-          setError("Error fetching vehicles: " + error.message);
-        }
+        setError("Error fetching vehicles: " + error.message);
         setLoading(false);
       });
   }, []);
@@ -64,7 +54,7 @@ const ManageVehicles = () => {
     const newStatus =
       currentStatus === "Functional" ? "Suspended" : "Functional";
 
-    axios
+    axiosInstance
       .patch(`${apiUrl}/api/vehicles/status/${id}`, { status: newStatus })
       .then(() => {
         setVehicles((prev) =>
@@ -123,7 +113,7 @@ const ManageVehicles = () => {
     }));
   };
 
-  const sortedVehicles = [...vehicles].sort((a, b) => {
+  const sortedVehicles = [...(vehicles || [])].sort((a, b) => {
     const aVal = a[sortConfig.key];
     const bVal = b[sortConfig.key];
 
@@ -188,7 +178,7 @@ const ManageVehicles = () => {
         </div>
       </div>
       <TableContainer component={Paper}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               {/* Checkbox for selecting all rows */}

@@ -235,7 +235,7 @@ const ViewBookings = () => {
         <div>
           <div className="mb-4">Currently Ongoing Tours</div>
           <TableContainer component={Paper}>
-            <Table>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell align="center">#</TableCell>
@@ -336,7 +336,7 @@ const ViewBookings = () => {
         <div className="mt-4">
           <div className="mb-4">Finalized Tours</div>
           <TableContainer component={Paper}>
-            <Table>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell align="center">#</TableCell>

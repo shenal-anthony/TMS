@@ -221,6 +221,23 @@ const getGuideFinalizedBookings = async (req, res) => {
   }
 };
 
+// get assigned bookings by guide id
+const getAssignedBookingsByGuideId = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const bookings = await booking.getAssignedBookingsByUserId(id);
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ message: "No bookings found" });
+    }
+    res.json(bookings);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching guide requests", error: error.message });
+  }
+};
+
+
 // get finalized bookings by id
 const getFinalizedBookingsById = async (req, res) => {
   const { id } = req.params;
@@ -247,4 +264,5 @@ module.exports = {
   deleteGuideRequest,
   getGuideFinalizedBookings,
   getFinalizedBookingsById,
+  getAssignedBookingsByGuideId,
 };

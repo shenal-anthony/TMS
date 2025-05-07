@@ -57,17 +57,23 @@ const App = () => {
           }
         >
           <Route element={<BaseLayout role={authUser?.role} />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/dashboard"
+              element={<Dashboard userId={authUser?.userId} />}
+            />
             <Route path="/bookings/pending" element={<PendingBookings />} />
             <Route path="/bookings/confirmed" element={<ViewBookings />} />
             <Route path="/admins" element={<Admins />} />
             <Route path="/contents/destinations" element={<Destinations />} />
             <Route path="/contents/events" element={<Events />} />
             <Route path="/guide-availability" element={<GuideAvailability />} />
-            <Route path="/vehicles/your-vehicles" element={<YourVehicles />} />
+            <Route
+              path="/vehicles/your-vehicles"
+              element={<YourVehicles userId={authUser?.userId} />}
+            />
             <Route
               path="/vehicles/manage-vehicles"
-              element={<ManageVehicles />}
+              element={<ManageVehicles userId={authUser?.userId} />}
             />
             <Route path="/reports" element={<Reports />} />
             <Route path="/edit-profile" element={<EditProfile />} />

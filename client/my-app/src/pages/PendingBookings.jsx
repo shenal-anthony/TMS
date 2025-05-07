@@ -26,11 +26,11 @@ const PendingBookings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [rowsPerPage, setRowsPerPage] = useState(3);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
-  const [sortField, setSortField] = useState("booking_id");
+  const [sortField, setSortField] = useState("closest");
   const [selectedIds, setSelectedIds] = useState([]);
 
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -122,15 +122,22 @@ const PendingBookings = () => {
   };
 
   const sortedBookingIds = Object.keys(groupedBookings).sort((a, b) => {
+    const today = new Date();
+
     if (sortField === "booking_id") {
       return sortOrder === "asc" ? a - b : b - a;
     } else if (sortField === "booking_date") {
-      const dateA = groupedBookings[a][0].booking_date;
-      const dateB = groupedBookings[b][0].booking_date;
-      return sortOrder === "asc"
-        ? new Date(dateA) - new Date(dateB)
-        : new Date(dateB) - new Date(dateA);
+      const dateA = new Date(groupedBookings[a][0].booking_date);
+      const dateB = new Date(groupedBookings[b][0].booking_date);
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    } else if (sortField === "closest") {
+      const dateA = new Date(groupedBookings[a][0].booking_date);
+      const dateB = new Date(groupedBookings[b][0].booking_date);
+      const diffA = Math.abs(today - dateA);
+      const diffB = Math.abs(today - dateB);
+      return sortOrder === "asc" ? diffA - diffB : diffB - diffA;
     }
+
     return 0;
   });
 
@@ -161,10 +168,11 @@ const PendingBookings = () => {
 
   return (
     <div>
-      <div className="m-2">
-        <Typography variant="h4" gutterBottom>
+      <div className="mb-4 mt-1">
+        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
           Pending Bookings
         </Typography>
+        <Typography>You've got pending work—assign guides to keep tours on track.</Typography>
       </div>
 
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -241,7 +249,7 @@ const PendingBookings = () => {
       {!loading && bookingIds.length > 0 && (
         <>
           <TableContainer component={Paper}>
-            <Table>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell align="center" padding="checkbox">
@@ -297,6 +305,15 @@ const PendingBookings = () => {
                       <TableRow
                         key={`${bookingId}-${booking.guide_id}`}
                         selected={isSelected(bookingId)}
+                        sx={{
+                          backgroundColor:
+                            (paginatedIds.indexOf(bookingId) +
+                              page * rowsPerPage) %
+                              2 ===
+                            0
+                              ? "#f7f8f8" // light gray for even rows
+                              : "inherit",
+                        }}
                       >
                         <TableCell align="center" padding="checkbox">
                           {index === 0 && (
@@ -338,7 +355,7 @@ const PendingBookings = () => {
           </TableContainer>
 
           <TablePagination
-            rowsPerPageOptions={[8, 10, 25]}
+            rowsPerPageOptions={[3, 5, 8]}
             component="div"
             count={bookingIds.length}
             rowsPerPage={rowsPerPage}

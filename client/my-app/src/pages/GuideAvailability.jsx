@@ -217,7 +217,7 @@ const GuideAvailability = () => {
       </div>
 
       <TableContainer component={Paper}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">

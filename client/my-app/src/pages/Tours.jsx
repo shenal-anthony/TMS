@@ -9,9 +9,6 @@ import {
   Paper,
   Button,
   TablePagination,
-  Box,
-  Card,
-  CardContent,
   Typography,
   Dialog,
   DialogTitle,
@@ -25,49 +22,43 @@ import CloseIcon from "@mui/icons-material/Close";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
 
-const Tours = () => {
+const Tours = ({ userId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [bookings, setBookings] = useState([]);
-  const [selectedBooking, setSelectedBooking] = useState(null); // Card data
+  const [assignedBookings, setAssignedBookings] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const [sortField, setSortField] = useState("booking_id");
+  const [sortAssginedField, setSortAssignedField] = useState("closest");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [sortAssginedOrder, setSortAssignedOrder] = useState("asc");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [assignedPage, setAssignedPage] = useState(0);
+  const [rowsPerAssignedPage, setRowsPerAssignedPage] = useState(8);
 
-  const guideId = 5;
+  const guideId = userId;
 
   useEffect(() => {
-    const fetchFinalizedBookings = async () => {
+    const fetchBookings = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get(
-          `/api/guides/finalized/${guideId}`
-        );
-        setBookings(response.data);
+        const [finalizedRes, assignedRes] = await Promise.all([
+          axiosInstance.get(`/api/guides/finalized/${guideId}`),
+          axiosInstance.get(`/api/guides/assigned/${guideId}`),
+        ]);
+        setBookings(finalizedRes.data);
+        setAssignedBookings(assignedRes.data);
       } catch (error) {
-        console.error("Error fetching finalized bookings:", error);
+        console.error("Error fetching bookings:", error);
         setError("Failed to load bookings");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFinalizedBookings();
+    fetchBookings();
   }, []);
-
-  const sortedBookings = [...bookings].sort((a, b) => {
-    const valA = a[sortField];
-    const valB = b[sortField];
-    if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-    if (valA > valB) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  const paginated = sortedBookings.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -78,19 +69,69 @@ const Tours = () => {
     }
   };
 
-  const handlePageChange = (_, newPage) => {
-    setPage(newPage);
+  const handleAssignedSort = (field) => {
+    if (sortAssginedField === field) {
+      setSortAssignedOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortAssignedField(field);
+      setSortAssignedOrder("asc");
+    }
   };
 
+  const sortedBookings = [...bookings].sort((a, b) => {
+    const valA = a[sortField];
+    const valB = b[sortField];
+    if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+    if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const sortedAssigned = [...assignedBookings].sort((a, b) => {
+    if (sortAssginedField === "closest") {
+      const today = dayjs();
+      const diffA = Math.abs(today.diff(dayjs(a.booking_date), "day"));
+      const diffB = Math.abs(today.diff(dayjs(b.booking_date), "day"));
+      return sortAssginedOrder === "asc" ? diffA - diffB : diffB - diffA;
+    } else {
+      const valA = sortAssginedField.includes("date")
+        ? dayjs(a[sortAssginedField])
+        : a[sortAssginedField];
+      const valB = sortAssginedField.includes("date")
+        ? dayjs(b[sortAssginedField])
+        : b[sortAssginedField];
+
+      if (valA < valB) return sortAssginedOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortAssginedOrder === "asc" ? 1 : -1;
+      return 0;
+    }
+  });
+
+  const paginated = sortedBookings.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const paginatedAssigned = sortedAssigned.slice(
+    assignedPage * rowsPerAssignedPage,
+    assignedPage * rowsPerAssignedPage + rowsPerAssignedPage
+  );
+
+  const handlePageChange = (_, newPage) => setPage(newPage);
   const handleRowsPerPageChange = (e) => {
     setRowsPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
 
-  const handleSendRequest = async (bookingId) => {
+  const handleAssignedPageChange = (_, newPage) => setAssignedPage(newPage);
+  const handleAssignedRowsPerPageChange = (e) => {
+    setRowsPerAssignedPage(parseInt(e.target.value, 10));
+    setAssignedPage(0);
+  };
+
+  const handleViewRequest = async (bookingId) => {
     try {
       const response = await axiosInstance.get(
-        `/api/guides/finalized/details/${bookingId}`
+        `/api/guides/details/${bookingId}`
       );
       setSelectedBooking(response.data);
     } catch (err) {
@@ -100,21 +141,121 @@ const Tours = () => {
 
   return (
     <div>
-      <div className="m-4">
-        <h1>Assigned Tours</h1>
-        <p>Admin reviewed and assigned bookings to you!</p>
+      <div className="mb-4 mt-2">
+        <Typography variant="h5">Assigned & Finalized Tours</Typography>
+        <Typography>
+          These bookings are currently assigned or finalized by admin.
+        </Typography>
       </div>
 
       {loading && <div>Loading...</div>}
       {error && <div style={{ color: "red" }}>{error}</div>}
 
-      {!loading && bookings.length > 0 && (
+      {/* Assigned Bookings Table */}
+      {!loading && assignedBookings.length > 0 && (
         <>
+          <Typography variant="h6" sx={{ m: 1 }}>
+            Assigned Bookings
+          </Typography>
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell align="center">#</TableCell>
+                  {/* booking_id */}
+                  <TableCell align="center">
+                    <Button
+                      onClick={() => handleAssignedSort("booking_id")}
+                      endIcon={
+                        sortAssginedField === "booking_id" ? (
+                          sortAssginedOrder === "asc" ? (
+                            <ArrowUpwardIcon />
+                          ) : (
+                            <ArrowDownwardIcon />
+                          )
+                        ) : null
+                      }
+                    >
+                      Booking ID
+                    </Button>
+                  </TableCell>
+                  <TableCell align="center">Headcount</TableCell>
+                  {/* booking_date */}
+                  <TableCell align="center">
+                    <Button
+                      onClick={() => handleAssignedSort("booking_date")}
+                      endIcon={
+                        sortAssginedField === "booking_date" ? (
+                          sortAssginedOrder === "asc" ? (
+                            <ArrowUpwardIcon />
+                          ) : (
+                            <ArrowDownwardIcon />
+                          )
+                        ) : null
+                      }
+                    >
+                      Booking Date
+                    </Button>
+                  </TableCell>
+                  <TableCell align="center">Duration</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedAssigned.map((booking, index) => (
+                  <TableRow key={booking.booking_id}>
+                    <TableCell align="center">
+                      {index + 1 + assignedPage * rowsPerAssignedPage}
+                    </TableCell>
+                    <TableCell align="center">{booking.booking_id}</TableCell>
+                    <TableCell align="center">{booking.headcount}</TableCell>
+                    <TableCell align="center">
+                      {dayjs(booking.booking_date).format("YYYY-MM-DD")}
+                    </TableCell>
+                    <TableCell align="center">
+                      {dayjs(booking.end_date).diff(
+                        dayjs(booking.start_date),
+                        "day"
+                      )}{" "}
+                      days
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="contained"
+                        onClick={() => handleViewRequest(booking.booking_id)}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[8, 10, 25]}
+            component="div"
+            count={assignedBookings.length}
+            rowsPerPage={rowsPerAssignedPage}
+            page={assignedPage}
+            onPageChange={handleAssignedPageChange}
+            onRowsPerPageChange={handleAssignedRowsPerPageChange}
+          />
+        </>
+      )}
+
+      {/* Finalized Bookings Table */}
+      {!loading && bookings.length > 0 && (
+        <>
+          <Typography variant="h6" sx={{ m: 2 }}>
+            Finalized Bookings
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center">#</TableCell>
+                  {/* booking_id */}
                   <TableCell align="center">
                     <Button
                       onClick={() => handleSort("booking_id")}
@@ -132,6 +273,7 @@ const Tours = () => {
                     </Button>
                   </TableCell>
                   <TableCell align="center">Headcount</TableCell>
+                  {/* booking_date */}
                   <TableCell align="center">
                     <Button
                       onClick={() => handleSort("booking_date")}
@@ -174,7 +316,7 @@ const Tours = () => {
                     <TableCell align="center">
                       <Button
                         variant="contained"
-                        onClick={() => handleSendRequest(booking.booking_id)}
+                        onClick={() => handleViewRequest(booking.booking_id)}
                       >
                         View Details
                       </Button>
@@ -184,7 +326,6 @@ const Tours = () => {
               </TableBody>
             </Table>
           </TableContainer>
-
           <TablePagination
             rowsPerPageOptions={[8, 10, 25]}
             component="div"
@@ -197,7 +338,7 @@ const Tours = () => {
         </>
       )}
 
-      {/* Details Dialog */}
+      {/* Dialog */}
       <Dialog
         open={!!selectedBooking}
         onClose={() => setSelectedBooking(null)}

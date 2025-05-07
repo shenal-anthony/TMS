@@ -87,7 +87,6 @@ const GuideDashboard = ({ userId }) => {
         {
           position: "top-right",
           autoClose: 4000,
-          closeOnClick: true,
           pauseOnHover: true,
         }
       );
@@ -110,11 +109,15 @@ const GuideDashboard = ({ userId }) => {
   };
 
   const handleReject = async (bookingId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to reject this request?"
+    );
+    if (!confirmed) return;
+
     try {
       const res = await axiosInstance.delete(
         `/api/bookings/requests/${bookingId}/${guideId}`
       );
-      console.log("Guide request deleted successfully", res.data);
 
       setRequests((prev) => prev.filter((req) => req.booking_id !== bookingId));
     } catch (error) {

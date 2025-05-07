@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const verifyJWT = require("../middlewares/verifyJWT");
 const {
   getVehiclesForUser,
   registerVehicle,
@@ -10,8 +9,8 @@ const {
 const validateVehicleRegistration = require("../middlewares/validateVehicleRegis");
 
 router.post("/register", validateVehicleRegistration, registerVehicle);
-router.get("/", verifyJWT, getVehiclesForUser);
-router.get("/manage", getAllVehicles);
+router.get("/:id", getVehiclesForUser);
+router.get("/manage/:id", getAllVehicles);
 router.patch("/status/:id", changeVehicleStatus);
 
 module.exports = router;

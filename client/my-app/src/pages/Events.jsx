@@ -371,7 +371,7 @@ const Events = () => {
 
         {/* Accommodation Table */}
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
@@ -613,7 +613,7 @@ const Events = () => {
         </div>
         {/* Accommodation Table */}
         <TableContainer component={Paper}>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
