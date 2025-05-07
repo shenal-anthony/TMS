@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Dashboard,
   DirectionsCar,
@@ -9,6 +9,14 @@ import RateReviewIcon from "@mui/icons-material/RateReview";
 import HikingIcon from "@mui/icons-material/Hiking";
 
 const GuideSidebar = ({ isCollapsed }) => {
+  const navigate = useNavigate();
+
+  const logout = () => {
+    sessionStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    navigate("/login");
+  };
+
   return (
     <aside
       className={`bg-gray-900 text-white flex flex-col transition-all duration-300 h-full overflow-y-auto p-3 ${
@@ -87,18 +95,14 @@ const GuideSidebar = ({ isCollapsed }) => {
         </li>
       </ul>
 
-      {/* Logout at the bottom */}
+      {/* Logout Button */}
       <div className="mt-auto">
-        <NavLink
-          to="/login"
-          className={({ isActive }) =>
-            `flex items-center gap-2 p-2 hover:bg-red-600 ${
-              isActive ? "bg-red-600" : ""
-            }`
-          }
+        <div
+          onClick={logout}
+          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-red-600"
         >
           <ExitToApp /> {!isCollapsed && "Logout"}
-        </NavLink>
+        </div>
       </div>
     </aside>
   );
