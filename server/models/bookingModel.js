@@ -158,6 +158,33 @@ const deleteBookingById = async (id) => {
   await pool.query(query, [id]);
 };
 
+const getPendingCount = async () => {
+  const query = `SELECT COUNT(*) AS pending_count FROM bookings WHERE status = $1`;
+  const values = ["pending"];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].pending_count, 10); // Convert to a number
+}; 
+
+const getConfirmedCount = async () => {
+  const query = `SELECT COUNT(*) AS confirmed_count FROM bookings WHERE status = $1`;
+  const values = ["confirmed"];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].confirmed_count, 10); // Convert to a number
+}; 
+
+const getOngoingCount = async (date) => { 
+  const query = `
+    SELECT COUNT(*) AS ongoing_count 
+    FROM bookings 
+    WHERE status = $1 AND booking_date = $2
+  `;
+  const values = ["confirmed", date];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].ongoing_count, 10);
+};
+
+
+
 module.exports = {
   getAllBookings,
   addBooking,
@@ -169,4 +196,7 @@ module.exports = {
   getFinalizedBookings,
   getFinalizedBookingsByUserId,
   getAssignedBookingsByUserId,
+  getPendingCount,
+  getConfirmedCount,
+  getOngoingCount,
 };

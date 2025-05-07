@@ -33,6 +33,7 @@ const contentRoutes = require("./routes/contentRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const touristRoutes = require("./routes/touristRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 const port = process.env.PORT || 8001;
 
@@ -69,6 +70,7 @@ app.use("/api/contents", contentRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/tourists", touristRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

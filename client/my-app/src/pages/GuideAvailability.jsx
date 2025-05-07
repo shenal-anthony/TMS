@@ -280,11 +280,11 @@ const GuideAvailability = () => {
                       onChange={() => handleSelectRow(guide.user_id)}
                     />
                   </TableCell>
-                  <TableCell>{index + 1 + page * rowsPerPage}</TableCell>
-                  <TableCell>{guide.user_id}</TableCell>
-                  <TableCell>{`${guide.first_name} ${guide.last_name}`}</TableCell>
-                  <TableCell>{guide.email_address}</TableCell>
-                  <TableCell style={{ minWidth: 150 }}>
+                  <TableCell align="center">{index + 1 + page * rowsPerPage}</TableCell>
+                  <TableCell align="center">{guide.user_id}</TableCell>
+                  <TableCell align="center">{`${guide.first_name} ${guide.last_name}`}</TableCell>
+                  <TableCell align="center">{guide.email_address}</TableCell>
+                  <TableCell align="center" style={{ minWidth: 150 }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -298,7 +298,7 @@ const GuideAvailability = () => {
                       label={guide.status}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell align="center">
                     <Button
                       variant="contained"
                       color="secondary"

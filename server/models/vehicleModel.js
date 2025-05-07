@@ -86,9 +86,25 @@ const changeStatusById = async (vehicleId, status) => {
   }
 };
 
+const getFunctionalCount = async () => {
+  const query = `SELECT COUNT(*) AS functional_count FROM vehicles WHERE status = $1`;
+  const values = ["Functional"];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].functional_count, 10); // Convert to a number
+};
+
+const getVehicleCount = async () => {
+  const query = `SELECT COUNT(*) AS vehicle_count FROM vehicles`;
+  const result = await pool.query(query);
+
+  return parseInt(result.rows[0].vehicle_count, 10); // Convert to a number
+};
+
 module.exports = {
   createVehicle,
   getVehiclesByUserId,
   findAllVehicles,
   changeStatusById,
+  getFunctionalCount,
+  getVehicleCount,
 };

@@ -5,6 +5,7 @@ const { getAllAdmins, deleteAdmin } = require("../controllers/adminController");
 
 // Route to get all admins
 router.get("/", getAllAdmins);
+router.get("/status", );
 router.delete("/:id", deleteAdmin);
 
 

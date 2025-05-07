@@ -4,8 +4,6 @@ const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 
 const path = require("path");
-const fs = require("fs");
-
 const baseUrl = process.env.BASE_URL;
 
 // destinations controller

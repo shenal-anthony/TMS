@@ -16,6 +16,8 @@ import {
   Checkbox,
   Snackbar,
   Alert,
+  IconButton,
+  CircularProgress,
 } from "@mui/material";
 import {
   DirectionsCar as VehicleIcon,
@@ -24,14 +26,18 @@ import {
   Refresh as OngoingIcon,
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
+  AccountCircle as AdminIcon,
+  Tour as TourIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
 import StatusCard from "../components/StatusCard";
 import io from "socket.io-client";
 
-const Dashboard = () => {
-  const [userData, setUserData] = useState(null);
+const Dashboard = ({ userId }) => {
+  const [statusCardsData, setStatusCardsData] = useState([]);
+  const [loadingCards, setLoadingCards] = useState(false); // Loading st
   const [guideRequests, setGuideRequests] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarError, setSnackbarError] = useState("");
@@ -47,31 +53,33 @@ const Dashboard = () => {
   const [page, setPage] = useState(0);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
-
   const socketRef = useRef(null);
+  const adminId = userId;
+  const iconMap = {
+    VehicleIcon: <VehicleIcon fontSize="medium" />,
+    BookingIcon: <BookingIcon fontSize="medium" />,
+    AdminIcon: <AdminIcon fontSize="medium" />,
+    TourIcon: <TourIcon fontSize="medium" />,
+  };
 
-  const statusCards = [
-    {
-      title: "Vehicle Status",
-      value: "24",
-      icon: <VehicleIcon fontSize="large" />,
-    },
-    {
-      title: "Booking Status",
-      value: "156",
-      icon: <BookingIcon fontSize="large" />,
-    },
-    {
-      title: "Ongoing Status",
-      value: "18",
-      icon: <OngoingIcon fontSize="large" />,
-    },
-    {
-      title: "Pending Booking Status",
-      value: "23",
-      icon: <PendingIcon fontSize="large" />,
-    },
-  ];
+  const fetchStatusCardsData = async () => {
+    try {
+      setLoadingCards(true);
+      const response = await axiosInstance.get(
+        `${apiUrl}/api/reports/cards/${adminId}`
+      );
+      const data = response.data.map((item) => ({
+        ...item,
+        icon: iconMap[item.icon],
+      }));
+      setStatusCardsData(data);
+      setLoadingCards(false);
+    } catch (error) {
+      console.error("Error fetching status card data:", error);
+      setLoadingCards(false);
+      setSnackbarError("Failed to fetch status card data.");
+    }
+  };
 
   useEffect(() => {
     socketRef.current = io(import.meta.env.VITE_SOCKET_URL);
@@ -79,12 +87,6 @@ const Dashboard = () => {
     socketRef.current.on("guide-response", () => {
       fetchGuideRequests();
     });
-
-    const accessToken = sessionStorage.getItem("accessToken");
-    if (!accessToken) {
-      navigate("/login");
-      return;
-    }
 
     const fetchGuideRequests = async () => {
       try {
@@ -99,10 +101,6 @@ const Dashboard = () => {
 
     const fetchData = async () => {
       try {
-        // const authRes = await axiosInstance.get(`${apiUrl}/api/admins/`);
-        // setUserData(authRes.data);
-        // console.log(authRes.data); // Check if the user is an admin
-
         await fetchGuideRequests(); // Fetch guide requests
 
         const bookingRes = await axiosInstance.get(
@@ -120,6 +118,7 @@ const Dashboard = () => {
     };
 
     fetchData();
+    fetchStatusCardsData(adminId); // Fetch status card data
     return () => {
       socketRef.current.off("guide-response"); // Clean up event listener
       socketRef.current.disconnect(); // Clean up socket on unmount
@@ -253,23 +252,53 @@ const Dashboard = () => {
   return (
     <div>
       <div>
+        {/* Card overview */}
         <div>
-          <Typography variant="h4">Dashboard</Typography>
-          <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}>
-            A quick data overview of the System.
-          </Typography>
-        </div>
+          {/* --- Status Cards Section --- */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+            <Box>
+              <Typography variant="h4">Dashboard</Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                A quick data overview of the system.
+              </Typography>
+            </Box>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 4 }}>
-          {statusCards.map((card, index) => (
-            <StatusCard
-              key={index}
-              title={card.title}
-              value={card.value}
-              icon={card.icon}
-            />
-          ))}
-        </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.1 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ color: "text.secondary", fontSize: "0.8rem" }}
+              >
+                Refresh Cards
+              </Typography>
+
+              <IconButton
+                onClick={fetchStatusCardsData}
+                disabled={loadingCards}
+              >
+                {loadingCards ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  <RefreshIcon />
+                )}
+              </IconButton>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 4 }}>
+            {statusCardsData.length > 0 ? (
+              statusCardsData.map((card, index) => (
+                <StatusCard
+                  key={index}
+                  title={card.title}
+                  value={card.value}
+                  icon={card.icon}
+                />
+              ))
+            ) : (
+              <Typography variant="body1">No data available.</Typography>
+            )}
+          </Box>
+        </div>
 
         <Divider sx={{ my: 3 }} />
 

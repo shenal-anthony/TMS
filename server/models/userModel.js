@@ -68,6 +68,13 @@ const getAdmins = async () => {
   return result.rows;
 };
 
+const getAdminCount = async () => {
+  const query = `SELECT COUNT(*) AS admin_count FROM users WHERE role = $1`;
+  const values = ["Admin"];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].admin_count, 10); // Convert to a number
+};
+
 const getUserById = async (id) => {
   const query = `SELECT role FROM users WHERE user_id = $1`;
   const values = [id];
@@ -80,6 +87,13 @@ const getGuides = async () => {
   const values = ["Guide"];
   const result = await pool.query(query, values);
   return result.rows;
+};
+
+const getGuideCount = async () => {
+  const query = `SELECT COUNT(*) AS guide_count FROM users WHERE role = $1`;
+  const values = ["Guide"];
+  const result = await pool.query(query, values);
+  return parseInt(result.rows[0].guide_count, 10); // Convert to a number
 };
 
 const getActiveGuides = async () => {
@@ -115,4 +129,6 @@ module.exports = {
   changeStatusById,
   getGuideById,
   getUserById,
+  getAdminCount,
+  getGuideCount,
 };
