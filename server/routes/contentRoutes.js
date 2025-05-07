@@ -32,7 +32,7 @@ router.delete("/destinations/:id", deleteDestination);
 // events routes
 router.get("/events", getAllEvents);
 router.post("/events", addEvent);
-router.put("/events/:id");
+// router.put("/events/:id", updateEvent);
 router.delete("/events/:id", deleteEvent);
 
 // packages routes

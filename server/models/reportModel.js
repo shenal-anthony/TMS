@@ -48,9 +48,17 @@ const getAllReports = async () => {
   return result.rows;
 };
 
-// get report by id
-const getReportById = async (id) => {
+// get report by user id
+const getReportByUserId = async (id) => {
   const query = `SELECT * FROM reports WHERE user_id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
+// get report by report id
+const getReportById = async (id) => {
+  const query = `SELECT * FROM reports WHERE report_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
   return result.rows[0];
@@ -70,6 +78,7 @@ const getReportsByRole = async (role) => {
 module.exports = {
   createReport,
   getAllReports,
-  getReportById,
   getReportsByRole,
+  getReportByUserId,
+  getReportById,
 };

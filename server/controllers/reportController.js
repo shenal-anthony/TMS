@@ -271,6 +271,21 @@ const storeReport = async (req, res) => {
   }
 };
 
+//
+const viewReport = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const reportData = await report.getReportById(id);
+    if (!reportData) {
+      return res.status(404).json({ error: "Report not found." });
+    }
+    res.status(200).json(reportData);
+  } catch (error) {
+    console.error("Error fetching report:", error);
+    res.status(500).json({ error: "Server error while fetching report." });
+  }
+};
+
 module.exports = {
   getStatusCardData,
   deleteAdmin,
@@ -278,4 +293,5 @@ module.exports = {
   getChartData,
   getLogData,
   storeReport,
+  viewReport,
 };

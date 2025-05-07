@@ -2,9 +2,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   TextField,
-  FormControlLabel,
-  Checkbox,
-  Typography,
   MenuItem,
   Container,
   Box,
@@ -21,7 +18,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextareaAutosize,
+  Typography,
+  Divider,
+  IconButton,
 } from "@mui/material";
 import { Textarea } from "@mui/joy";
 
@@ -37,7 +36,6 @@ const Events = () => {
     serviceUrl: "",
     accommodationType: "hotel",
     picture: null,
-    agreeTerms: false,
   });
 
   // Event Form state
@@ -47,15 +45,19 @@ const Events = () => {
     groupSize: "",
     description: "",
   });
-
   const [picturePreview, setPicturePreview] = useState("");
+  const [accommodationContents, setAccommodationContents] = useState([]);
+  const [eventContents, setEventContents] = useState([]);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
+
   const [modalOpen, setModalOpen] = useState(false);
 
   const [modalMessage, setModalMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
-
-  const [accommodationContents, setAccommodationContents] = useState([]);
-  const [eventContents, setEventContents] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [eventLoading, setEventLoading] = useState(true);
@@ -69,42 +71,28 @@ const Events = () => {
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [eventRowsPerPage, setEventRowsPerPage] = useState(8);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [eventDialogOpen, setEventDialogOpen] = useState(false);
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentId, setCurrentId] = useState(null);
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleEventChange = (e) => {
     const { name, value } = e.target;
-    setEventFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setEventFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({ ...formData, [e.target.name]: file });
+      setFormData({ ...formData, picture: file });
 
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPicturePreview(reader.result);
-      };
+      reader.onloadend = () => setPicturePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
-  const resetAccommodationForm = () => {
+  const resetForm = () => {
     setFormData({
       accommodationName: "",
       locationUrl: "",
@@ -113,7 +101,6 @@ const Events = () => {
       serviceUrl: "",
       accommodationType: "hotel",
       picture: null,
-      agreeTerms: false,
     });
     setPicturePreview("");
     setCurrentId(null);
@@ -169,53 +156,45 @@ const Events = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.agreeTerms) {
-      setModalMessage(
-        "You must agree to the Terms and Conditions before submitting."
-      );
-      setModalOpen(true);
-      return;
-    }
-
     const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] !== null) {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
+    formDataToSend.append("accommodationName", formData.accommodationName);
+    formDataToSend.append("locationUrl", formData.locationUrl);
+    formDataToSend.append("contactNumber", formData.contactNumber);
+    formDataToSend.append("amenities", formData.amenities);
+    formDataToSend.append("serviceUrl", formData.serviceUrl);
+    formDataToSend.append("accommodationType", formData.accommodationType);
+    formDataToSend.append("folder", "accommodations");
 
-    try {
-      const url =
-        isEditing && currentId
-          ? `${apiUrl}/api/contents/accommodations/${currentId}`
-          : `${apiUrl}/api/contents/accommodations`;
-
-      const method = isEditing ? "put" : "post";
-
-      const response = await axios[method](url, formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      setModalMessage(
-        response.data.message ||
-          `Accommodation ${isEditing ? "updated" : "registered"} successfully!`
-      );
-      setIsSuccess(true);
-      setModalOpen(true);
-      fetchAccommodations();
-      setDialogOpen(false);
-      resetAccommodationForm();
-    } catch (error) {
-      console.error("Error:", error);
-      setModalMessage(
-        error.response?.data?.message ||
-          "An error occurred during the operation."
-      );
-      setIsSuccess(false);
-      setModalOpen(true);
+    if (formData.picture) {
+      formDataToSend.append("file", formData.picture);
+    } else if (picturePreview) {
+      formDataToSend.append("pictureUrl", picturePreview);
     }
+
+    const request =
+      isEditing && currentId
+        ? axios.put(
+            `${apiUrl}/api/contents/accommodations/${currentId}`,
+            formDataToSend
+          )
+        : axios.post(`${apiUrl}/api/contents/accommodations`, formDataToSend);
+
+    request
+      .then((response) => {
+        setModalMessage(
+          response.data.message ||
+            `Accommodation ${isEditing ? "updated" : "added"} successfully!`
+        );
+        setIsSuccess(true);
+        fetchAccommodations();
+        setDialogOpen(false);
+        resetForm();
+      })
+      .catch((err) => {
+        setModalMessage("Error saving accommodation: " + err.message);
+        setIsSuccess(false);
+      })
+      .finally(() => setModalOpen(true));
   };
 
   const handleEventSubmit = async (e) => {
@@ -288,31 +267,28 @@ const Events = () => {
     }
   };
 
-  const handleEditAccommodation = (accommodation) => {
+  const handleEditAccommodation = (acc) => {
     setFormData({
-      accommodationName: accommodation.accommodation_name,
-      locationUrl: accommodation.location_url || "",
-      contactNumber: accommodation.contact_number || "",
-      amenities: accommodation.amenities || "",
-      serviceUrl: accommodation.service_url || "",
-      accommodationType: accommodation.accommodation_type || "hotel",
-      picture: null, // need to change
-      agreeTerms: false,
+      accommodationName: acc.accommodation_name,
+      locationUrl: acc.location_url,
+      contactNumber: acc.contact_number,
+      amenities: acc.amenities,
+      serviceUrl: acc.service_url,
+      accommodationType: acc.accommodation_type,
+      picture: null,
     });
-    setCurrentId(accommodation.accommodation_id);
+    setPicturePreview(acc.picture_url);
+    setCurrentId(acc.accommodation_id);
     setIsEditing(true);
     setDialogOpen(true);
-
-    if (accommodation.picture_url) {
-      setPicturePreview(accommodation.picture_url);
-    }
   };
 
   const handleEditEvent = (event) => {
     setEventFormData({
-      eventName: event.event_name || "",
-      startDate: event.start_date || "",
-      groupSize: event.group_size || "",
+      eventName: event.event_name,
+      startDate: event.start_date,
+      groupSize: event.group_size,
+      description: event.description,
     });
     setCurrentId(event.event_id);
     setIsEditing(true);
@@ -354,19 +330,16 @@ const Events = () => {
       {/* accommodation part  */}
       <div>
         <div className="mb-4 mt-4">
-          <h1>Accommodation List</h1>
-          <div className="mt-4">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                resetAccommodationForm();
-                setDialogOpen(true);
-              }}
-            >
-              Add New Accommodation
-            </Button>
-          </div>
+          <h1>Accommodations</h1>
+          <Button
+            variant="contained"
+            onClick={() => {
+              resetForm();
+              setDialogOpen(true);
+            }}
+          >
+            Add Accommodation
+          </Button>
         </div>
 
         {/* Accommodation Table */}
@@ -399,7 +372,7 @@ const Events = () => {
                           onClick={() => handleEditAccommodation(accommodation)}
                           sx={{ mr: 1 }}
                         >
-                          Edit
+                          Update
                         </Button>
                         <Button
                           variant="contained"
@@ -438,143 +411,89 @@ const Events = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
 
-        {/* Add/Edit Dialog */}
+        {/* Add/Edit Accommodation Dialog */}
         <Dialog
           open={dialogOpen}
-          onClose={() => {
-            setDialogOpen(false);
-            resetAccommodationForm();
-          }}
-          maxWidth="md"
+          onClose={() => setDialogOpen(false)}
           fullWidth
+          maxWidth="md"
         >
           <DialogTitle>
-            {isEditing ? "Edit Accommodation" : "Add New Accommodation"}
+            {isEditing ? "Edit Accommodation" : "Add Accommodation"}
           </DialogTitle>
           <DialogContent>
-            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-              <TextField
-                label="Accommodation Name"
-                name="accommodationName"
-                value={formData.accommodationName}
-                onChange={handleChange}
-                fullWidth
-                required
-                margin="normal"
-              />
+            <TextField
+              label="Accommodation Name"
+              name="accommodationName"
+              value={formData.accommodationName}
+              onChange={handleChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              label="Location URL"
+              name="locationUrl"
+              value={formData.locationUrl}
+              onChange={handleChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              label="Contact Number"
+              name="contactNumber"
+              value={formData.contactNumber}
+              onChange={handleChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              label="Amenities"
+              name="amenities"
+              value={formData.amenities}
+              onChange={handleChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              label="Service URL"
+              name="serviceUrl"
+              value={formData.serviceUrl}
+              onChange={handleChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              select
+              label="Type"
+              name="accommodationType"
+              value={formData.accommodationType}
+              onChange={handleChange}
+              fullWidth
+              margin="dense"
+            >
+              <MenuItem value="hotel">Hotel</MenuItem>
+              <MenuItem value="resort">Resort</MenuItem>
+              <MenuItem value="apartment">Apartment</MenuItem>
+            </TextField>
 
-              <TextField
-                select
-                label="Accommodation Type"
-                name="accommodationType"
-                value={formData.accommodationType}
-                onChange={handleChange}
-                fullWidth
-                required
-                margin="normal"
-              >
-                <MenuItem value="hotel">Hotel</MenuItem>
-                <MenuItem value="apartment">Apartment</MenuItem>
-                <MenuItem value="guesthouse">Guesthouse</MenuItem>
-                <MenuItem value="resort">Resort</MenuItem>
-                <MenuItem value="villa">Villa</MenuItem>
-              </TextField>
-
-              <TextField
-                label="Location URL (Google Maps)"
-                name="locationUrl"
-                value={formData.locationUrl}
-                onChange={handleChange}
-                fullWidth
-                required
-                margin="normal"
-                placeholder="https://maps.google.com/..."
-              />
-
-              <TextField
-                label="Contact Number"
-                name="contactNumber"
-                value={formData.contactNumber}
-                onChange={handleChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-
-              <TextField
-                label="Amenities (comma separated)"
-                name="amenities"
-                value={formData.amenities}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                rows={3}
-                margin="normal"
-                placeholder="WiFi, Pool, Parking, etc."
-              />
-
-              <TextField
-                label="Service URL (Booking link)"
-                name="serviceUrl"
-                value={formData.serviceUrl}
-                onChange={handleChange}
-                fullWidth
-                margin="normal"
-                placeholder="https://booking.com/..."
-              />
-
-              <Box my={2}>
-                <Button variant="contained" component="label">
-                  Upload Picture
-                  <input
-                    type="file"
-                    name="picture"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    hidden
-                  />
-                </Button>
-                {picturePreview && (
-                  <Box mt={2}>
-                    <Typography variant="subtitle2">Preview:</Typography>
-                    <img
-                      src={picturePreview}
-                      alt="Preview"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "200px",
-                        marginTop: "8px",
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    name="agreeTerms"
-                    checked={formData.agreeTerms}
-                    onChange={handleChange}
-                    required
-                  />
-                }
-                label="I agree to the Terms and Conditions"
-              />
-            </Box>
+            <div style={{ marginTop: "10px" }}>
+              <input type="file" accept="image/*" onChange={handleFileChange} />
+              {picturePreview && (
+                <img
+                  src={picturePreview}
+                  alt="Preview"
+                  style={{
+                    maxWidth: "200px",
+                    maxHeight: "200px",
+                    marginTop: "10px",
+                  }}
+                />
+              )}
+            </div>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => {
-                setDialogOpen(false);
-                resetAccommodationForm();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} color="primary">
-              {isEditing ? "Update" : "Add"}
-            </Button>
+            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button color="primary">{isEditing ? "Update" : "Add"}</Button>
           </DialogActions>
         </Dialog>
 
@@ -592,35 +511,32 @@ const Events = () => {
         </Dialog>
       </div>
 
-      <hr></hr>
+      <Divider sx={{ my: 3 }} />
 
       {/* event part */}
       <div>
         <div className="mb-4 mt-4">
-          <h1>Event List</h1>
-          <div className="mt-4">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                resetEventForm();
-                setEventDialogOpen(true);
-              }}
-            >
-              Add New Event
-            </Button>
-          </div>
+          <h1>Events</h1>
+          <Button
+            variant="contained"
+            onClick={() => {
+              resetEventForm();
+              setEventDialogOpen(true);
+            }}
+          >
+            Add Event
+          </Button>
         </div>
-        {/* Accommodation Table */}
+        {/* Event Table */}
         <TableContainer component={Paper}>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Start Date</TableCell>
-                <TableCell>Group size</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="center">ID</TableCell>
+                <TableCell align="center">Name</TableCell>
+                <TableCell align="center">Start Date</TableCell>
+                <TableCell align="center">Group size</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -632,21 +548,12 @@ const Events = () => {
                   )
                   .map((event) => (
                     <TableRow key={event.event_id} hover>
-                      <TableCell>{event.event_id}</TableCell>
-                      <TableCell>{event.event_id}</TableCell>
+                      <TableCell align="center">{event.event_id}</TableCell>
+                      <TableCell align="center">{event.event_id}</TableCell>
                       {/* change to event name */}
-                      <TableCell>{event.start_date}</TableCell>
-                      <TableCell>{event.group_size}</TableCell>
-                      <TableCell style={{ display: "flex" }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={() => handleEditEvent(event)}
-                          sx={{ mr: 1 }}
-                        >
-                          Edit
-                        </Button>
+                      <TableCell align="center">{event.start_date}</TableCell>
+                      <TableCell align="center">{event.group_size}</TableCell>
+                      <TableCell align="center">
                         <Button
                           variant="contained"
                           color="secondary"
@@ -683,73 +590,50 @@ const Events = () => {
         {/* Add/Edit Dialog */}
         <Dialog
           open={eventDialogOpen}
-          onClose={() => {
-            setEventDialogOpen(false);
-            resetEventForm();
-          }}
-          maxWidth="md"
+          onClose={() => setEventDialogOpen(false)}
           fullWidth
+          maxWidth="md"
         >
-          <DialogTitle>
-            {isEditing ? "Edit Event" : "Add New Event"}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Event" : "Add Event"}</DialogTitle>
           <DialogContent>
-            <Box component="form" onSubmit={handleEventSubmit} sx={{ mt: 2 }}>
-              <TextField
-                label="Tour Name"
-                name="tourName"
-                value={eventFormData.tourName}
-                onChange={handleEventChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-
-              <TextField
-                name="startDate"
-                type="date"
-                value={eventFormData.startDate}
-                onChange={handleEventChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-
-              <TextField
-                label="Group Size"
-                name="groupSize"
-                value={eventFormData.groupSize}
-                onChange={handleEventChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-              <Textarea
-                placeholder="Type in here…"
-                variant="outlined"
-                minRows={3}
-                maxRows={5}
-                name="description"
-                value={eventFormData.description}
-                onChange={handleEventChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-            </Box>
+            <TextField
+              label="Event Name"
+              name="eventName"
+              value={eventFormData.eventName}
+              onChange={handleEventChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              type="date"
+              name="startDate"
+              value={eventFormData.startDate}
+              onChange={handleEventChange}
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              label="Group Size"
+              name="groupSize"
+              value={eventFormData.groupSize}
+              onChange={handleEventChange}
+              fullWidth
+              margin="dense"
+            />
+            <Textarea
+              placeholder="Description"
+              name="description"
+              value={eventFormData.description}
+              onChange={handleEventChange}
+              minRows={3}
+              maxRows={5}
+              fullWidth
+              style={{ marginTop: "10px" }}
+            />
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => {
-                setEventDialogOpen(false);
-                resetEventForm();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleEventSubmit} color="primary">
-              {isEditing ? "Update" : "Add"}
-            </Button>
+            <Button onClick={() => setEventDialogOpen(false)}>Cancel</Button>
+            <Button color="primary">{isEditing ? "Update" : "Add"}</Button>
           </DialogActions>
         </Dialog>
       </div>

@@ -65,9 +65,9 @@ const Reports = ({ userId }) => {
     }
   };
 
-  const handleViewReport = async (reportId) => {
+  const handleViewReport = async (report_id) => {
     try {
-      const response = await axiosInstance.get(`/api/reports/${reportId}`);
+      const response = await axiosInstance.get(`/api/reports/view/${report_id}`);
       const report = response.data;
       setCurrentReportDetails(report);
       setChartData(JSON.parse(report.report_data));
@@ -108,14 +108,14 @@ const Reports = ({ userId }) => {
 
       const response = await axiosInstance.get("/api/reports/download", {
         params,
-        responseType: 'blob'
+        responseType: "blob",
       });
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `report.${downloadType.toLowerCase()}`);
+      link.setAttribute("download", `report.${downloadType.toLowerCase()}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -195,6 +195,7 @@ const Reports = ({ userId }) => {
       </Stack>
 
       <Box display="flex" gap={2} flexWrap="wrap">
+        {/* chart part  */}
         <Paper elevation={2} sx={{ flex: 3, p: 2, minWidth: 300 }}>
           <Typography variant="h6" gutterBottom>
             {reportType} Report
@@ -226,6 +227,7 @@ const Reports = ({ userId }) => {
           />
         </Paper>
 
+        {/* previous reports part */}
         <Paper
           elevation={2}
           sx={{
@@ -253,13 +255,18 @@ const Reports = ({ userId }) => {
                         secondary={
                           <>
                             <div>Type: {report.report_type}</div>
-                            <div>Date: {dayjs(report.generated_date).format('YYYY-MM-DD')}</div>
+                            <div>
+                              Date:{" "}
+                              {dayjs(report.generated_date).format(
+                                "YYYY-MM-DD"
+                              )}
+                            </div>
                           </>
                         }
                       />
                       <Button
                         variant="text"
-                        onClick={() => handleViewReport(report.id)}
+                        onClick={() => handleViewReport(report.report_id)}
                       >
                         View
                       </Button>
