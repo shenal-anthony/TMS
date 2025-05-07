@@ -17,7 +17,9 @@ const BaseLayout = ({ role }) => {
 
       {/* Bottom part: Sidebar + Main Content */}
       <div className="flex flex-grow overflow-hidden">
-        <Sidebar isCollapsed={isCollapsed} />
+        <div className="shrink-0">
+          <Sidebar isCollapsed={isCollapsed} />
+        </div>
 
         {/* Main content on the right */}
         <main className="flex-grow p-6 overflow-y-auto">

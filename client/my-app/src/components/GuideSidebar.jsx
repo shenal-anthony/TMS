@@ -11,9 +11,9 @@ import HikingIcon from "@mui/icons-material/Hiking";
 const GuideSidebar = ({ isCollapsed }) => {
   return (
     <aside
-      className={`bg-gray-900 text-white flex flex-col ${
-        isCollapsed ? "w-16" : "w-64"
-      } transition-all duration-300 h-full overflow-y-auto p-3`}
+      className={`bg-gray-900 text-white flex flex-col transition-all duration-300 h-full overflow-y-auto p-3 ${
+        isCollapsed ? "w-16 min-w-[4rem]" : "w-64 min-w-[16rem]"
+      } shrink-0`}
     >
       <ul className="flex-grow">
         {/* Dashboard */}
