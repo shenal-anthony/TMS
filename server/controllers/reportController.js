@@ -3,6 +3,7 @@ const user = require("../models/userModel");
 const vehicle = require("../models/vehicleModel");
 const booking = require("../models/bookingModel");
 const payment = require("../models/paymentModel");
+const report = require("../models/reportModel");
 
 const getStatusCardData = async (req, res) => {
   try {
@@ -141,7 +142,10 @@ const getChartData = async (req, res) => {
     for (const payment of paymentData) {
       if (!payment.payment_date) continue;
       const dateObj = new Date(payment.payment_date);
-      console.log("🚀 ~ reportController.js:144 ~ getChartData ~ dateObj:", dateObj);
+      //   console.log(
+      //     "🚀 ~ reportController.js:144 ~ getChartData ~ dateObj:",
+      //     dateObj
+      //   );
       if (start && end && (dateObj < start || dateObj > end)) continue;
 
       const date = dateObj.toISOString().split("T")[0];
@@ -185,10 +189,85 @@ const getChartData = async (req, res) => {
     );
 
     res.status(200).json(chartData);
-    console.log("🚀 ~ reportController.js:191 ~ getChartData ~ chartData:", chartData);
+    console.log(
+      "🚀 ~ reportController.js:191 ~ getChartData ~ chartData:",
+      chartData
+    );
   } catch (error) {
     console.error("Error fetching chart data:", error);
     res.status(500).json({ error: "Server error while fetching chart data." });
+  }
+};
+
+// Get report history by user role
+const getLogData = async (req, res) => {
+  const { id } = req.params;
+  //   console.log("🚀 ~ reportController.js:205 ~ getLogData ~ id:", id);
+
+  try {
+    // Fetch the user by ID
+    const userData = await user.getUserById(id);
+    // console.log(
+    //   "🚀 ~ reportController.js:210 ~ getLogData ~ userData:",
+    //   userData
+    // );
+    if (!userData) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const role = userData.role;
+    let reports;
+
+    // Determine which reports to fetch based on role
+    if (role === "SuperAdmin") {
+      reports = await report.getAllReports();
+    } else if (role === "Admin") {
+      reports = await report.getReportsByRole(role);
+    } else {
+      return res.status(403).json({
+        error:
+          "Access denied. Only Admins and SuperAdmins can access report history.",
+      });
+    }
+
+    res.status(200).json(reports);
+    console.log(
+      "🚀 ~ reportController.js:237 ~ getLogData ~ reports:",
+      reports
+    );
+  } catch (error) {
+    console.error("Error fetching report history:", error);
+    res
+      .status(500)
+      .json({ error: "Server error while fetching report history." });
+  }
+};
+
+// Store report data
+const storeReport = async (req, res) => {
+  const reportDetails = req.body;
+
+  try {
+    const userData = await user.getUserById(reportDetails.user_id);
+    const storedReport = await report.createReport({
+      generatedDate: reportDetails.generated_date,
+      startDate: reportDetails.start_date,
+      endDate: reportDetails.end_date,
+      comment: reportDetails.comment,
+      reportData: reportDetails.report_data,
+      reportType: reportDetails.report_type,
+      userId: reportDetails.user_id,
+      role: userData.role,
+    });
+    console.log(
+      "🚀 ~ reportController.js:262 ~ storeReport ~ storedReport:",
+      storedReport
+    );
+
+    res.status(201).json(storedReport);
+  } catch (error) {
+    console.error("Error storing report:", error);
+    res.status(500).json({ error: "Server error while storing report." });
   }
 };
 
@@ -197,4 +276,6 @@ module.exports = {
   deleteAdmin,
   getReportsByFilter,
   getChartData,
+  getLogData,
+  storeReport,
 };

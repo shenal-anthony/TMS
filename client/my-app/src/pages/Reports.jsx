@@ -13,10 +13,6 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
 import {
   BarChart,
   Bar,
@@ -27,30 +23,26 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 const Reports = ({ userId }) => {
-  const [startDate, setStartDate] = useState(
-    dayjs().startOf("day").subtract(1, "month")
-  );
-  const [endDate, setEndDate] = useState(dayjs().startOf("day"));
+  const [startDate, setStartDate] = useState(dayjs().subtract(1, "month"));
+  const [endDate, setEndDate] = useState(dayjs());
   const [reportType, setReportType] = useState("Bookings");
   const [downloadType, setDownloadType] = useState("PDF");
   const [chartData, setChartData] = useState([]);
-
-  const adminId = userId; //
-
-  const [previousReports, setPreviousReports] = useState([
-    { id: "RPT-001", date: "2025-04-25" },
-    { id: "RPT-002", date: "2025-04-20" },
-    { id: "RPT-003", date: "2025-04-10" },
-  ]);
-
+  const [previousReports, setPreviousReports] = useState([]);
+  const [currentReportDetails, setCurrentReportDetails] = useState(null);
+  const [comment, setComment] = useState("");
   const dataKey = reportType.toLowerCase();
 
-  const fetchChartData = async (adminId) => {
+  const fetchChartData = async () => {
     try {
       const response = await axiosInstance.get(
-        `/api/reports/charts/${adminId}`,
+        `/api/reports/charts/${userId}`,
         {
           params: {
             startDate: startDate.format("YYYY-MM-DD"),
@@ -64,49 +56,105 @@ const Reports = ({ userId }) => {
     }
   };
 
-  const handleDownload = () => {
-    const newId = `RPT-${String(previousReports.length + 1).padStart(3, "0")}`;
-    const today = dayjs().format("YYYY-MM-DD");
-    const newReport = { id: newId, date: today };
-    setPreviousReports((prev) => [newReport, ...prev]);
-    alert(`Downloaded ${reportType} report as ${downloadType}`);
+  const fetchPreviousReports = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/reports/logs/${userId}`);
+      setPreviousReports(response.data);
+    } catch (error) {
+      console.error("Error fetching previous reports:", error);
+    }
+  };
+
+  const handleViewReport = async (reportId) => {
+    try {
+      const response = await axiosInstance.get(`/api/reports/${reportId}`);
+      const report = response.data;
+      setCurrentReportDetails(report);
+      setChartData(JSON.parse(report.report_data));
+    } catch (error) {
+      console.error("Error fetching report details:", error);
+    }
+  };
+
+  const handleStoreReport = async () => {
+    try {
+      const reportDetails = {
+        generated_date: dayjs().toISOString(),
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        comment,
+        report_data: JSON.stringify(chartData),
+        report_type: reportType.toLowerCase(),
+        user_id: userId,
+      };
+
+      await axiosInstance.post("/api/reports/store", reportDetails);
+      alert("Report stored successfully!");
+      setComment("");
+      fetchPreviousReports();
+    } catch (error) {
+      console.error("Error storing report:", error);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      const params = {
+        startDate: startDate.format("YYYY-MM-DD"),
+        endDate: endDate.format("YYYY-MM-DD"),
+        reportType: reportType.toLowerCase(),
+        downloadType,
+      };
+
+      const response = await axiosInstance.get("/api/reports/download", {
+        params,
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `report.${downloadType.toLowerCase()}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error downloading report:", error);
+    }
   };
 
   useEffect(() => {
-    fetchChartData(adminId);
-  }, [startDate, endDate]);
+    fetchChartData();
+    fetchPreviousReports();
+  }, [startDate, endDate, reportType]);
 
   return (
     <Box>
-      {/* Header - Full Width */}
-      <div style={{ textAlign: "left", marginBottom: "20px" }}>
-        <Typography variant="h4" gutterBottom>
-          Tourist Management Reports
-        </Typography>
-      </div>
+      <Typography variant="h4" gutterBottom>
+        Tourist Management Reports
+      </Typography>
 
-      {/* Filters - Full Width */}
       <Stack
         direction="row"
         spacing={2}
         alignItems="center"
         mb={3}
         flexWrap="wrap"
+        rowGap={2}
       >
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Start Date"
             value={startDate}
+            onChange={setStartDate}
             slotProps={{ textField: { size: "small" } }}
-            onChange={(newValue) => setStartDate(newValue)}
-            renderInput={(params) => <TextField {...params} size="small" />}
           />
           <DatePicker
             label="End Date"
             value={endDate}
+            onChange={setEndDate}
             slotProps={{ textField: { size: "small" } }}
-            onChange={(newValue) => setEndDate(newValue)}
-            renderInput={(params) => <TextField {...params} size="small" />}
           />
         </LocalizationProvider>
 
@@ -114,8 +162,11 @@ const Reports = ({ userId }) => {
           select
           label="Report Type"
           value={reportType}
-          onChange={(e) => setReportType(e.target.value)}
+          onChange={(e) => {
+            setReportType(e.target.value);
+          }}
           size="small"
+          sx={{ minWidth: 120 }}
         >
           <MenuItem value="Revenue">Revenue</MenuItem>
           <MenuItem value="Tourists">Tourists</MenuItem>
@@ -124,28 +175,34 @@ const Reports = ({ userId }) => {
 
         <TextField
           select
-          label="Download Type"
+          label="Download Format"
           value={downloadType}
           onChange={(e) => setDownloadType(e.target.value)}
           size="small"
+          sx={{ minWidth: 120 }}
         >
           <MenuItem value="PDF">PDF</MenuItem>
+          <MenuItem value="CSV">CSV</MenuItem>
           <MenuItem value="Excel">Excel</MenuItem>
         </TextField>
 
-        <div style={{ flexGrow: 1, margin: "10px" }}>
-          <Button variant="contained" onClick={handleDownload}>
-            Download
-          </Button>
-        </div>
+        <Button variant="contained" onClick={handleStoreReport}>
+          Store Report
+        </Button>
+        <Button variant="outlined" onClick={handleDownloadReport}>
+          Download Report
+        </Button>
       </Stack>
 
-      {/* Report + History Row */}
-      <Box display="flex" gap={2}>
-        {/* Chart Section */}
-        <Paper elevation={2} sx={{ flex: 3, p: 2 }}>
+      <Box display="flex" gap={2} flexWrap="wrap">
+        <Paper elevation={2} sx={{ flex: 3, p: 2, minWidth: 300 }}>
           <Typography variant="h6" gutterBottom>
             {reportType} Report
+            {currentReportDetails && (
+              <Typography variant="subtitle2" color="text.secondary">
+                (Viewing report ID: {currentReportDetails.report_id})
+              </Typography>
+            )}
           </Typography>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
@@ -157,26 +214,66 @@ const Reports = ({ userId }) => {
               <Bar dataKey={dataKey} fill="#1976d2" name={reportType} />
             </BarChart>
           </ResponsiveContainer>
+
+          <TextField
+            label="Comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            fullWidth
+            multiline
+            rows={2}
+            sx={{ mt: 2 }}
+          />
         </Paper>
 
-        {/* Report History */}
-        <Paper elevation={2} sx={{ flex: 1, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper
+          elevation={2}
+          sx={{
+            flex: 1,
+            p: 2,
+            minWidth: 250,
+            maxHeight: 500,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ flexShrink: 0 }}>
             Previous Reports
           </Typography>
-          <List dense>
-            {previousReports.map((report) => (
-              <React.Fragment key={report.id}>
-                <ListItem>
-                  <ListItemText
-                    primary={`Report ID: ${report.id}`}
-                    secondary={`Generated: ${report.date}`}
-                  />
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
-          </List>
+          <Box sx={{ overflowY: "auto", flexGrow: 1 }}>
+            <List dense>
+              {previousReports.length > 0 ? (
+                previousReports.map((report, index) => (
+                  <React.Fragment key={report.id}>
+                    <ListItem>
+                      <Typography sx={{ width: 30 }}>{index + 1}</Typography>
+                      <ListItemText
+                        primary={`Report ID: ${report.report_id}`}
+                        secondary={
+                          <>
+                            <div>Type: {report.report_type}</div>
+                            <div>Date: {dayjs(report.generated_date).format('YYYY-MM-DD')}</div>
+                          </>
+                        }
+                      />
+                      <Button
+                        variant="text"
+                        onClick={() => handleViewReport(report.id)}
+                      >
+                        View
+                      </Button>
+                    </ListItem>
+                    <Divider />
+                  </React.Fragment>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No reports available.
+                </Typography>
+              )}
+            </List>
+          </Box>
         </Paper>
       </Box>
     </Box>
