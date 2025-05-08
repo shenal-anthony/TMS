@@ -198,6 +198,59 @@ const Sidebar = ({ isCollapsed }) => {
           )}
         </li>
 
+        {/* Vehicles */}
+        <li>
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("vehicles")} // Toggle vehicles menu
+          >
+            <div className="flex items-center gap-2">
+              <DirectionsCar /> {!isCollapsed && "Vehicles"}
+            </div>
+            {!isCollapsed &&
+              (openMenus.vehicles || isRouteUnder("/vehicles") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
+
+          {/* Show submenu if:
+              1. The menu is toggled open, OR
+              2. The current route is under "/vehicles"
+          */}
+          {(openMenus.vehicles || isRouteUnder("/vehicles")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
+              <li>
+                <NavLink
+                  to="/vehicles/your-vehicles"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Your Vehicles"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/vehicles/manage-vehicles"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Manage Vehicles"}
+                </NavLink>
+              </li>
+            </ul>
+          )}
+        </li>
+
         {/* Reports */}
         <li>
           <NavLink

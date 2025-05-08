@@ -182,7 +182,6 @@ const Reports = ({ userId }) => {
           sx={{ minWidth: 120 }}
         >
           <MenuItem value="PDF">PDF</MenuItem>
-          <MenuItem value="CSV">CSV</MenuItem>
           <MenuItem value="Excel">Excel</MenuItem>
         </TextField>
 
