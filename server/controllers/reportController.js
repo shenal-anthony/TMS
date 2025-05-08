@@ -4,6 +4,8 @@ const vehicle = require("../models/vehicleModel");
 const booking = require("../models/bookingModel");
 const payment = require("../models/paymentModel");
 const report = require("../models/reportModel");
+const generateReportPDF = require("../utils/pdfGenerator");
+const generateReportExcel = require("../utils/excelGenerator");
 
 const getStatusCardData = async (req, res) => {
   try {
@@ -189,10 +191,10 @@ const getChartData = async (req, res) => {
     );
 
     res.status(200).json(chartData);
-    console.log(
-      "🚀 ~ reportController.js:191 ~ getChartData ~ chartData:",
-      chartData
-    );
+    // console.log(
+    //   "🚀 ~ reportController.js:191 ~ getChartData ~ chartData:",
+    //   chartData
+    // );
   } catch (error) {
     console.error("Error fetching chart data:", error);
     res.status(500).json({ error: "Server error while fetching chart data." });
@@ -231,10 +233,10 @@ const getLogData = async (req, res) => {
     }
 
     res.status(200).json(reports);
-    console.log(
-      "🚀 ~ reportController.js:237 ~ getLogData ~ reports:",
-      reports
-    );
+    // console.log(
+    //   "🚀 ~ reportController.js:237 ~ getLogData ~ reports:",
+    //   reports
+    // );
   } catch (error) {
     console.error("Error fetching report history:", error);
     res
@@ -259,10 +261,6 @@ const storeReport = async (req, res) => {
       userId: reportDetails.user_id,
       role: userData.role,
     });
-    console.log(
-      "🚀 ~ reportController.js:262 ~ storeReport ~ storedReport:",
-      storedReport
-    );
 
     res.status(201).json(storedReport);
   } catch (error) {
@@ -286,6 +284,68 @@ const viewReport = async (req, res) => {
   }
 };
 
+const downloadReport = async (req, res) => {
+  try {
+    const { startDate, endDate, reportType, downloadType, userId } = req.query;
+    // console.log("🚀 ~ reportController.js:294 ~ downloadReport ~ userId:", userId);
+
+    // Validate required parameters
+    if (!startDate || !endDate || !reportType || !downloadType || !userId) {
+      return res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    // Sample data; in a real scenario, fetch from DB based on date range
+    const dummyData = [
+      { date: "2025-05-01", bookings: 10, tourists: 50, revenue: 1200 },
+      { date: "2025-05-02", bookings: 5, tourists: 30, revenue: 700 },
+      { date: "2025-05-03", bookings: 8, tourists: 40, revenue: 1000 },
+    ];
+
+    // Handle PDF generation
+    if (downloadType === "PDF") {
+      const pdfBuffer = await generateReportPDF({
+        startDate,
+        endDate,
+        reportType,
+        userId,
+        data: dummyData,
+      });
+
+      // Set headers for PDF download
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", "attachment; filename=report.pdf");
+      return res.send(pdfBuffer);
+    }
+
+    // Handle Excel generation
+    if (downloadType === "Xlsx") {
+      const excelBuffer = await generateReportExcel({
+        startDate,
+        endDate,
+        reportType,
+        userId,
+        data: dummyData,
+      });
+
+      // Set headers for Excel download
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+      return res.send(excelBuffer);
+    }
+
+    // If the download type is not PDF or Excel
+    return res.status(400).json({
+      message: "Invalid download type. Only PDF and Excel are supported.",
+    });
+  } catch (err) {
+    console.error("Error generating report:", err);
+    return res.status(500).json({ message: "Failed to generate report" });
+  }
+};
+
 module.exports = {
   getStatusCardData,
   deleteAdmin,
@@ -294,4 +354,5 @@ module.exports = {
   getLogData,
   storeReport,
   viewReport,
+  downloadReport,
 };

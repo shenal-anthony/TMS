@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  DialogActions,
 } from "@mui/material";
 import {
   BarChart,
@@ -67,16 +68,22 @@ const Reports = ({ userId }) => {
 
   const handleViewReport = async (report_id) => {
     try {
-      const response = await axiosInstance.get(`/api/reports/view/${report_id}`);
+      const response = await axiosInstance.get(
+        `/api/reports/view/${report_id}`
+      );
       const report = response.data;
       setCurrentReportDetails(report);
       setChartData(JSON.parse(report.report_data));
+      setComment(report.comment); // Update comment state
     } catch (error) {
       console.error("Error fetching report details:", error);
     }
   };
 
   const handleStoreReport = async () => {
+    if (!window.confirm("Are you sure you want to store this report?")) {
+      return;
+    }
     try {
       const reportDetails = {
         generated_date: dayjs().toISOString(),
@@ -98,12 +105,16 @@ const Reports = ({ userId }) => {
   };
 
   const handleDownloadReport = async () => {
+    if (!window.confirm("Are you sure you want to download this report?")) {
+      return;
+    }
     try {
       const params = {
         startDate: startDate.format("YYYY-MM-DD"),
         endDate: endDate.format("YYYY-MM-DD"),
         reportType: reportType.toLowerCase(),
         downloadType,
+        userId: userId,
       };
 
       const response = await axiosInstance.get("/api/reports/download", {
@@ -122,6 +133,11 @@ const Reports = ({ userId }) => {
     } catch (error) {
       console.error("Error downloading report:", error);
     }
+  };
+
+  const handleGoBack = () => {
+    setCurrentReportDetails(null);
+    setComment("");
   };
 
   useEffect(() => {
@@ -167,6 +183,7 @@ const Reports = ({ userId }) => {
           }}
           size="small"
           sx={{ minWidth: 120 }}
+          disabled={!!currentReportDetails}
         >
           <MenuItem value="Revenue">Revenue</MenuItem>
           <MenuItem value="Tourists">Tourists</MenuItem>
@@ -180,40 +197,58 @@ const Reports = ({ userId }) => {
           onChange={(e) => setDownloadType(e.target.value)}
           size="small"
           sx={{ minWidth: 120 }}
+          disabled={!!currentReportDetails}
         >
           <MenuItem value="PDF">PDF</MenuItem>
-          <MenuItem value="Excel">Excel</MenuItem>
+          <MenuItem value="Xlsx">Excel</MenuItem>
         </TextField>
 
-        <Button variant="contained" onClick={handleStoreReport}>
-          Store Report
-        </Button>
-        <Button variant="outlined" onClick={handleDownloadReport}>
-          Download Report
-        </Button>
+        {currentReportDetails ? (
+          <Button variant="outlined" color="secondary" onClick={handleGoBack}>
+            Go Back
+          </Button>
+        ) : (
+          <>
+            <Button variant="contained" onClick={handleStoreReport}>
+              Store Report
+            </Button>
+            <Button variant="outlined" onClick={handleDownloadReport}>
+              Download Report
+            </Button>
+          </>
+        )}
       </Stack>
 
       <Box display="flex" gap={2} flexWrap="wrap">
-        {/* chart part  */}
+        {/* Chart Section */}
         <Paper elevation={2} sx={{ flex: 3, p: 2, minWidth: 300 }}>
           <Typography variant="h6" gutterBottom>
             {reportType} Report
             {currentReportDetails && (
-              <Typography variant="subtitle2" color="text.secondary">
-                (Viewing report ID: {currentReportDetails.report_id})
-              </Typography>
+              <span style={{ fontSize: "0.8em", marginLeft: "1rem" }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  component="span"
+                >
+                  (Viewing report ID: {currentReportDetails.report_id})
+                </Typography>
+              </span>
             )}
           </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey={dataKey} fill="#1976d2" name={reportType} />
-            </BarChart>
-          </ResponsiveContainer>
+
+          <Box sx={{ overflowY: "auto", flexGrow: 1, paddingRight: 3 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey={dataKey} fill="#1976d2" name={reportType} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
 
           <TextField
             label="Comment"
@@ -223,10 +258,12 @@ const Reports = ({ userId }) => {
             multiline
             rows={2}
             sx={{ mt: 2 }}
+            placeholder="Add a comment"
+            disabled={!!currentReportDetails}
           />
         </Paper>
 
-        {/* previous reports part */}
+        {/* Previous Reports Section */}
         <Paper
           elevation={2}
           sx={{
@@ -239,28 +276,25 @@ const Reports = ({ userId }) => {
             flexDirection: "column",
           }}
         >
-          <Typography variant="h6" gutterBottom sx={{ flexShrink: 0 }}>
+          <Typography variant="h6" gutterBottom>
             Previous Reports
           </Typography>
+
           <Box sx={{ overflowY: "auto", flexGrow: 1 }}>
             <List dense>
               {previousReports.length > 0 ? (
                 previousReports.map((report, index) => (
-                  <React.Fragment key={report.id}>
+                  <React.Fragment key={report.report_id}>
                     <ListItem>
                       <Typography sx={{ width: 30 }}>{index + 1}</Typography>
                       <ListItemText
                         primary={`Report ID: ${report.report_id}`}
                         secondary={
-                          <>
-                            <div>Type: {report.report_type}</div>
-                            <div>
-                              Date:{" "}
-                              {dayjs(report.generated_date).format(
-                                "YYYY-MM-DD"
-                              )}
-                            </div>
-                          </>
+                          <span>
+                            Type: {report.report_type} <br />
+                            Date:{" "}
+                            {dayjs(report.generated_date).format("YYYY-MM-DD")}
+                          </span>
                         }
                       />
                       <Button
