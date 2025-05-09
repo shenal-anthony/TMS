@@ -4,6 +4,7 @@ const vehicle = require("../models/vehicleModel");
 const booking = require("../models/bookingModel");
 const payment = require("../models/paymentModel");
 const report = require("../models/reportModel");
+const assignedGuide = require("../models/assignedGuideModel");
 const generateReportPDF = require("../utils/pdfGenerator");
 const generateReportExcel = require("../utils/excelGenerator");
 
@@ -30,7 +31,7 @@ const getStatusCardData = async (req, res) => {
       {
         title: "Guide Count",
         value: totalGuides.toString(),
-        icon: "AdminIcon",
+        icon: "GuideIcon",
       },
       {
         title: "Functional Vehicles",
@@ -54,6 +55,64 @@ const getStatusCardData = async (req, res) => {
         title: "Ongoing Tours",
         value: ongoingTours.toString(),
         icon: "TourIcon",
+      },
+    ];
+
+    res.json(statusCards);
+  } catch (error) {
+    console.error("Error fetching status card data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// get status card date by user id
+const getStatusCardDataById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+    // --- Vehicles ---
+    const vehicles = await vehicle.getVehiclesByUserId(id);
+    const totalVehicles = vehicles.length;
+    const functionalVehicles = vehicles.filter(
+      (v) => v.status === "Functional"
+    ).length;
+
+    // --- Confirmed Bookings (assigned) ---
+    const confirmedBookings = await assignedGuide.getAssignedBookingsByUserId(id);
+    const totalConfirmedBookings = confirmedBookings.length;
+
+    // --- Ongoing Tours ---
+    const ongoingTours = confirmedBookings.filter((ag) => {
+      return new Date(ag.start_date).toISOString().split("T")[0] === today;
+    });
+    const totalOngoingTours = ongoingTours.length;
+
+    // --- Finalized Bookings ---
+    const finalizedBookings = await booking.getFinalizedBookingsByUserId(id);
+    const totalFinalizedBookings = finalizedBookings.length;
+
+    // --- Build Status Cards ---
+    const statusCards = [
+      {
+        title: "Functional Vehicles",
+        value: `${functionalVehicles}/${totalVehicles}`,
+        icon: "VehicleIcon",
+      },
+      {
+        title: "Confirmed Bookings",
+        value: totalConfirmedBookings,
+        icon: "ConfirmedBookingIcon",
+      },
+      {
+        title: "Ongoing Tours",
+        value: totalOngoingTours,
+        icon: "OngoingTourIcon",
+      },
+      {
+        title: "Finalized Bookings",
+        value: totalFinalizedBookings,
+        icon: "FinalizedBookingIcon",
       },
     ];
 
@@ -144,10 +203,7 @@ const getChartData = async (req, res) => {
     for (const payment of paymentData) {
       if (!payment.payment_date) continue;
       const dateObj = new Date(payment.payment_date);
-      //   console.log(
-      //     "🚀 ~ reportController.js:144 ~ getChartData ~ dateObj:",
-      //     dateObj
-      //   );
+
       if (start && end && (dateObj < start || dateObj > end)) continue;
 
       const date = dateObj.toISOString().split("T")[0];
@@ -191,10 +247,10 @@ const getChartData = async (req, res) => {
     );
 
     res.status(200).json(chartData);
-    // console.log(
-    //   "🚀 ~ reportController.js:191 ~ getChartData ~ chartData:",
-    //   chartData
-    // );
+    console.log(
+      "🚀 ~ reportController.js:194 ~ getChartData ~ chartData:",
+      chartData
+    );
   } catch (error) {
     console.error("Error fetching chart data:", error);
     res.status(500).json({ error: "Server error while fetching chart data." });
@@ -204,15 +260,11 @@ const getChartData = async (req, res) => {
 // Get report history by user role
 const getLogData = async (req, res) => {
   const { id } = req.params;
-  //   console.log("🚀 ~ reportController.js:205 ~ getLogData ~ id:", id);
 
   try {
     // Fetch the user by ID
-    const userData = await user.getUserById(id);
-    // console.log(
-    //   "🚀 ~ reportController.js:210 ~ getLogData ~ userData:",
-    //   userData
-    // );
+    const userData = await user.getUserRoleById(id);
+
     if (!userData) {
       return res.status(404).json({ error: "User not found." });
     }
@@ -233,10 +285,6 @@ const getLogData = async (req, res) => {
     }
 
     res.status(200).json(reports);
-    // console.log(
-    //   "🚀 ~ reportController.js:237 ~ getLogData ~ reports:",
-    //   reports
-    // );
   } catch (error) {
     console.error("Error fetching report history:", error);
     res
@@ -269,7 +317,7 @@ const storeReport = async (req, res) => {
   }
 };
 
-//
+// view report by ID
 const viewReport = async (req, res) => {
   const { id } = req.params;
   try {
@@ -286,48 +334,52 @@ const viewReport = async (req, res) => {
 
 const downloadReport = async (req, res) => {
   try {
-    const { startDate, endDate, reportType, downloadType, userId } = req.query;
-    // console.log("🚀 ~ reportController.js:294 ~ downloadReport ~ userId:", userId);
+    const {
+      start_date,
+      end_date,
+      report_type,
+      downloadType,
+      generated_date,
+      comment,
+      report_data,
+      user_id,
+    } = req.body;
 
-    // Validate required parameters
-    if (!startDate || !endDate || !reportType || !downloadType || !userId) {
-      return res.status(400).json({ message: "Missing required parameters" });
+    // Validate required fields
+    if (!start_date || !end_date || !report_type || !downloadType || !user_id) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Sample data; in a real scenario, fetch from DB based on date range
-    const dummyData = [
-      { date: "2025-05-01", bookings: 10, tourists: 50, revenue: 1200 },
-      { date: "2025-05-02", bookings: 5, tourists: 30, revenue: 700 },
-      { date: "2025-05-03", bookings: 8, tourists: 40, revenue: 1000 },
-    ];
+    // Use report_data or fetch from DB as needed
+    const data = JSON.parse(report_data);
 
-    // Handle PDF generation
     if (downloadType === "PDF") {
       const pdfBuffer = await generateReportPDF({
-        startDate,
-        endDate,
-        reportType,
-        userId,
-        data: dummyData,
+        startDate: start_date,
+        endDate: end_date,
+        reportType: report_type,
+        data,
+        comment,
+        userId: user_id,
+        generatedDate: generated_date,
       });
 
-      // Set headers for PDF download
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", "attachment; filename=report.pdf");
       return res.send(pdfBuffer);
     }
 
-    // Handle Excel generation
     if (downloadType === "Xlsx") {
       const excelBuffer = await generateReportExcel({
-        startDate,
-        endDate,
-        reportType,
-        userId,
-        data: dummyData,
+        startDate: start_date,
+        endDate: end_date,
+        reportType: report_type,
+        data,
+        comment,
+        userId: user_id,
+        generatedDate: generated_date,
       });
 
-      // Set headers for Excel download
       res.setHeader(
         "Content-Type",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -336,10 +388,7 @@ const downloadReport = async (req, res) => {
       return res.send(excelBuffer);
     }
 
-    // If the download type is not PDF or Excel
-    return res.status(400).json({
-      message: "Invalid download type. Only PDF and Excel are supported.",
-    });
+    return res.status(400).json({ message: "Unsupported download type." });
   } catch (err) {
     console.error("Error generating report:", err);
     return res.status(500).json({ message: "Failed to generate report" });
@@ -355,4 +404,5 @@ module.exports = {
   storeReport,
   viewReport,
   downloadReport,
+  getStatusCardDataById,
 };

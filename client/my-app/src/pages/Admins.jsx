@@ -163,9 +163,6 @@ const Admins = ({ userId, role }) => {
           {selectedAdmin ? (
             <div>
               <Typography variant="body1">
-                <strong>ID:</strong> {selectedAdmin.user_id}
-              </Typography>
-              <Typography variant="body1">
                 <strong>Name:</strong>{" "}
                 {`${selectedAdmin.first_name} ${selectedAdmin.last_name}`}
               </Typography>

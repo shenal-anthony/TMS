@@ -19,6 +19,22 @@ const getAllGuides = async (req, res) => {
   }
 };
 
+// get guide by id
+const getGuide = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const guideData = await user.getGuideById(id);
+    if (!guideData) {
+      return res.status(404).json({ message: "Guide not found" });
+    }
+    res.json(guideData);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching guide", error: error.message });
+  }
+};
+
 // get available guides
 const getAvailableGuidesByFilter = async (req, res) => {
   try {
@@ -237,7 +253,6 @@ const getAssignedBookingsByGuideId = async (req, res) => {
   }
 };
 
-
 // get finalized bookings by id
 const getFinalizedBookingsById = async (req, res) => {
   const { id } = req.params;
@@ -248,9 +263,10 @@ const getFinalizedBookingsById = async (req, res) => {
     }
     res.json(bookings);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching finalized bookings", error: error.message });
+    res.status(500).json({
+      message: "Error fetching finalized bookings",
+      error: error.message,
+    });
   }
 };
 
@@ -265,4 +281,5 @@ module.exports = {
   getGuideFinalizedBookings,
   getFinalizedBookingsById,
   getAssignedBookingsByGuideId,
+  getGuide,
 };

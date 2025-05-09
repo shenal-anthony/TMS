@@ -16,8 +16,6 @@ import {
   DialogActions,
   IconButton,
 } from "@mui/material";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import CloseIcon from "@mui/icons-material/Close";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
@@ -167,13 +165,11 @@ const Tours = ({ userId }) => {
                     <Button
                       onClick={() => handleAssignedSort("booking_id")}
                       endIcon={
-                        sortAssginedField === "booking_id" ? (
-                          sortAssginedOrder === "asc" ? (
-                            <ArrowUpwardIcon />
-                          ) : (
-                            <ArrowDownwardIcon />
-                          )
-                        ) : null
+                        sortAssginedField === "booking_id"
+                          ? sortAssginedOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
+                          : null
                       }
                     >
                       Booking ID
@@ -185,13 +181,11 @@ const Tours = ({ userId }) => {
                     <Button
                       onClick={() => handleAssignedSort("booking_date")}
                       endIcon={
-                        sortAssginedField === "booking_date" ? (
-                          sortAssginedOrder === "asc" ? (
-                            <ArrowUpwardIcon />
-                          ) : (
-                            <ArrowDownwardIcon />
-                          )
-                        ) : null
+                        sortAssginedField === "booking_date"
+                          ? sortAssginedOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
+                          : null
                       }
                     >
                       Booking Date
@@ -222,6 +216,7 @@ const Tours = ({ userId }) => {
                     <TableCell align="center">
                       <Button
                         variant="contained"
+                        size="small"
                         onClick={() => handleViewRequest(booking.booking_id)}
                       >
                         View Details
@@ -260,13 +255,11 @@ const Tours = ({ userId }) => {
                     <Button
                       onClick={() => handleSort("booking_id")}
                       endIcon={
-                        sortField === "booking_id" ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUpwardIcon />
-                          ) : (
-                            <ArrowDownwardIcon />
-                          )
-                        ) : null
+                        sortField === "booking_id"
+                          ? sortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
+                          : null
                       }
                     >
                       Booking ID
@@ -278,13 +271,11 @@ const Tours = ({ userId }) => {
                     <Button
                       onClick={() => handleSort("booking_date")}
                       endIcon={
-                        sortField === "booking_date" ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUpwardIcon />
-                          ) : (
-                            <ArrowDownwardIcon />
-                          )
-                        ) : null
+                        sortField === "booking_date"
+                          ? sortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
+                          : null
                       }
                     >
                       Booking Date
@@ -316,6 +307,7 @@ const Tours = ({ userId }) => {
                     <TableCell align="center">
                       <Button
                         variant="contained"
+                        size="small"
                         onClick={() => handleViewRequest(booking.booking_id)}
                       >
                         View Details

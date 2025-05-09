@@ -49,10 +49,12 @@ const getVehiclesByUserId = async (userId) => {
     const query = `
       SELECT * FROM vehicles WHERE user_id = $1;
     `;
-    const result = await pool.query(query, [userId]);
+    const values = [userId];
+    const result = await pool.query(query, values);
+    // console.log("🚀 ~ vehicleModel.js:54 ~ getVehiclesByUserId ~ result:", result);
     return result.rows;
   } catch (error) {
-    console.error("Error fetching vehicles by user ID:", error);
+    console.error("Error fetching vehicles:", error);
     throw error;
   }
 };

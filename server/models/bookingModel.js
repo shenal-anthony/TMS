@@ -7,13 +7,6 @@ const getAllBookings = async () => {
   return result.rows;
 };
 
-// const getBookingsByDate = async (date) => {
-//   const query = `SELECT * FROM bookings WHERE booking_date = $1`;
-//   const values = [date];
-//   const result = await pool.query(query, values);
-//   return result.rows;
-// };
-
 const getPendingBookings = async () => {
   const query = `SELECT booking_id, booking_date, headcount, check_in_date, tourist_id, tour_id, event_id FROM bookings WHERE status = 'pending'`;
   const result = await pool.query(query);

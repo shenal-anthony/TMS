@@ -1,8 +1,3 @@
-const {
-  createVehicle,
-  getVehiclesByUserId,
-  findAllVehicles,
-} = require("../models/vehicleModel");
 const vehicle = require("../models/vehicleModel");
 const user = require("../models/userModel");
 
@@ -98,7 +93,7 @@ const registerVehicle = async (req, res) => {
     }
 
     // Create vehicle record in database
-    const newVehicle = await createVehicle({
+    const newVehicle = await vehicle.createVehicle({
       userId,
       brand,
       model,
@@ -123,9 +118,9 @@ const registerVehicle = async (req, res) => {
 };
 
 const getVehiclesForUser = async (req, res) => {
-  const { Id } = req.params;
+  const { id } = req.params;
   try {
-    const vehicles = await getVehiclesByUserId(Id);
+    const vehicles = await vehicle.getVehiclesByUserId(id);
     if (vehicles.length === 0) {
       return res
         .status(200)
@@ -143,7 +138,7 @@ const getAllVehicles = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const admin = await user.getUserById(id);
+    const admin = await user.getUserRoleById(id);
     // console.log("🚀 ~ vehicleController.js:148 ~ getAllVehicles ~ admin:", admin);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
@@ -157,7 +152,7 @@ const getAllVehicles = async (req, res) => {
   }
 
   try {
-    const vehicles = await findAllVehicles();
+    const vehicles = await vehicle.findAllVehicles();
     // console.log(
     //   "🚀 ~ vehicleController.js:145 ~ getAllVehicles ~ vehicles:",
     //   vehicles

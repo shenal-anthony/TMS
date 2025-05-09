@@ -53,6 +53,14 @@ const getAllUsers = async () => {
   return result.rows;
 };
 
+// get user by id
+const getUserById = async (id) => {
+  const query = `SELECT * FROM users WHERE user_id = $1`;
+  const values = [id];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
 // get guide by id
 const getGuideById = async (id) => {
   const query = `SELECT * FROM users WHERE user_id = $1 AND role = 'Guide'`;
@@ -75,7 +83,7 @@ const getAdminCount = async () => {
   return parseInt(result.rows[0].admin_count, 10); // Convert to a number
 };
 
-const getUserById = async (id) => {
+const getUserRoleById = async (id) => {
   const query = `SELECT role FROM users WHERE user_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
@@ -131,4 +139,5 @@ module.exports = {
   getUserById,
   getAdminCount,
   getGuideCount,
+  getUserRoleById,
 };

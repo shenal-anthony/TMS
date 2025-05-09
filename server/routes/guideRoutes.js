@@ -7,9 +7,11 @@ const {
   getGuideFinalizedBookings,
   getFinalizedBookingsById,
   getAssignedBookingsByGuideId,
+  getGuide,
 } = require("../controllers/guideController");
 
 router.get("/", getAllGuides);
+router.get("/:id", getGuide);
 router.delete("/:id", deleteGuide);
 router.patch("/status/:id", changeGuideStatus);
 router.get("/finalized/:id", getGuideFinalizedBookings);

@@ -34,6 +34,16 @@ const getUnassignedGuidesByPeriod = async (startDate, endDate) => {
   return result.rows;
 };
 
+// get assigned bookings by guide id
+const getAssignedBookingsByUserId = async (guideId) => {
+  const query = `
+      SELECT * FROM assigned_guides WHERE user_id = $1
+    `;
+  const values = [guideId];
+  const result = await pool.query(query, values);
+  return result.rows;
+};
+
 // add guide to booking
 const addAssignedGuide = async (assignedGuideData) => {
   const { guideId, bookingId, startDate, endDate } = assignedGuideData;
@@ -57,4 +67,5 @@ module.exports = {
   removeAssignedGuide,
   getUnassignedGuidesByPeriod,
   getAssignedGuidesByBookingId,
+  getAssignedBookingsByUserId,
 };

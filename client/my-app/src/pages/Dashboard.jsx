@@ -26,15 +26,16 @@ import {
   Refresh as OngoingIcon,
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
-  AccountCircle as AdminIcon,
+  SupervisorAccount as AdminIcon,
   Tour as TourIcon,
   Refresh as RefreshIcon,
+  FollowTheSigns as GuideIcon
 } from "@mui/icons-material";
-import  AdminPanelSettingsIcon  from "@mui/icons-material/AdminPanelSettings";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
 import StatusCard from "../components/StatusCard";
 import io from "socket.io-client";
+
 
 const Dashboard = ({ userId }) => {
   const [statusCardsData, setStatusCardsData] = useState([]);
@@ -61,6 +62,7 @@ const Dashboard = ({ userId }) => {
     BookingIcon: <BookingIcon fontSize="medium" />,
     AdminIcon: <AdminIcon fontSize="medium" />,
     TourIcon: <TourIcon fontSize="medium" />,
+    GuideIcon: <GuideIcon fontSize="medium" />,
   };
 
   const fetchStatusCardsData = async () => {
