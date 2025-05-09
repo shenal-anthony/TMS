@@ -8,115 +8,114 @@ const assignedGuide = require("../models/assignedGuideModel");
 const generateReportPDF = require("../utils/pdfGenerator");
 const generateReportExcel = require("../utils/excelGenerator");
 
-const getStatusCardData = async (req, res) => {
-  try {
-    const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
-
-    const totalAdmins = await user.getAdminCount();
-    const totalGuides = await user.getGuideCount();
-
-    const totalVehicles = await vehicle.getVehicleCount();
-    const functionalVehicles = await vehicle.getFunctionalCount();
-
-    const pendingBookings = await booking.getPendingCount();
-    const confirmedBookings = await booking.getConfirmedCount();
-    const ongoingTours = await booking.getOngoingCount(date);
-
-    const statusCards = [
-      {
-        title: "Admin Count",
-        value: totalAdmins.toString(),
-        icon: "AdminIcon",
-      },
-      {
-        title: "Guide Count",
-        value: totalGuides.toString(),
-        icon: "GuideIcon",
-      },
-      {
-        title: "Functional Vehicles",
-        value: totalVehicles
-          ? `${((functionalVehicles / totalVehicles) * 100).toFixed(2)}%`
-          : "0%",
-        icon: "VehicleIcon",
-      },
-      {
-        title: "Confirmed Bookings",
-        value:
-          confirmedBookings + pendingBookings
-            ? `${(
-                (confirmedBookings / (confirmedBookings + pendingBookings)) *
-                100
-              ).toFixed(2)}%`
-            : "0%",
-        icon: "BookingIcon",
-      },
-      {
-        title: "Ongoing Tours",
-        value: ongoingTours.toString(),
-        icon: "TourIcon",
-      },
-    ];
-
-    res.json(statusCards);
-  } catch (error) {
-    console.error("Error fetching status card data:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-// get status card date by user id
 const getStatusCardDataById = async (req, res) => {
   const { id } = req.params;
   try {
+    const userData = await user.getUserRoleById(id);
+
+    if (!userData) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const role = userData.role;
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
-    // --- Vehicles ---
-    const vehicles = await vehicle.getVehiclesByUserId(id);
-    const totalVehicles = vehicles.length;
-    const functionalVehicles = vehicles.filter(
-      (v) => v.status === "Functional"
-    ).length;
+    if (role === "Admin" || role === "SuperAdmin") {
+      const totalAdmins = await user.getAdminCount();
+      const totalGuides = await user.getGuideCount();
+      const totalVehicles = await vehicle.getVehicleCount();
+      const functionalVehicles = await vehicle.getFunctionalCount();
+      const pendingBookings = await booking.getPendingCount();
+      const confirmedBookings = await booking.getConfirmedCount();
+      const ongoingTours = await booking.getOngoingCount(today);
 
-    // --- Confirmed Bookings (assigned) ---
-    const confirmedBookings = await assignedGuide.getAssignedBookingsByUserId(id);
-    const totalConfirmedBookings = confirmedBookings.length;
+      const statusCards = [
+        {
+          title: "Admin Count",
+          value: totalAdmins.toString(),
+          icon: "AdminIcon",
+        },
+        {
+          title: "Guide Count",
+          value: totalGuides.toString(),
+          icon: "GuideIcon",
+        },
+        {
+          title: "Functional Vehicles",
+          value: totalVehicles
+            ? `${((functionalVehicles / totalVehicles) * 100).toFixed(2)}%`
+            : "0%",
+          icon: "VehicleIcon",
+        },
+        {
+          title: "Confirmed Bookings",
+          value:
+            confirmedBookings + pendingBookings
+              ? `${(
+                  (confirmedBookings / (confirmedBookings + pendingBookings)) *
+                  100
+                ).toFixed(2)}%`
+              : "0%",
+          icon: "BookingIcon",
+        },
+        {
+          title: "Ongoing Tours",
+          value: ongoingTours.toString(),
+          icon: "TourIcon",
+        },
+      ];
 
-    // --- Ongoing Tours ---
-    const ongoingTours = confirmedBookings.filter((ag) => {
-      return new Date(ag.start_date).toISOString().split("T")[0] === today;
-    });
-    const totalOngoingTours = ongoingTours.length;
+      return res.json(statusCards);
+    }
 
-    // --- Finalized Bookings ---
-    const finalizedBookings = await booking.getFinalizedBookingsByUserId(id);
-    const totalFinalizedBookings = finalizedBookings.length;
+    // If the user is a guide
+    else if (role === "Guide") {
+      const vehicles = await vehicle.getVehiclesByUserId(id);
+      const totalVehicles = vehicles.length;
+      const functionalVehicles = vehicles.filter(
+        (v) => v.status === "Functional"
+      ).length;
 
-    // --- Build Status Cards ---
-    const statusCards = [
-      {
-        title: "Functional Vehicles",
-        value: `${functionalVehicles}/${totalVehicles}`,
-        icon: "VehicleIcon",
-      },
-      {
-        title: "Confirmed Bookings",
-        value: totalConfirmedBookings,
-        icon: "ConfirmedBookingIcon",
-      },
-      {
-        title: "Ongoing Tours",
-        value: totalOngoingTours,
-        icon: "OngoingTourIcon",
-      },
-      {
-        title: "Finalized Bookings",
-        value: totalFinalizedBookings,
-        icon: "FinalizedBookingIcon",
-      },
-    ];
+      const confirmedBookings = await assignedGuide.getAssignedBookingsByUserId(
+        id
+      );
+      const totalConfirmedBookings = confirmedBookings.length;
 
-    res.json(statusCards);
+      const ongoingTours = confirmedBookings.filter((ag) => {
+        return new Date(ag.start_date).toISOString().split("T")[0] === today;
+      });
+      const totalOngoingTours = ongoingTours.length;
+
+      const finalizedBookings = await booking.getFinalizedBookingsByUserId(id);
+      const totalFinalizedBookings = finalizedBookings.length;
+
+      const statusCards = [
+        {
+          title: "Functional Vehicles",
+          value: `${functionalVehicles}/${totalVehicles}`,
+          icon: "VehicleIcon",
+        },
+        {
+          title: "Confirmed Bookings",
+          value: totalConfirmedBookings,
+          icon: "ConfirmedBookingIcon",
+        },
+        {
+          title: "Ongoing Tours",
+          value: totalOngoingTours,
+          icon: "OngoingTourIcon",
+        },
+        {
+          title: "Finalized Bookings",
+          value: totalFinalizedBookings,
+          icon: "FinalizedBookingIcon",
+        },
+      ];
+
+      return res.json(statusCards);
+    }
+
+    return res.status(403).json({ error: "Unauthorized role" });
   } catch (error) {
     console.error("Error fetching status card data:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -396,7 +395,6 @@ const downloadReport = async (req, res) => {
 };
 
 module.exports = {
-  getStatusCardData,
   deleteAdmin,
   getReportsByFilter,
   getChartData,

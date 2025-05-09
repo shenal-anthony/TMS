@@ -26,16 +26,16 @@ import {
   Refresh as OngoingIcon,
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
+  AccountCircle as AccountIcon,
   SupervisorAccount as AdminIcon,
   Tour as TourIcon,
   Refresh as RefreshIcon,
-  FollowTheSigns as GuideIcon
+  FollowTheSigns as GuideIcon,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
 import StatusCard from "../components/StatusCard";
 import io from "socket.io-client";
-
 
 const Dashboard = ({ userId }) => {
   const [statusCardsData, setStatusCardsData] = useState([]);
@@ -339,13 +339,11 @@ const Dashboard = ({ userId }) => {
                       <Button
                         onClick={() => handleRequestSort("booking_id")}
                         endIcon={
-                          requestSortField === "booking_id" ? (
-                            requestSortOrder === "asc" ? (
-                              <ArrowUpwardIcon />
-                            ) : (
-                              <ArrowDownwardIcon />
-                            )
-                          ) : null
+                          requestSortField === "booking_id"
+                            ? requestSortOrder === "asc"
+                              ? " ⬆️"
+                              : " ⬇️"
+                            : null
                         }
                       >
                         Booking ID
@@ -356,13 +354,11 @@ const Dashboard = ({ userId }) => {
                       <Button
                         onClick={() => handleRequestSort("sent_at")}
                         endIcon={
-                          requestSortField === "sent_at" ? (
-                            requestSortOrder === "asc" ? (
-                              <ArrowUpwardIcon />
-                            ) : (
-                              <ArrowDownwardIcon />
-                            )
-                          ) : null
+                          requestSortField === "sent_at"
+                            ? requestSortOrder === "asc"
+                              ? " ⬆️"
+                              : " ⬇️"
+                            : null
                         }
                       >
                         Sent At
@@ -372,13 +368,11 @@ const Dashboard = ({ userId }) => {
                       <Button
                         onClick={() => handleRequestSort("updated_at")}
                         endIcon={
-                          requestSortField === "updated_at" ? (
-                            requestSortOrder === "asc" ? (
-                              <ArrowUpwardIcon />
-                            ) : (
-                              <ArrowDownwardIcon />
-                            )
-                          ) : null
+                          requestSortField === "updated_at"
+                            ? requestSortOrder === "asc"
+                              ? " ⬆️"
+                              : " ⬇️"
+                            : null
                         }
                       >
                         Updated At
@@ -461,6 +455,7 @@ const Dashboard = ({ userId }) => {
             <Button
               variant="contained"
               color="primary"
+              size="small"
               disabled={selected.length === 0}
               onClick={sendRequestsToAllGuides}
             >
@@ -486,13 +481,11 @@ const Dashboard = ({ userId }) => {
                     <Button
                       onClick={() => handleSort("booking_id")}
                       endIcon={
-                        sortField === "booking_id" ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUpwardIcon />
-                          ) : (
-                            <ArrowDownwardIcon />
-                          )
-                        ) : null
+                        sortField === "booking_id"
+                          ? sortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
+                          : null
                       }
                     >
                       Booking ID
@@ -503,13 +496,11 @@ const Dashboard = ({ userId }) => {
                     <Button
                       onClick={() => handleSort("booking_date")}
                       endIcon={
-                        sortField === "booking_date" ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUpwardIcon />
-                          ) : (
-                            <ArrowDownwardIcon />
-                          )
-                        ) : null
+                        sortField === "booking_date"
+                          ? sortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
+                          : null
                       }
                     >
                       Booking Date
@@ -562,6 +553,8 @@ const Dashboard = ({ userId }) => {
                         <TableCell align="center">
                           <Button
                             variant="contained"
+                            color="primary"
+                            size="small"
                             onClick={() =>
                               handleSendRequest(bookingId, booking.guide_id)
                             }
