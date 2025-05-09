@@ -9,6 +9,8 @@ const Header = ({ toggleSidebar, role }) => {
       navigate("/guide/edit-profile");
     } else if (role === "Admin") {
       navigate("/edit-profile");
+    } else if (role === "SuperAdmin") {
+      navigate("/edit-profile");
     } else {
       navigate("/login"); // fallback
     }

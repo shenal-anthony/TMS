@@ -6,8 +6,8 @@ import Sidebar from "../components/Sidebar";
 const BaseLayout = ({ role }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  if ("Admin" != role) {
-    return <Navigate to="/login" />; // Redirect to login if not a Guide
+  if (role !== "Admin" && role !== "SuperAdmin") {
+    return <Navigate to="/login" />;
   }
 
   return (

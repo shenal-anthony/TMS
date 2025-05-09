@@ -51,7 +51,7 @@ const App = () => {
         <Route
           element={
             <ProtectedRoute
-              allowedRoles={["Admin"]}
+              allowedRoles={["Admin", "SuperAdmin"]}
               onAuthSuccess={(user) => setAuthUser(user)}
             />
           }
@@ -65,7 +65,9 @@ const App = () => {
             <Route path="/bookings/confirmed" element={<ViewBookings />} />
             <Route
               path="/admins"
-              element={<Admins userId={authUser?.userId} />}
+              element={
+                <Admins userId={authUser?.userId} role={authUser?.role} />
+              }
             />
             <Route path="/contents/destinations" element={<Destinations />} />
             <Route path="/contents/events" element={<Events />} />

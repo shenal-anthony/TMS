@@ -13,6 +13,22 @@ const getAllAdmins = async (req, res) => {
   }
 };
 
+// get admin by id
+const getAdminById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const admin = await user.getUserById(id);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+    res.json(admin);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching admin", error: error.message });
+  }
+};
+
 const deleteAdmin = async (req, res) => {
   const { id } = req.params;
   try {
@@ -27,4 +43,4 @@ const deleteAdmin = async (req, res) => {
 
 
 
-module.exports = { getAllAdmins, deleteAdmin };
+module.exports = { getAllAdmins, deleteAdmin, getAdminById };
