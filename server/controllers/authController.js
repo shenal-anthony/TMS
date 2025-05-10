@@ -5,99 +5,43 @@ const userModel = require("../models/userModel");
 
 const fs = require("fs");
 const path = require("path");
-const baseUrl = process.env.BASE_URL;
 
-// Register User Function
-// const registerUser = async (req, res) => {
-//   try {
-//     const { body, files } = req;
+const getAllRegisteredUsers = async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM users");
 
-//     // Check if all required fields are present
-//     const requiredFields = [
-//       "firstName",
-//       "lastName",
-//       "email",
-//       "password",
-//       "nic",
-//       "contactNumber",
-//       "address1",
-//       "role",
-//     ];
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-//     for (const field of requiredFields) {
-//       if (!body[field]) {
-//         return res.status(400).json({ message: `${field} is required` });
-//       }
-//     }
+    const users = result.rows.map((user) => {
+      // Normalize profile picture path
+      const profilePicture = user.profile_picture
+        ? `${baseUrl}${user.profile_picture.replace(/\\/g, "/")}`
+        : null;
 
-//     // Check if user already exists
-//     const existingUser = await findUserByEmail(body.email);
-//     if (existingUser) {
-//       return res.status(400).json({ message: "User already exists" });
-//     }
+      // Split comma-separated string and normalize each license path
+      const touristLicenses = user.tourist_license
+        ? user.tourist_license
+            .split(",")
+            .map((path) => `${baseUrl}${path.trim().replace(/\\/g, "/")}`)
+        : [];
 
-//     // Hash the password
-//     const saltRounds = 10;
-//     const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+      return {
+        ...user,
+        profilePicture,
+        touristLicenses,
+      };
+    });
 
-//     // Determine file paths if files are uploaded
-//     const profilePicturePath = files?.profilePicture
-//       ? `/uploads/profiles/${files.profilePicture[0].filename}`
-//       : null;
-
-//     const touristLicensePath = files?.touristLicense
-//       ? `/uploads/licenses/${files.touristLicense[0].filename}`
-//       : null;
-
-//     // Prepare user data to be saved
-//     const userData = {
-//       firstName: body.firstName,
-//       lastName: body.lastName,
-//       email: body.email,
-//       hashedPassword,
-//       nic: body.nic,
-//       contactNumber: body.contactNumber,
-//       address1: body.address1,
-//       address2: body.address2,
-//       role: body.role,
-//       profilePicturePath,
-//       touristLicensePath,
-//     };
-
-//     // Create new user
-//     const newUser = await createUser(userData);
-
-//     // Generate JWT tokens
-//     const { accessToken, refreshToken } = generateToken(newUser.user_id, newUser.role);
-
-//     // Send success response
-//     return res.status(201).json({
-//       success: true,
-//       message: "User registered successfully",
-//       data: {
-//         userId: newUser.user_id,
-//         firstName: newUser.first_name,
-//         lastName: newUser.last_name,
-//         email: newUser.email_address,
-//         role: newUser.role,
-//         profilePicturePath,
-//         touristLicensePath,
-//         accessToken,
-//         refreshToken,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error registering user:", error.message);
-//     res.status(500).json({
-//       success: false,
-//       error: "Internal server error",
-//     });
-//   }
-// };
+    res.status(200).json({ users });
+  } catch (error) {
+    console.error("Error retrieving users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+};
 
 const registerUser = async (req, res) => {
   try {
-    const {
+    let {
       firstName,
       lastName,
       contactNumber,
@@ -110,26 +54,50 @@ const registerUser = async (req, res) => {
       role,
     } = req.body;
 
+    const errors = {};
+
+    if (!firstName) errors.firstName = "First name is required";
+    if (!lastName) errors.lastName = "Last name is required";
+    if (!contactNumber) errors.contactNumber = "Contact number is required";
+    if (!email) errors.email = "Email is required";
+    if (!nic) errors.nic = "NIC is required";
+    if (!address1) errors.address1 = "Address line 1 is required";
+    if (!password) errors.password = "Password is required";
+    if (!confirmPassword)
+      errors.confirmPassword = "Confirm password is required";
+    if (!role) errors.role = "Role is required";
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ errors });
+    }
+
     if (password !== confirmPassword) {
       return res.status(400).json({ error: "Passwords do not match" });
     }
+
+    firstName = firstName.trim().toLowerCase();
+    lastName = lastName.trim().toLowerCase();
+    email = email.trim().toLowerCase();
+    address1 = address1.trim().toLowerCase();
+    address2 = address2 ? address2.trim().toLowerCase() : "";
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const fileFields = req.files || {};
     const profileImage = fileFields["profilePicture"]?.[0] || null;
     const licenseFiles = fileFields["touristLicense"] || [];
 
     const profileImageUrl = profileImage
-      ? path.join("/uploads/profile", profileImage.filename)
+      ? path.join("/uploads/profile_pics", profileImage.filename)
       : null;
-
     const licenseUrls =
-      role === "guide"
+      role === "Guide"
         ? licenseFiles.map((file) =>
-            path.join("/uploads/licenses", file.filename)
+            path.join("/uploads/tourist_licenses", file.filename)
           )
         : [];
 
-    // Create user
     const newUser = await userModel.createUser({
       firstName,
       lastName,
@@ -137,16 +105,12 @@ const registerUser = async (req, res) => {
       email,
       nic,
       address1,
-      address2: null,
-      hashedPassword: password,
+      address2,
+      hashedPassword,
       role,
       profilePicturePath: profileImageUrl,
       touristLicensePath: licenseUrls.join(","),
     });
-    console.log(
-      "🚀 ~ authController.js:145 ~ registerUser ~ newUser:",
-      newUser
-    );
 
     res.status(201).json({
       message: "User registered successfully",
@@ -163,7 +127,7 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     // Check if user exists
-    const user = await findUserByEmail(email);
+    const user = await userModel.findUserByEmail(email);
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -271,4 +235,10 @@ const editProfile = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, registerUser, editProfile, getAccessToken };
+module.exports = {
+  loginUser,
+  registerUser,
+  editProfile,
+  getAccessToken,
+  getAllRegisteredUsers,
+};

@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const app = express();
 require("dotenv").config();
+const multer = require("multer");
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -17,10 +18,8 @@ const io = new Server(server, {
 
 // Import and use socket logic
 require("./socket")(io);
-
 // Store io for later use in routes/controllers if needed
 app.set("io", io);
-
 // Middleware imports
 const bodyParser = require("body-parser");
 
@@ -32,7 +31,6 @@ const guideRoutes = require("./routes/guideRoutes");
 const contentRoutes = require("./routes/contentRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const touristRoutes = require("./routes/touristRoutes");
-const uploadRoutes = require("./routes/uploadRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 
 const port = process.env.PORT || 8001;
@@ -69,7 +67,6 @@ app.use("/api/guides", guideRoutes);
 app.use("/api/contents", contentRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/tourists", touristRoutes);
-app.use("/api/uploads", uploadRoutes);
 app.use("/api/reports", reportRoutes);
 
 // Error handling middleware
