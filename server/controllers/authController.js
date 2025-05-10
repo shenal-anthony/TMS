@@ -1,84 +1,160 @@
 const pool = require("../db");
 const bcrypt = require("../node_modules/bcryptjs");
 const generateToken = require("../utils/tokenGenerator");
-const { findUserByEmail, createUser } = require("../models/userModel");
+const userModel = require("../models/userModel");
 
 const fs = require("fs");
 const path = require("path");
+const baseUrl = process.env.BASE_URL;
+
+// Register User Function
+// const registerUser = async (req, res) => {
+//   try {
+//     const { body, files } = req;
+
+//     // Check if all required fields are present
+//     const requiredFields = [
+//       "firstName",
+//       "lastName",
+//       "email",
+//       "password",
+//       "nic",
+//       "contactNumber",
+//       "address1",
+//       "role",
+//     ];
+
+//     for (const field of requiredFields) {
+//       if (!body[field]) {
+//         return res.status(400).json({ message: `${field} is required` });
+//       }
+//     }
+
+//     // Check if user already exists
+//     const existingUser = await findUserByEmail(body.email);
+//     if (existingUser) {
+//       return res.status(400).json({ message: "User already exists" });
+//     }
+
+//     // Hash the password
+//     const saltRounds = 10;
+//     const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+
+//     // Determine file paths if files are uploaded
+//     const profilePicturePath = files?.profilePicture
+//       ? `/uploads/profiles/${files.profilePicture[0].filename}`
+//       : null;
+
+//     const touristLicensePath = files?.touristLicense
+//       ? `/uploads/licenses/${files.touristLicense[0].filename}`
+//       : null;
+
+//     // Prepare user data to be saved
+//     const userData = {
+//       firstName: body.firstName,
+//       lastName: body.lastName,
+//       email: body.email,
+//       hashedPassword,
+//       nic: body.nic,
+//       contactNumber: body.contactNumber,
+//       address1: body.address1,
+//       address2: body.address2,
+//       role: body.role,
+//       profilePicturePath,
+//       touristLicensePath,
+//     };
+
+//     // Create new user
+//     const newUser = await createUser(userData);
+
+//     // Generate JWT tokens
+//     const { accessToken, refreshToken } = generateToken(newUser.user_id, newUser.role);
+
+//     // Send success response
+//     return res.status(201).json({
+//       success: true,
+//       message: "User registered successfully",
+//       data: {
+//         userId: newUser.user_id,
+//         firstName: newUser.first_name,
+//         lastName: newUser.last_name,
+//         email: newUser.email_address,
+//         role: newUser.role,
+//         profilePicturePath,
+//         touristLicensePath,
+//         accessToken,
+//         refreshToken,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error registering user:", error.message);
+//     res.status(500).json({
+//       success: false,
+//       error: "Internal server error",
+//     });
+//   }
+// };
 
 const registerUser = async (req, res) => {
   try {
     const {
       firstName,
       lastName,
-      email,
-      password,
-      nic,
       contactNumber,
+      email,
+      nic,
       address1,
       address2,
+      password,
+      confirmPassword,
       role,
     } = req.body;
 
-    const profilePicture = req.files?.profilePicture; // Assuming file upload via FormData
-    const touristLicense = req.files?.touristLicense; // Assuming file upload via FormData
-
-    // Check if user already exists
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: "Passwords do not match" });
     }
 
-    // Hash the password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const fileFields = req.files || {};
+    const profileImage = fileFields["profilePicture"]?.[0] || null;
+    const licenseFiles = fileFields["touristLicense"] || [];
 
-    // Save profile picture and tourist license file paths (if uploaded)
-    let profilePicturePath = null;
-    let touristLicensePath = null;
+    const profileImageUrl = profileImage
+      ? path.join("/uploads/profile", profileImage.filename)
+      : null;
 
-    if (profilePicture) {
-      profilePicturePath = `/uploads/${Date.now()}_${profilePicture.name}`;
-      await profilePicture.mv(`./public${profilePicturePath}`);
-    }
+    const licenseUrls =
+      role === "guide"
+        ? licenseFiles.map((file) =>
+            path.join("/uploads/licenses", file.filename)
+          )
+        : [];
 
-    if (touristLicense) {
-      touristLicensePath = `/uploads/${Date.now()}_${touristLicense.name}`;
-      await touristLicense.mv(`./public${touristLicensePath}`);
-    }
-
-    // Create user in the database
-    const newUser = await createUser({
+    // Create user
+    const newUser = await userModel.createUser({
       firstName,
       lastName,
-      email,
-      hashedPassword,
-      nic,
       contactNumber,
+      email,
+      nic,
       address1,
-      address2,
+      address2: null,
+      hashedPassword: password,
       role,
-      profilePicturePath,
-      touristLicensePath,
+      profilePicturePath: profileImageUrl,
+      touristLicensePath: licenseUrls.join(","),
     });
-
-    // Generate JWT token
-    const { accessToken, refreshToken } = generateToken(
-      user.user_id,
-      user.role
+    console.log(
+      "🚀 ~ authController.js:145 ~ registerUser ~ newUser:",
+      newUser
     );
 
     res.status(201).json({
-      token,
-      userId: newUser.user_id,
-      firstName: newUser.first_name,
-      lastName: newUser.last_name,
-      email: newUser.email_address,
-      role: newUser.role,
+      message: "User registered successfully",
+      user: newUser,
     });
   } catch (error) {
-    console.error("Registration error:", error.message);
-    res.status(500).json({ message: "Server error" });
+    console.error("Registration failed:", error);
+    res.status(500).json({ error: "Registration failed" });
   }
 };
 

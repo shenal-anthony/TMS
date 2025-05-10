@@ -1,24 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import axios from "axios";
-import {
-  TextField,
-  Button,
-  MenuItem,
-  Checkbox,
-  FormControlLabel,
-  Box,
-  Typography,
-  Container,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
 
-const SignupForm = () => {
-  const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL;
+
+const RegistrationForm = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -26,289 +11,138 @@ const SignupForm = () => {
     email: "",
     nic: "",
     address1: "",
-    address2: "",
-    profilePicture: null,
-    role: "Guide",
-    touristLicense: null,
     password: "",
     confirmPassword: "",
-    agreeTerms: false,
+    role: "admin", // default
   });
-  const [modalOpen, setModalOpen] = useState(false); // For modal dialog visibility
-  const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
-  const [isSuccess, setIsSuccess] = useState(false); // To track if registration is successful
+
+  const [profileImage, setProfileImage] = useState(null);
+  const [licenses, setLicenses] = useState([]); // multiple files
 
   const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        type === "file" ? files[0] : type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if the user has agreed to the terms
-    if (!formData.agreeTerms) {
-      setModalMessage(
-        "You must agree to the Terms and Conditions before signing up."
-      );
-      setModalOpen(true); // Open modal dialog
-      return;
-    }
-
-    // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
-      setModalMessage("Passwords do not match.");
-      setModalOpen(true); // Open modal dialog
+      alert("Passwords do not match");
       return;
     }
 
-    // Check if all required fields are filled
-    const requiredFields = [
-      "firstName",
-      "lastName",
-      "contactNumber",
-      "email",
-      "nic",
-      "address1",
-      "password",
-      "confirmPassword",
-    ];
-    const isFormValid = requiredFields.every((field) => formData[field]);
-    if (!isFormValid) {
-      setModalMessage("Please fill out all required fields.");
-      setModalOpen(true); // Open modal dialog
+    if (formData.role === "guide" && licenses.length > 3) {
+      alert("You can upload up to 3 license files only.");
       return;
     }
 
-    const formPayload = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key]) {
-        formPayload.append(key, formData[key]);
-      }
-    });
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => data.append(key, value));
+    if (profileImage) data.append("profilePicture", profileImage);
+    if (formData.role === "guide") {
+      licenses.forEach((file) => data.append("touristLicense", file)); // plural field name
+    }
 
     try {
-      const response = await axios.post(
-        `${apiUrl}/api/auth/register`,
-        formPayload,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      // Show success message
-      setModalMessage(response.data.message || "User registered successfully!");
-      setIsSuccess(true); // Mark as success
-      setModalOpen(true); // Open modal dialog
-    } catch (error) {
-      console.error("Error registering user:", error);
-      if (error.response?.data?.message === "User already exists") {
-        setModalMessage("User with this email already exists.");
-      } else {
-        setModalMessage(
-          error.response?.data?.message ||
-            "An error occurred during registration."
-        );
-      }
-      setIsSuccess(false); // Mark as error
-      setModalOpen(true); // Open modal dialog
-    }
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false); // Close modal dialog
-
-    // Redirect to dashboard after successful registration
-    if (isSuccess) {
-      navigate("/login");
+      const res = await axios.post(`${apiUrl}/api/auth/register`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      alert("Registration successful!");
+      console.log(res.data);
+    } catch (err) {
+      console.error(err);
+      alert("Registration failed.");
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 4,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 2, // Adds spacing between child elements
-        }}
-      >
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Create your account
-        </Typography>
-        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="First name"
-              name="firstName"
-              fullWidth
-              onChange={handleChange}
-              value={formData.firstName}
-              required
-            />
-            <TextField
-              label="Last name"
-              name="lastName"
-              fullWidth
-              onChange={handleChange}
-              value={formData.lastName}
-              required
-            />
-            <TextField
-              label="Contact number"
-              name="contactNumber"
-              fullWidth
-              onChange={handleChange}
-              value={formData.contactNumber}
-              required
-            />
-            <TextField
-              label="E-mail"
-              name="email"
-              type="email"
-              fullWidth
-              onChange={handleChange}
-              value={formData.email}
-              required
-            />
-            <TextField
-              label="NIC"
-              name="nic"
-              fullWidth
-              onChange={handleChange}
-              value={formData.nic}
-              required
-            />
-            <TextField
-              label="Address Line 01"
-              name="address1"
-              fullWidth
-              onChange={handleChange}
-              value={formData.address1}
-              required
-            />
-            <TextField
-              label="Address Line 02"
-              name="address2"
-              fullWidth
-              onChange={handleChange}
-              value={formData.address2}
-            />
+    <div>
+      <h2>User Registration</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          name="firstName"
+          placeholder="First Name"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="lastName"
+          placeholder="Last Name"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="contactNumber"
+          placeholder="Contact Number"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          onChange={handleChange}
+          required
+        />
+        <input name="nic" placeholder="NIC" onChange={handleChange} required />
+        <input
+          name="address1"
+          placeholder="Address"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm Password"
+          onChange={handleChange}
+          required
+        />
 
-            <Box>
-              <Button variant="contained" component="label">
-                Upload Profile Picture
-                <input
-                  type="file"
-                  name="profilePicture"
-                  onChange={handleChange}
-                  hidden
-                />
-              </Button>
-              {formData.profilePicture && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Selected file: {formData.profilePicture.name}
-                </Typography>
-              )}
-            </Box>
+        <div>
+          <label>User Role:</label>
+          <select name="role" value={formData.role} onChange={handleChange}>
+            <option value="admin">Admin</option>
+            <option value="guide">Guide</option>
+          </select>
+        </div>
 
-            <TextField
-              select
-              label="Select the role"
-              name="role"
-              fullWidth
-              onChange={handleChange}
-              value={formData.role}
-            >
-              <MenuItem value="Guide">Guide</MenuItem>
-              <MenuItem value="Admin">Admin</MenuItem>
-            </TextField>
+        <div>
+          <label>Profile Picture:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setProfileImage(e.target.files[0])}
+          />
+        </div>
 
-            {formData.role === "Guide" && (
-              <Box>
-                <Button variant="contained" component="label">
-                  Upload Tourist License
-                  <input
-                    type="file"
-                    name="touristLicense"
-                    onChange={handleChange}
-                    hidden
-                  />
-                </Button>
-                {formData.touristLicense && (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    Selected file: {formData.touristLicense.name}
-                  </Typography>
-                )}
-              </Box>
-            )}
-
-            <TextField
-              label="Password"
-              name="password"
-              type="password"
-              fullWidth
-              onChange={handleChange}
-              value={formData.password}
-              required
+        {formData.role === "guide" && (
+          <div>
+            <label>License Documents (max 3):</label>
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf"
+              onChange={(e) => setLicenses(Array.from(e.target.files))}
             />
-            <TextField
-              label="Re-enter Password"
-              name="confirmPassword"
-              type="password"
-              fullWidth
-              onChange={handleChange}
-              value={formData.confirmPassword}
-              required
-            />
+          </div>
+        )}
 
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="agreeTerms"
-                  onChange={handleChange}
-                  checked={formData.agreeTerms}
-                />
-              }
-              label="I agree to the Terms and Conditions, and Privacy Policy"
-            />
-
-            <Button type="submit" variant="contained" color="primary" fullWidth>
-              Sign Up
-            </Button>
-
-            <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
-              Already have an account?{" "}
-              <a href="/login" style={{ color: "primary.main" }}>
-                Sign In
-              </a>
-            </Typography>
-          </Box>
-        </form>
-
-        {/* Modal Dialog for all error messages */}
-        <Dialog open={modalOpen} onClose={handleCloseModal}>
-          <DialogTitle>{isSuccess ? "Success" : "Error"}</DialogTitle>
-          <DialogContent>
-            <Typography>{modalMessage}</Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseModal} color="primary">
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
-    </Container>
+        <button type="submit">Register</button>
+      </form>
+    </div>
   );
 };
 
-export default SignupForm;
+export default RegistrationForm;
