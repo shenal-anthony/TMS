@@ -27,6 +27,10 @@ const destinationMiddleware = MulterMiddleware([
   { fieldName: "destination", folder: "destinations", maxCount: 1 },
 ]);
 
+const eventMiddleware = MulterMiddleware([
+  { fieldName: "accommodation", folder: "accommodations", maxCount: 1 },
+]);
+
 // destinations routes
 router.get("/destinations", getAllDestinations);
 router.get("/destination/:id", getDestination);
@@ -50,8 +54,8 @@ router.delete("/packages/:id", deletePackage);
 // accommodations routes
 router.get("/accommodations", getAllAccommodations);
 router.get("/accommodation/:id", getAccommodation);
-router.post("/accommodations", addAccommodation);
-router.patch("/accommodations/:id", updateAccommodation);
+router.post("/accommodations", eventMiddleware, addAccommodation);
+router.patch("/accommodations/:id", eventMiddleware, updateAccommodation);
 router.delete("/accommodations/:id", deleteAccommodation);
 
 // reviews routes

@@ -31,7 +31,6 @@ const createAccommodation = async (accommodationData) => {
   ];
 
   const result = await pool.query(query, values);
-  // console.log(result.rows[0]); // Debugging
   return result.rows[0];
 };
 
@@ -47,44 +46,60 @@ const deleteAccommodationById = async (id) => {
 };
 
 const updateAccommodationById = async (id, accommodationData) => {
-  const {
-    accommodationName,
-    locationUrl,
-    pictureUrl,
-    contactNumber,
-    amenities,
-    updatedAt,
-    serviceUrl,
-    accommodationType,
-  } = accommodationData;
+  const fields = [];
+  const values = [];
+  let index = 1;
+
+  for (const [key, value] of Object.entries(accommodationData)) {
+    if (value !== undefined && value !== null) {
+      let column;
+      switch (key) {
+        case "accommodationName":
+          column = "accommodation_name";
+          break;
+        case "locationUrl":
+          column = "location_url";
+          break;
+        case "pictureUrl":
+          column = "picture_url";
+          break;
+        case "contactNumber":
+          column = "contact_number";
+          break;
+        case "amenities":
+          column = "amenities";
+          break;
+        case "updatedAt":
+          column = "updated_at";
+          break;
+        case "serviceUrl":
+          column = "service_url";
+          break;
+        case "accommodationType":
+          column = "accommodation_type";
+          break;
+        default:
+          continue; // skip unknown fields
+      }
+      fields.push(`${column} = $${index}`);
+      values.push(value);
+      index++;
+    }
+  }
+
+  if (fields.length === 0) {
+    throw new Error("No valid fields provided to update.");
+  }
 
   const query = `
-      UPDATE accommodations SET 
-      accommodation_name = $1, 
-      location_url = $2, 
-      picture_url = $3, 
-      contact_number = $4, 
-      amenities = $5, 
-      updated_at = $6, 
-      service_url = $7, 
-      accommodation_type = $8 
-      WHERE accommodation_id = $9
-      RETURNING *`;
+    UPDATE accommodations 
+    SET ${fields.join(", ")} 
+    WHERE accommodation_id = $${index} 
+    RETURNING *`;
 
-  const values = [
-    accommodationName,
-    locationUrl,
-    pictureUrl,
-    contactNumber,
-    amenities,
-    updatedAt,
-    serviceUrl,
-    accommodationType,
-    id,
-  ];
+  values.push(id); // accommodation_id as last value
 
   const result = await pool.query(query, values);
-  console.log("update model:", result.rows[0]); // Debugging
   return result.rows[0];
 };
 

@@ -3,8 +3,6 @@ import axios from "axios";
 import {
   TextField,
   MenuItem,
-  Container,
-  Box,
   Table,
   TableBody,
   TableCell,
@@ -20,14 +18,15 @@ import {
   DialogTitle,
   Typography,
   Divider,
-  IconButton,
 } from "@mui/material";
-import { Textarea } from "@mui/joy";
+import dayjs from "dayjs";
 
 const Events = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Accommodation Form state
+  const [sortField, setSortField] = useState("id");
+  const [sortDirection, setSortDirection] = useState("asc");
+
   const [formData, setFormData] = useState({
     accommodationName: "",
     locationUrl: "",
@@ -37,8 +36,6 @@ const Events = () => {
     accommodationType: "hotel",
     picture: null,
   });
-
-  // Event Form state
   const [eventFormData, setEventFormData] = useState({
     eventName: "",
     startDate: "",
@@ -71,6 +68,27 @@ const Events = () => {
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [eventRowsPerPage, setEventRowsPerPage] = useState(8);
 
+  // Sorting handler function
+  const handleSort = (field) => {
+    const isAsc = sortField === field && sortDirection === "asc";
+    setSortDirection(isAsc ? "desc" : "asc");
+    setSortField(field);
+
+    const sorted = [...accommodationContents].sort((a, b) => {
+      if (field === "id") {
+        return isAsc
+          ? a.accommodation_id - b.accommodation_id
+          : b.accommodation_id - a.accommodation_id;
+      } else {
+        return isAsc
+          ? a.accommodation_name.localeCompare(b.accommodation_name)
+          : b.accommodation_name.localeCompare(a.accommodation_name);
+      }
+    });
+
+    setAccommodationContents(sorted);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -92,7 +110,7 @@ const Events = () => {
     }
   };
 
-  const resetForm = () => {
+  const resetAccommodationForm = () => {
     setFormData({
       accommodationName: "",
       locationUrl: "",
@@ -148,36 +166,35 @@ const Events = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAccommodations();
-    fetchEvents();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleAddOrUpdateAccommodation = () => {
     const formDataToSend = new FormData();
-    formDataToSend.append("accommodationName", formData.accommodationName);
+
+    formDataToSend.append("name", formData.accommodationName);
     formDataToSend.append("locationUrl", formData.locationUrl);
-    formDataToSend.append("contactNumber", formData.contactNumber);
+    formDataToSend.append("contact", formData.contactNumber);
     formDataToSend.append("amenities", formData.amenities);
     formDataToSend.append("serviceUrl", formData.serviceUrl);
     formDataToSend.append("accommodationType", formData.accommodationType);
-    formDataToSend.append("folder", "accommodations");
 
+    // File handling
     if (formData.picture) {
-      formDataToSend.append("file", formData.picture);
+      formDataToSend.append("accommodation", formData.picture); // field must match multer config
     } else if (picturePreview) {
-      formDataToSend.append("pictureUrl", picturePreview);
+      formDataToSend.append("pictureUrl", picturePreview); // use existing image if not replaced
     }
 
     const request =
       isEditing && currentId
-        ? axios.put(
+        ? axios.patch(
             `${apiUrl}/api/contents/accommodations/${currentId}`,
-            formDataToSend
+            formDataToSend,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
           )
-        : axios.post(`${apiUrl}/api/contents/accommodations`, formDataToSend);
+        : axios.post(`${apiUrl}/api/contents/accommodations`, formDataToSend, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
 
     request
       .then((response) => {
@@ -188,7 +205,7 @@ const Events = () => {
         setIsSuccess(true);
         fetchAccommodations();
         setDialogOpen(false);
-        resetForm();
+        resetAccommodationForm();
       })
       .catch((err) => {
         setModalMessage("Error saving accommodation: " + err.message);
@@ -321,6 +338,11 @@ const Events = () => {
     setEventPage(0);
   };
 
+  useEffect(() => {
+    fetchAccommodations();
+    fetchEvents();
+  }, []);
+
   if (loading || eventLoading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
   if (eventError) return <div>{eventError}</div>;
@@ -330,16 +352,19 @@ const Events = () => {
       {/* accommodation part  */}
       <div>
         <div className="mb-4 mt-4">
-          <h1>Accommodations</h1>
-          <Button
-            variant="contained"
-            onClick={() => {
-              resetForm();
-              setDialogOpen(true);
-            }}
-          >
-            Add Accommodation
-          </Button>
+          <Typography variant="h5">Accommodations</Typography>
+          <div className="mt-4">
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => {
+                resetAccommodationForm();
+                setDialogOpen(true);
+              }}
+            >
+              Add Accommodation
+            </Button>
+          </div>
         </div>
 
         {/* Accommodation Table */}
@@ -347,24 +372,74 @@ const Events = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Contact</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="center">#</TableCell>
+                <TableCell align="center">
+                  <Button
+                    onClick={() => handleSort("id")}
+                    endIcon={
+                      sortField === "id"
+                        ? sortDirection === "asc"
+                          ? " ⬆️"
+                          : " ⬇️"
+                        : null
+                    }
+                    sx={{ p: 0, textTransform: "none", fontWeight: "bold" }}
+                  >
+                    ID
+                  </Button>
+                </TableCell>
+                <TableCell align="center">
+                  <Button
+                    onClick={() => handleSort("name")}
+                    endIcon={
+                      sortField === "name"
+                        ? sortDirection === "asc"
+                          ? " ⬆️"
+                          : " ⬇️"
+                        : null
+                    }
+                    sx={{ p: 0, textTransform: "none", fontWeight: "bold" }}
+                  >
+                    Name
+                  </Button>
+                </TableCell>
+                <TableCell align="center">Type</TableCell>
+                <TableCell align="center">Contact</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {accommodationContents.length > 0 ? (
                 accommodationContents
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((accommodation) => (
-                    <TableRow key={accommodation.accommodation_id} hover>
-                      <TableCell>{accommodation.accommodation_id}</TableCell>
-                      <TableCell>{accommodation.accommodation_name}</TableCell>
-                      <TableCell>{accommodation.accommodation_type}</TableCell>
-                      <TableCell>{accommodation.contact_number}</TableCell>
-                      <TableCell style={{ display: "flex" }}>
+                  .map((accommodation, index) => (
+                    <TableRow
+                      key={accommodation.accommodation_id}
+                      sx={{
+                        "&:hover td": {
+                          backgroundColor: "#e3f2fd",
+                        },
+                      }}
+                    >
+                      <TableCell align="center">
+                        {page * rowsPerPage + index + 1}
+                      </TableCell>
+                      <TableCell align="center">
+                        {accommodation.accommodation_id}
+                      </TableCell>
+                      <TableCell align="center">
+                        {accommodation.accommodation_name}
+                      </TableCell>
+                      <TableCell align="center">
+                        {accommodation.accommodation_type}
+                      </TableCell>
+                      <TableCell align="center">
+                        {accommodation.contact_number}
+                      </TableCell>
+                      <TableCell
+                        align="center"
+                        style={{ display: "flex", justifyContent: "center" }}
+                      >
                         <Button
                           variant="contained"
                           color="primary"
@@ -391,8 +466,8 @@ const Events = () => {
                   ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    No vehicles found
+                  <TableCell colSpan={6} align="center">
+                    No accommodations found
                   </TableCell>
                 </TableRow>
               )}
@@ -423,6 +498,7 @@ const Events = () => {
           </DialogTitle>
           <DialogContent>
             <TextField
+              size="small"
               label="Accommodation Name"
               name="accommodationName"
               value={formData.accommodationName}
@@ -431,6 +507,7 @@ const Events = () => {
               margin="dense"
             />
             <TextField
+              size="small"
               label="Location URL"
               name="locationUrl"
               value={formData.locationUrl}
@@ -439,6 +516,7 @@ const Events = () => {
               margin="dense"
             />
             <TextField
+              size="small"
               label="Contact Number"
               name="contactNumber"
               value={formData.contactNumber}
@@ -447,14 +525,18 @@ const Events = () => {
               margin="dense"
             />
             <TextField
+              size="small"
               label="Amenities"
               name="amenities"
+              multiline
+              rows={4}
               value={formData.amenities}
               onChange={handleChange}
               fullWidth
               margin="dense"
             />
             <TextField
+              size="small"
               label="Service URL"
               name="serviceUrl"
               value={formData.serviceUrl}
@@ -463,6 +545,7 @@ const Events = () => {
               margin="dense"
             />
             <TextField
+              size="small"
               select
               label="Type"
               name="accommodationType"
@@ -493,45 +576,57 @@ const Events = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button color="primary">{isEditing ? "Update" : "Add"}</Button>
+            <Button color="primary" onClick={handleAddOrUpdateAccommodation}>
+              {isEditing ? "Update" : "Add"}
+            </Button>
           </DialogActions>
         </Dialog>
 
         {/* Message Modal */}
-        <Dialog open={modalOpen} onClose={handleCloseModal}>
-          <DialogTitle>{isSuccess ? "Success" : "Error"}</DialogTitle>
-          <DialogContent>
+        <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs">
+          <DialogTitle sx={{ p: 2, pb: 1 }}>
+            {isSuccess ? "✅ Success" : "❌ Error"}
+          </DialogTitle>
+          <DialogContent sx={{ p: 2 }}>
             <Typography>{modalMessage}</Typography>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseModal} color="primary">
+          <DialogActions sx={{ p: 1 }}>
+            <Button
+              onClick={handleCloseModal}
+              size="small"
+              sx={{ textTransform: "none" }}
+            >
               OK
             </Button>
           </DialogActions>
         </Dialog>
       </div>
 
-      <Divider sx={{ my: 3 }} />
+      <Divider sx={{ my: 4 }} />
 
       {/* event part */}
       <div>
         <div className="mb-4 mt-4">
-          <h1>Events</h1>
-          <Button
-            variant="contained"
-            onClick={() => {
-              resetEventForm();
-              setEventDialogOpen(true);
-            }}
-          >
-            Add Event
-          </Button>
+          <Typography variant="h5">Events</Typography>
+          <div className="mt-4">
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => {
+                resetEventForm();
+                setEventDialogOpen(true);
+              }}
+            >
+              Add Event
+            </Button>
+          </div>
         </div>
         {/* Event Table */}
         <TableContainer component={Paper}>
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell align="center">#</TableCell>
                 <TableCell align="center">ID</TableCell>
                 <TableCell align="center">Name</TableCell>
                 <TableCell align="center">Start Date</TableCell>
@@ -546,12 +641,24 @@ const Events = () => {
                     eventPage * eventRowsPerPage,
                     eventPage * eventRowsPerPage + eventRowsPerPage
                   )
-                  .map((event) => (
-                    <TableRow key={event.event_id} hover>
+                  .map((event, index) => (
+                    <TableRow
+                      key={event.event_id}
+                      sx={{
+                        "&:hover td": {
+                          backgroundColor: "#e3f2fd",
+                        },
+                      }}
+                    >
+                      <TableCell align="center">
+                        {page * rowsPerPage + index + 1}
+                      </TableCell>
                       <TableCell align="center">{event.event_id}</TableCell>
                       <TableCell align="center">{event.event_id}</TableCell>
                       {/* change to event name */}
-                      <TableCell align="center">{event.start_date}</TableCell>
+                      <TableCell align="center">
+                        {dayjs(event.start_date).format("YYYY-MM-DD")}
+                      </TableCell>
                       <TableCell align="center">{event.group_size}</TableCell>
                       <TableCell align="center">
                         <Button
@@ -597,6 +704,7 @@ const Events = () => {
           <DialogTitle>{isEditing ? "Edit Event" : "Add Event"}</DialogTitle>
           <DialogContent>
             <TextField
+              size="small"
               label="Event Name"
               name="eventName"
               value={eventFormData.eventName}
@@ -606,6 +714,7 @@ const Events = () => {
             />
             <TextField
               type="date"
+              size="small"
               name="startDate"
               value={eventFormData.startDate}
               onChange={handleEventChange}
@@ -615,18 +724,20 @@ const Events = () => {
             <TextField
               label="Group Size"
               name="groupSize"
+              size="small"
               value={eventFormData.groupSize}
               onChange={handleEventChange}
               fullWidth
               margin="dense"
             />
-            <Textarea
+            <TextField
               placeholder="Description"
               name="description"
+              size="small"
               value={eventFormData.description}
               onChange={handleEventChange}
-              minRows={3}
-              maxRows={5}
+              multiline
+              minRows={4}
               fullWidth
               style={{ marginTop: "10px" }}
             />

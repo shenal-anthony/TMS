@@ -1,4 +1,5 @@
 const express = require("express");
+const router = express.Router();
 const {
   registerUser,
   loginUser,
@@ -11,7 +12,6 @@ const {
 } = require("../controllers/feedbackController");
 const verifyJWT = require("../middlewares/verifyJWT");
 const MulterMiddleware = require("../middlewares/uploadMiddleware");
-const router = express.Router();
 
 // Protected Dashboard route
 router.get("/check-role", verifyJWT, (req, res) => {

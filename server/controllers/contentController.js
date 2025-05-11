@@ -302,23 +302,59 @@ const addAccommodation = async (req, res) => {
     });
   }
 };
+
 // update
 const updateAccommodation = async (req, res) => {
   const { id } = req.params;
-  const { body } = req;
+  const { body, files } = req;
+
   try {
+    const updatedData = {
+      accommodationName: body.name,
+      amenities: body.amenities, 
+      serviceUrl: body.serviceUrl,
+      contactNumber: body.contact,
+      locationUrl: body.locationUrl,
+      updatedAt: new Date().toISOString(),
+      accommodationType: body.accommodationType,
+    };
+
+    const uploadedImage = files?.accommodation?.[0];
+
+    if (uploadedImage) {
+      const fileUrl = `/uploads/accommodations/${uploadedImage.filename}`;
+      const fullUrl = `${baseUrl}${fileUrl}`;
+      updatedData.pictureUrl = fullUrl;
+    } else if (body.pictureUrl) {
+      updatedData.pictureUrl = body.pictureUrl; // fallback to existing image
+    }
+
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No data provided to update",
+      });
+    }
+
     const updatedContent = await accommodation.updateAccommodationById(
       id,
-      body
+      updatedData
     );
-    res.json(updatedContent);
+
+    res.json({
+      success: true,
+      message: "Accommodation updated successfully",
+      data: updatedContent,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating accommodation", error: error.message });
+    console.error("Error updating accommodation:", error);
+    res.status(500).json({
+      message: "Error updating accommodation",
+      error: error.message,
+    });
   }
-  // console.log("🚀 ~ updateAccommodation ~ updatedContent:", updatedContent);
 };
+
 // delete
 const deleteAccommodation = async (req, res) => {
   const { id } = req.params;
