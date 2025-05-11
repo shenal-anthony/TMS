@@ -29,6 +29,7 @@ const LoginForm = () => {
 
       // Navigate based on role
       if (role === "Admin") navigate("/dashboard");
+      else if(role === "SuperAdmin") navigate("/dashboard");
       else if (role === "Guide") navigate("/guide-dashboard");
       else {
         sessionStorage.removeItem("accessToken");

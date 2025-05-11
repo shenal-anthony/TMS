@@ -18,6 +18,7 @@ const getAllDestinations = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
+
 // get by id
 const getDestination = async (req, res) => {
   const { id } = req.params;
@@ -36,45 +37,41 @@ const getDestination = async (req, res) => {
 
 // add
 const addDestination = async (req, res) => {
-  try {
-    const { body, file } = req;
-    // console.log("🚀 ~ contentController.js:43 ~ addDestination ~ body:", body);
+  const { body, files } = req;
 
-    if (!file) {
-      return res.status(400).json({ error: "No file uploaded" });
+  try {
+    const uploadedImage = files?.destination?.[0];
+    let pictureUrl = null;
+
+    if (uploadedImage) {
+      const filePath = `/uploads/destinations/${uploadedImage.filename}`;
+      pictureUrl = `${baseUrl}${filePath}`;
     }
 
-    // OVERRIDE any req.body.folder with "destinations"
-    body.folder = "destinations"; // Force this value
-
-    const fileUrl = `/uploads/${body.folder}/${file.filename}`;
-    const fullUrl = `${baseUrl}${fileUrl}`;
-
-    const destinationData = {
+    const newData = {
       destinationName: body.destinationName,
       description: body.description,
       weatherCondition: body.weatherCondition,
       locationUrl: body.locationUrl,
-      pictureUrl: fullUrl,
-      folder: body.folder,
+      pictureUrl: pictureUrl,
     };
-    // console.log(
-    // "🚀 ~ contentController.js:45 ~ addDestination ~ destinationData:",
-    // destinationData
-    // );
 
-    const newDestination = await tourist.addDestination(destinationData);
+    if (Object.keys(newData).length === 0 || !uploadedImage) {
+      return res.status(400).json({
+        success: false,
+        message: "No data or image provided to create destination",
+      });
+    }
+
+    const createdDestination = await tourist.addDestination(newData);
 
     res.status(201).json({
       success: true,
       message: "Destination created successfully",
-      data: {
-        fileUrl: fullUrl,
-        destination: newDestination,
-      },
+      data: createdDestination,
     });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error creating destination:", error);
     res.status(500).json({
       success: false,
       error: "Internal server error",
@@ -85,36 +82,32 @@ const addDestination = async (req, res) => {
 // update
 const updateDestination = async (req, res) => {
   const { id } = req.params;
-  const { body, file } = req;
-  // console.log("🚀 ~ contentController.js:91 ~ updateDestination ~ file:", file);
-  // console.log("🚀 ~ contentController.js:92 ~ updateDestination ~ body:", body);
+  const { body, files } = req;
+
   try {
-    let updatedData = {
+    const updatedData = {
       destinationName: body.destinationName,
       description: body.description,
       weatherCondition: body.weatherCondition,
       locationUrl: body.locationUrl,
-      pictureUrl: body.pictureUrl,
     };
 
-    body.folder = "destinations";
-    // If new file is uploaded
-    if (file) {
-      // console.log("🚀 ~ contentController.js:104 ~ updateDestination ~ file:", file);
-      // Force the folder again
-      const fileUrl = `/uploads/${body.folder}/${file.filename}`;
+    const uploadedImage = files?.destination?.[0];
+
+    if (uploadedImage) {
+      const fileUrl = `/uploads/destinations/${uploadedImage.filename}`;
       const fullUrl = `${baseUrl}${fileUrl}`;
       updatedData.pictureUrl = fullUrl;
     }
 
     if (Object.keys(updatedData).length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No data provided to update" });
+      return res.status(400).json({
+        success: false,
+        message: "No data provided to update",
+      });
     }
 
     const updatedContent = await tourist.updateDestinationById(id, updatedData);
-    // console.log("🚀 ~ contentController.js:115 ~ updateDestination ~ updatedContent:", updatedContent);
 
     res.json({
       success: true,
@@ -123,9 +116,10 @@ const updateDestination = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating destination:", error);
-    res
-      .status(500)
-      .json({ message: "Error updating destination", error: error.message });
+    res.status(500).json({
+      message: "Error updating destination",
+      error: error.message,
+    });
   }
 };
 
@@ -169,6 +163,7 @@ const getPackage = async (req, res) => {
       .json({ message: "Error fetching package", error: error.message });
   }
 };
+
 // add
 const addPackage = async (req, res) => {
   const { body } = req;
@@ -181,20 +176,22 @@ const addPackage = async (req, res) => {
       .json({ message: "Error adding destination", error: error.message });
   }
 };
+
 // update
 const updatePackage = async (req, res) => {
   const { id } = req.params;
   const { body } = req;
-  console.log("🚀 ~ contentController.js:190 ~ updatePackage ~ body:", body);
+  // console.log("🚀 ~ contentController.js:190 ~ updatePackage ~ body:", body);
   try {
-    const updatedContent = await pkg.updatePackageById(id, body);
-    res.json(updatedContent);
+    const updatedPackageContent = await pkg.updatePackageById(id, body);
+    res.json(updatedPackageContent);
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error updating destination", error: error.message });
   }
 };
+
 // delete
 const deletePackage = async (req, res) => {
   const { id } = req.params;

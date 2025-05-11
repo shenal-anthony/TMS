@@ -11,7 +11,7 @@ const getPackageById = async (id) => {
   const query = `SELECT * FROM packages WHERE package_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
-  // console.log("🚀 ~ packageModel.js:14 ~ getPackageById ~ result:", result); 
+  // console.log("🚀 ~ packageModel.js:14 ~ getPackageById ~ result:", result);
   return result.rows[0];
 };
 
@@ -40,11 +40,58 @@ const addPackage = async (packageData) => {
 };
 
 const updatePackageById = async (id, packageData) => {
-  const { packageName, description, price, duration } = packageData;
+  const fields = [];
+  const values = [];
+  let paramIndex = 1;
 
-  const query = `UPDATE packages SET package_name = $1, description = $2, price = $3, duration = $4 WHERE package_id = $5 RETURNING *;`;
-  const values = [packageName, description, price, duration, id];
+  for (const [key, value] of Object.entries(packageData)) {
+    if (value !== undefined && value !== null) {
+      // Convert camelCase to snake_case to match DB column names
+      let column;
+      switch (key) {
+        case "package_name":
+          column = "package_name";
+          break;
+        case "description":
+          column = "description";
+          break;
+        case "price":
+          column = "price";
+          break;
+        case "duration":
+          column = "duration";
+          break;
+        case "destination_id":
+          column = "destination_id";
+          break;
+        case "accommodation_id":
+          column = "accommodation_id";
+          break;
+        default:
+          continue; // Skip unrecognized fields
+      }
+
+      fields.push(`${column} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
+    }
+  }
+
+  if (fields.length === 0) {
+    throw new Error("No fields provided for update");
+  }
+
+  const query = `
+    UPDATE packages
+    SET ${fields.join(", ")}
+    WHERE package_id = $${paramIndex}
+    RETURNING *;
+  `;
+
+  values.push(id); // Add ID as the last parameter
+
   const result = await pool.query(query, values);
+  // console.log("🚀 ~ packageModel.js:94 ~ updatePackageById ~ values:", values);
   return result.rows[0];
 };
 

@@ -11,7 +11,6 @@ const {
 } = require("../controllers/feedbackController");
 const verifyJWT = require("../middlewares/verifyJWT");
 const MulterMiddleware = require("../middlewares/uploadMiddleware");
-// const validateUser = require("../middlewares/validateRegistration");
 const router = express.Router();
 
 // Protected Dashboard route

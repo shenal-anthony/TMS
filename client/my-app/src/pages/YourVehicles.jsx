@@ -134,6 +134,7 @@ const YourVehicles = ({ userId }) => {
                       <Button
                         variant="outlined"
                         color="primary"
+                        size="small"
                         onClick={() => handleViewDetails(vehicle)}
                       >
                         View Details

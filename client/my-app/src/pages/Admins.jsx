@@ -124,6 +124,7 @@ const Admins = ({ userId, role }) => {
                       <Button
                         variant="contained"
                         color="primary"
+                        size="small"
                         onClick={() => handleView(admin.user_id)}
                       >
                         View
@@ -131,6 +132,7 @@ const Admins = ({ userId, role }) => {
                       <Button
                         variant="contained"
                         color="secondary"
+                        size="small"
                         disabled={userRole !== "SuperAdmin"}
                         onClick={() => handleRemove(admin.user_id)}
                       >
@@ -202,7 +204,12 @@ const Admins = ({ userId, role }) => {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)} color="primary">
+          <Button
+            onClick={() => setOpenDialog(false)}
+            color="primary"
+            variant="text"
+            size="small"
+          >
             Close
           </Button>
         </DialogActions>

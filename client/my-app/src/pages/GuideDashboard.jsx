@@ -301,7 +301,7 @@ const GuideDashboard = ({ userId }) => {
                     {new Date(req.sent_at).toLocaleString()}
                   </TableCell>
                   <TableCell align="center">
-                    <Stack direction="row" spacing={1}>
+                    <Stack direction="row" spacing={1} justifyContent="center">
                       <Button
                         variant="contained"
                         color="success"
