@@ -3,7 +3,6 @@ const pkg = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 
-const path = require("path");
 const baseUrl = process.env.BASE_URL;
 
 // destinations controller
@@ -167,13 +166,65 @@ const getPackage = async (req, res) => {
 // add
 const addPackage = async (req, res) => {
   const { body } = req;
+
   try {
-    const newContent = await pkg.addPackage(body);
+    // Validations
+    if (!body.package_name || typeof body.package_name !== "string") {
+      return res
+        .status(400)
+        .json({ message: "Invalid or missing package name" });
+    }
+
+    if (!body.description || typeof body.description !== "string") {
+      return res
+        .status(400)
+        .json({ message: "Invalid or missing description" });
+    }
+
+    if (!body.price || isNaN(body.price) || parseFloat(body.price) <= 0) {
+      return res
+        .status(400)
+        .json({ message: "Price must be a positive number" });
+    }
+
+    if (
+      !body.duration ||
+      isNaN(body.duration) ||
+      parseInt(body.duration) <= 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Duration must be a positive integer" });
+    }
+
+    if (!body.accommodation_id || isNaN(body.accommodation_id)) {
+      return res.status(400).json({ message: "Invalid accommodation ID" });
+    }
+
+    if (!body.destination_id || isNaN(body.destination_id)) {
+      return res.status(400).json({ message: "Invalid destination ID" });
+    }
+
+    // Construct data for the model
+    const newPackageData = {
+      packageName: body.package_name.trim(),
+      description: body.description.trim(),
+      price: parseFloat(body.price),
+      duration: parseInt(body.duration),
+      accommodationId: parseInt(body.accommodation_id),
+      destinationId: parseInt(body.destination_id),
+    };
+
+    // Send to the model
+    const newContent = await pkg.addPackage(newPackageData);
+
     res.json(newContent);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error adding destination", error: error.message });
+    console.error("Error adding package:", error);
+    res.status(500).json({
+      message: "Error adding package",
+      error: error.message,
+    });
   }
 };
 
@@ -181,14 +232,89 @@ const addPackage = async (req, res) => {
 const updatePackage = async (req, res) => {
   const { id } = req.params;
   const { body } = req;
-  // console.log("🚀 ~ contentController.js:190 ~ updatePackage ~ body:", body);
+
   try {
-    const updatedPackageContent = await pkg.updatePackageById(id, body);
+    // ID Validation
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: "Invalid package ID" });
+    }
+
+    // Initialize the update data object
+    const updatedPackageData = {};
+
+
+    if (body.package_name) {
+      if (typeof body.package_name !== "string" || !body.package_name.trim()) {
+        return res.status(400).json({ message: "Invalid package name" });
+      }
+      updatedPackageData.packageName = body.package_name.trim();
+    }
+
+    if (body.description) {
+      if (typeof body.description !== "string" || !body.description.trim()) {
+        return res.status(400).json({ message: "Invalid description" });
+      }
+      updatedPackageData.description = body.description.trim();
+    }
+
+    // Validate and update `price`
+    if (body.price) {
+      const price = parseFloat(body.price);
+      if (isNaN(price) || price <= 0) {
+        return res
+          .status(400)
+          .json({ message: "Price must be a positive number" });
+      }
+      updatedPackageData.price = price;
+    }
+
+    // Validate and update `duration`
+    if (body.duration) {
+      const duration = parseInt(body.duration);
+      if (isNaN(duration) || duration <= 0) {
+        return res
+          .status(400)
+          .json({ message: "Duration must be a positive integer" });
+      }
+      updatedPackageData.duration = duration;
+    }
+
+    // Validate and update `accommodationId`
+    if (body.accommodation_id) {
+      const accommodation_id = parseInt(body.accommodation_id);
+      if (isNaN(accommodation_id)) {
+        return res.status(400).json({ message: "Invalid accommodation ID" });
+      }
+      updatedPackageData.accommodationId = accommodation_id;
+    }
+
+    // Validate and update `destinationId`
+    if (body.destination_id) {
+      const destination_id = parseInt(body.destination_id);
+      if (isNaN(destination_id)) {
+        return res.status(400).json({ message: "Invalid destination ID" });
+      }
+      updatedPackageData.destinationId = destination_id;
+    }
+
+    // Ensure that at least one field is being updated
+    if (Object.keys(updatedPackageData).length === 0) {
+      return res.status(400).json({ message: "No valid fields to update" });
+    }
+
+    // Update the package in the model
+    const updatedPackageContent = await pkg.updatePackageById(
+      id,
+      updatedPackageData
+    );
+
     res.json(updatedPackageContent);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating destination", error: error.message });
+    console.error("Error updating package:", error);
+    res.status(500).json({
+      message: "Error updating package",
+      error: error.message,
+    });
   }
 };
 
@@ -234,65 +360,80 @@ const getAccommodation = async (req, res) => {
 };
 // add
 const addAccommodation = async (req, res) => {
-  try {
-    const {
-      accommodationName,
-      locationUrl,
-      contactNumber,
-      amenities,
-      serviceUrl,
-      accommodationType,
-      agreeTerms,
-    } = req.body;
+  const { body, files } = req;
 
-    // Check if the user agreed to the terms
-    if (agreeTerms !== "true") {
-      return res
-        .status(400)
-        .json({ message: "You must agree to the terms and conditions" });
+  try {
+    // Type Checking and Data Validation
+    if (!body.accommodationName || typeof body.accommodationName !== "string") {
+      return res.status(400).json({ message: "Invalid accommodation name" });
     }
 
-    let pictureUrl = null;
+    if (!body.locationUrl || typeof body.locationUrl !== "string") {
+      return res.status(400).json({ message: "Invalid location URL" });
+    }
 
-    // Handle file upload
-    if (req.files && req.files.picture) {
-      const picture = req.files.picture;
-      const allowedMimeTypes = ["image/jpeg", "image/png"];
+    if (
+      !body.contactNumber ||
+      typeof body.contactNumber !== "string" ||
+      !/^\d{10}$/.test(body.contactNumber.trim())
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Contact number must be a valid 10-digit number" });
+    }
 
-      if (!allowedMimeTypes.includes(picture.mimetype)) {
-        return res
-          .status(400)
-          .json({ message: "Only JPEG and PNG images are allowed" });
-      }
+    const validAccommodationTypes = [
+      "hotel",
+      "resort",
+      "bungalow",
+      "homestay",
+      "villa",
+      "cabin",
+      "cabana",
+      "lodge",
+      "camp",
+      "tent",
+    ];
 
-      // 16MB limit
-      if (picture.size > 16 * 1024 * 1024) {
-        return res
-          .status(400)
-          .json({ message: "Image size exceeds 16MB limit" });
-      }
+    if (
+      !body.accommodationType ||
+      !validAccommodationTypes.includes(body.accommodationType)
+    ) {
+      return res.status(400).json({
+        message: `Invalid accommodation type. Must be one of: ${validAccommodationTypes.join(
+          ", "
+        )}`,
+      });
+    }
 
-      const fileName = `${Date.now()}_${picture.name}`;
-      pictureUrl = `/uploads/accommodations/${fileName}`;
-      await picture.mv(path.join(__dirname, "../public", pictureUrl));
+    // Constructing the accommodation data
+    const newAccommodation = {
+      accommodationName: body.accommodationName,
+      locationUrl: body.locationUrl ? body.locationUrl.trim() : "",
+      contactNumber: body.contactNumber,
+      amenities: body.amenities ? body.amenities.trim() : "",
+      serviceUrl: body.serviceUrl ? body.serviceUrl.trim() : "",
+      accommodationType: body.accommodationType,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const uploadedImage = files?.picture?.[0];
+
+    if (uploadedImage) {
+      const fileUrl = `/uploads/accommodations/${uploadedImage.filename}`;
+      const fullUrl = `${baseUrl}${fileUrl}`;
+      newAccommodation.pictureUrl = fullUrl;
     }
 
     // Create accommodation record in database
-    const newAccommodation = await accommodation.createAccommodation({
-      accommodationName,
-      locationUrl,
-      pictureUrl,
-      contactNumber,
-      amenities: Array.isArray(amenities)
-        ? amenities
-        : amenities.split(",").map((item) => item.trim()),
-      serviceUrl,
-      accommodationType,
-      updatedAt: new Date().toISOString(),
-    });
+    const createdAccommodation = await accommodation.createAccommodation(
+      newAccommodation
+    );
 
     res.status(201).json({
+      success: true,
       message: "Accommodation registered successfully",
+      data: createdAccommodation,
     });
   } catch (error) {
     console.error("Accommodation registration error:", error);
@@ -302,7 +443,6 @@ const addAccommodation = async (req, res) => {
     });
   }
 };
-
 // update
 const updateAccommodation = async (req, res) => {
   const { id } = req.params;
@@ -311,7 +451,7 @@ const updateAccommodation = async (req, res) => {
   try {
     const updatedData = {
       accommodationName: body.name,
-      amenities: body.amenities, 
+      amenities: body.amenities,
       serviceUrl: body.serviceUrl,
       contactNumber: body.contact,
       locationUrl: body.locationUrl,
@@ -354,7 +494,6 @@ const updateAccommodation = async (req, res) => {
     });
   }
 };
-
 // delete
 const deleteAccommodation = async (req, res) => {
   const { id } = req.params;
@@ -393,7 +532,6 @@ const addEvent = async (req, res) => {
       .json({ message: "Error adding event", error: error.message });
   }
 };
-// update
 
 // delete
 const deleteEvent = async (req, res) => {

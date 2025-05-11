@@ -172,7 +172,9 @@ const PendingBookings = () => {
         <Typography variant="h5" sx={{ fontWeight: "bold" }}>
           Pending Bookings
         </Typography>
-        <Typography>You've got pending work—assign guides to keep tours on track.</Typography>
+        <Typography>
+          You've got pending work—assign guides to keep tours on track.
+        </Typography>
       </div>
 
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -313,6 +315,9 @@ const PendingBookings = () => {
                             0
                               ? "#f7f8f8" // light gray for even rows
                               : "inherit",
+                          "&:hover td": {
+                            backgroundColor: "#e3f2fd",
+                          },
                         }}
                       >
                         <TableCell align="center" padding="checkbox">

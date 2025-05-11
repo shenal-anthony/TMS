@@ -666,6 +666,7 @@ const Destinations = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell align="center">#</TableCell>
                 <TableCell align="center">
                   <Button
                     onClick={sortDestinationsById}
@@ -684,7 +685,7 @@ const Destinations = () => {
                   destinationPage * rowsPerPage,
                   destinationPage * rowsPerPage + rowsPerPage
                 )
-                .map((destination) => (
+                .map((destination, index) => (
                   <TableRow
                     key={destination.destination_id}
                     sx={{
@@ -693,6 +694,10 @@ const Destinations = () => {
                       },
                     }}
                   >
+                    <TableCell align="center">
+                      {index + 1 + destinationPage * rowsPerPage}
+                    </TableCell>
+
                     <TableCell align="center">
                       {destination.destination_id}
                     </TableCell>
@@ -826,7 +831,7 @@ const Destinations = () => {
               >
                 <TextField
                   margin="dense"
-                  label="Price ($) *"
+                  label="Price (LKR) *"
                   size="small"
                   fullWidth
                   type="number"
@@ -967,6 +972,7 @@ const Destinations = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell align="center">#</TableCell>
                 <TableCell align="center">
                   <Button
                     onClick={sortPackagesById}
@@ -987,7 +993,7 @@ const Destinations = () => {
                     packagePage * rowsPerPage,
                     packagePage * rowsPerPage + rowsPerPage
                   )
-                  .map((pkg) => (
+                  .map((pkg, index) => (
                     <TableRow
                       key={pkg.package_id}
                       sx={{
@@ -996,6 +1002,9 @@ const Destinations = () => {
                         },
                       }}
                     >
+                      <TableCell align="center">
+                        {index + 1 + packagePage * rowsPerPage}
+                      </TableCell>
                       <TableCell align="center">{pkg.package_id}</TableCell>
                       <TableCell align="center">{pkg.package_name}</TableCell>
                       <TableCell align="center">{pkg.duration}</TableCell>

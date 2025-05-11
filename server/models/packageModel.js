@@ -49,7 +49,7 @@ const updatePackageById = async (id, packageData) => {
       // Convert camelCase to snake_case to match DB column names
       let column;
       switch (key) {
-        case "package_name":
+        case "packageName":
           column = "package_name";
           break;
         case "description":
@@ -61,10 +61,10 @@ const updatePackageById = async (id, packageData) => {
         case "duration":
           column = "duration";
           break;
-        case "destination_id":
+        case "destinationId":
           column = "destination_id";
           break;
-        case "accommodation_id":
+        case "accommodationId":
           column = "accommodation_id";
           break;
         default:

@@ -140,7 +140,9 @@ const Tours = ({ userId }) => {
   return (
     <div>
       <div className="mb-4 mt-2">
-        <Typography variant="h5">Assigned & Finalized Tours</Typography>
+        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+          Assigned & Finalized Tours
+        </Typography>
         <Typography>
           These bookings are currently assigned or finalized by admin.
         </Typography>

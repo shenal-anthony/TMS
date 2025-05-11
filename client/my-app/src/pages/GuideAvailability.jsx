@@ -297,6 +297,7 @@ const GuideAvailability = () => {
                     <FormControlLabel
                       control={
                         <Switch
+                        size="small"
                           checked={guide.status === "Active"}
                           onChange={() =>
                             handleToggleStatus(guide.user_id, guide.status)
@@ -311,6 +312,7 @@ const GuideAvailability = () => {
                     <Button
                       variant="contained"
                       color="secondary"
+                      size="small"
                       onClick={() => handleRemove(guide.user_id)}
                     >
                       Remove

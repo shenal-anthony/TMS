@@ -8,7 +8,10 @@ const Feedbacks = () => {
   const [documents, setDocuments] = useState([]);
   const [touristId, setTouristId] = useState(""); // controlled input
   const [rating, setRating] = useState(5); // default rating
-  const [uploaded, setUploaded] = useState({ profileImage: null, documents: [] });
+  const [uploaded, setUploaded] = useState({
+    profileImage: null,
+    documents: [],
+  });
   const [feedbacks, setFeedbacks] = useState([]); // Store feedbacks
   const [loading, setLoading] = useState(true); // Loading state for feedbacks
 
@@ -24,7 +27,7 @@ const Feedbacks = () => {
         setLoading(false);
       }
     };
-    
+
     fetchFeedbacks();
   }, []);
 
@@ -45,9 +48,13 @@ const Feedbacks = () => {
     documents.forEach((doc) => formData.append("documents", doc));
 
     try {
-      const res = await axios.post(`${apiUrl}/api/auth/upload/feedbacks`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await axios.post(
+        `${apiUrl}/api/auth/upload/feedbacks`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       setUploaded({
         profileImage: res.data.profileImage,
@@ -55,7 +62,9 @@ const Feedbacks = () => {
       });
 
       // Fetch updated feedbacks after successful upload
-      const updatedFeedbacks = await axios.get(`${apiUrl}/api/auth/view/feedbacks`);
+      const updatedFeedbacks = await axios.get(
+        `${apiUrl}/api/auth/view/feedbacks`
+      );
       setFeedbacks(updatedFeedbacks.data.feedbacks);
 
       alert("Upload success");
@@ -147,7 +156,10 @@ const Feedbacks = () => {
               <div key={idx}>
                 <h3>Feedback from Tourist ID: {feedback.touristId}</h3>
                 <p>Rating: {feedback.rating}</p>
-                <p>Date Submitted: {new Date(feedback.dateSubmitted).toLocaleString()}</p>
+                <p>
+                  Date Submitted:{" "}
+                  {new Date(feedback.dateSubmitted).toLocaleString()}
+                </p>
                 <div>
                   <h4>Uploaded Files:</h4>
                   {feedback.fileUrls.map((url, fileIdx) => (
@@ -167,6 +179,59 @@ const Feedbacks = () => {
           )}
         </div>
       )}
+      {/* === Grid of Uploaded Users === */}
+      <h3 style={{ marginTop: "2rem" }}>Registered Users</h3>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+          gap: "1rem",
+        }}
+      >
+        {users.map((user, idx) => (
+          <div
+            key={idx}
+            style={{
+              border: "1px solid #ccc",
+              padding: "1rem",
+              borderRadius: "8px",
+              background: "#f9f9f9",
+            }}
+          >
+            <h4>
+              {user.first_name} {user.last_name}
+            </h4>
+            <p>Email: {user.email_address}</p>
+            <p>Role: {user.role}</p>
+
+            {user.profilePicture && (
+              <img
+                src={user.profilePicture}
+                alt="Profile"
+                width="100"
+                style={{ borderRadius: "6px", marginBottom: "0.5rem" }}
+              />
+            )}
+
+            {user.touristLicenses && user.touristLicenses.length > 0 && (
+              <div>
+                <p>Licenses:</p>
+                {user.touristLicenses.map((license, i) => (
+                  <a
+                    key={i}
+                    href={license}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "block", color: "blue" }}
+                  >
+                    View File {i + 1}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

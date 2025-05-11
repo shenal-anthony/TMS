@@ -77,7 +77,7 @@ const YourVehicles = ({ userId }) => {
   return (
     <div>
       <div className="mb-4 mt-4">
-        <Typography variant="h4" color="intial">
+        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
           Your Vehicles
         </Typography>
         <h1 className="ml-2">View your vehicles here</h1>
