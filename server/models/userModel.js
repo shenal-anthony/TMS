@@ -40,6 +40,80 @@ const createUser = async (userData) => {
   return result.rows[0];
 };
 
+const updateUserById = async (userId, userData) => {
+  // Filter out undefined values and prepare the update fields
+  const updateFields = [];
+  const values = [];
+  let paramIndex = 1;
+
+  // List of allowed fields that can be updated
+  const allowedFields = [
+    "firstName",
+    "lastName",
+    "email",
+    "password",
+    "nic",
+    "contactNumber",
+    "address1",
+    "address2",
+    "role",
+    "profilePicturePath",
+    "touristLicensePath",
+    "status",
+  ];
+
+  // Build the dynamic query parts
+  for (const [key, value] of Object.entries(userData)) {
+    if (allowedFields.includes(key) && value !== undefined) {
+      // Map JavaScript camelCase to database snake_case
+      const dbField =
+        {
+          firstName: "first_name",
+          lastName: "last_name",
+          email: "email_address",
+          password: "password",
+          nic: "nic_number",
+          contactNumber: "contact_number",
+          address1: "addressline_01",
+          address2: "addressline_02",
+          profilePicturePath: "profile_picture",
+          touristLicensePath: "tourist_license",
+        }[key] || key; // Default to original key if not in mapping
+
+      updateFields.push(`${dbField} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
+    }
+  }
+
+  if (updateFields.length === 0) {
+    throw new Error("No valid fields provided for update");
+  }
+
+  // Add the user ID as the last parameter
+  values.push(userId);
+
+  const query = `
+    UPDATE users 
+    SET ${updateFields.join(", ")}
+    WHERE user_id = $${paramIndex}
+    RETURNING 
+      user_id, 
+      first_name as "firstName", 
+      last_name as "lastName", 
+      email_address as "email", 
+      role,
+      status`;
+
+  const result = await pool.query(query, values);
+
+  if (result.rows.length === 0) {
+    throw new Error("User not found or no changes made");
+  }
+
+  return result.rows[0];
+};
+
 const findUserByEmail = async (email) => {
   const query = `SELECT * FROM users WHERE email_address = $1`;
   const values = [email];
@@ -140,4 +214,5 @@ module.exports = {
   getAdminCount,
   getGuideCount,
   getUserRoleById,
+  updateUserById,
 };

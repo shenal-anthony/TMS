@@ -174,64 +174,132 @@ const getAccessToken = async (req, res) => {
 
 const editProfile = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { firstName, lastName, email, contactNumber, address1, address2 } =
-      req.body;
-
-    // Check if the user exists
-    const userQuery = "SELECT * FROM users WHERE id = $1";
-    const userResult = await pool.query(userQuery, [id]);
-
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    let profilePicturePath = userResult.rows[0].profile_picture;
-
-    // Check if a new profile picture is uploaded
-    if (req.files?.profilePicture) {
-      const profilePicture = req.files.profilePicture;
-
-      // Delete old profile picture if exists
-      if (profilePicturePath) {
-        const oldFilePath = path.join(__dirname, "..", profilePicturePath);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-      }
-
-      // Save new profile picture
-      profilePicturePath = `/uploads/${Date.now()}_${profilePicture.name}`;
-      profilePicture.mv(path.join(__dirname, "..", profilePicturePath));
-    }
-
-    // Update user details in the database
-    const updateUserQuery = `
-      UPDATE users 
-      SET first_name = $1, last_name = $2, email = $3, contact_number = $4, 
-          address1 = $5, address2 = $6, profile_picture = $7
-      WHERE id = $8
-      RETURNING id, first_name, last_name, email, contact_number, address1, address2, profile_picture;
-    `;
-
-    const updatedUser = await pool.query(updateUserQuery, [
+    const userId = req.params.userId;
+    let {
       firstName,
       lastName,
-      email,
       contactNumber,
+      email,
+      nic,
       address1,
       address2,
-      profilePicturePath,
-      id,
-    ]);
+      currentPassword,
+      newPassword,
+      confirmNewPassword,
+    } = req.body;
+
+    const errors = {};
+
+    // Basic validation
+    if (!firstName) errors.firstName = "First name is required";
+    if (!lastName) errors.lastName = "Last name is required";
+    if (!contactNumber) errors.contactNumber = "Contact number is required";
+    if (!email) errors.email = "Email is required";
+    if (!nic) errors.nic = "NIC is required";
+    if (!address1) errors.address1 = "Address line 1 is required";
+
+    // Password change validation (optional)
+    if (newPassword || confirmNewPassword) {
+      if (!currentPassword) {
+        errors.currentPassword = "Current password is required to change password";
+      }
+      if (newPassword !== confirmNewPassword) {
+        errors.confirmNewPassword = "New passwords do not match";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ errors });
+    }
+
+    // Trim and lowercase fields
+    firstName = firstName.trim().toLowerCase();
+    lastName = lastName.trim().toLowerCase();
+    email = email.trim().toLowerCase();
+    address1 = address1.trim().toLowerCase();
+    address2 = address2 ? address2.trim().toLowerCase() : "";
+
+    // Get existing user
+    const existingUser = await userModel.getUserById(userId);
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Handle password change if requested
+    let hashedPassword = existingUser.password;
+    if (newPassword && currentPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, existingUser.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+      const saltRounds = 10;
+      hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    }
+
+    // Handle file uploads
+    const fileFields = req.files || {};
+    const profileImage = fileFields["profilePicture"]?.[0] || null;
+    const licenseFiles = fileFields["touristLicense"] || [];
+
+    // Get existing file paths or use new ones
+    const profileImageUrl = profileImage
+      ? path.join("/uploads/profile_pics", profileImage.filename)
+      : existingUser.profilePicturePath;
+
+    const licenseUrls = licenseFiles.length > 0
+      ? licenseFiles.map(file => path.join("/uploads/tourist_licenses", file.filename))
+      : existingUser.touristLicensePath?.split(",") || [];
+
+    // Update user
+    const updatedUser = await userModel.updateUserById(userId, {
+      firstName,
+      lastName,
+      contactNumber,
+      email,
+      nic,
+      address1,
+      address2,
+      password: hashedPassword,
+      profilePicturePath: profileImageUrl,
+      touristLicensePath: licenseUrls.join(","),
+    });
 
     res.status(200).json({
       message: "Profile updated successfully",
-      user: updatedUser.rows[0],
+      user: updatedUser,
     });
   } catch (error) {
-    console.error("Edit Profile error:", error.message);
-    res.status(500).json({ message: "Server error" });
+    console.error("Profile update failed:", error);
+    res.status(500).json({ error: "Profile update failed" });
+  }
+};
+
+const getUser = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const user = await userModel.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Normalize file paths
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const profilePicture = user.profile_picture
+      ? `${baseUrl}${user.profile_picture.replace(/\\/g, "/")}`
+      : null;
+    const touristLicenses = user.tourist_license
+      ? user.tourist_license.split(",").map((path) => `${baseUrl}${path.trim().replace(/\\/g, "/")}`)
+      : [];
+
+    res.status(200).json({
+      ...user,
+      profilePicture,
+      touristLicenses,
+    });
+  } catch (error) {
+    console.error("Error retrieving user:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
 };
 
@@ -241,4 +309,5 @@ module.exports = {
   editProfile,
   getAccessToken,
   getAllRegisteredUsers,
+  getUser,
 };

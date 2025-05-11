@@ -121,6 +121,10 @@ const App = () => {
               path="/guide-reports"
               element={<GuideReports userId={authUser?.userId} />}
             />
+            <Route
+              path="/guide/edit-profile"
+              element={<EditProfile userId={authUser?.userId} />}
+            />
           </Route>
         </Route>
       </Routes>

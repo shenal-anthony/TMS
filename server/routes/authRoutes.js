@@ -5,6 +5,8 @@ const {
   loginUser,
   getAccessToken,
   getAllRegisteredUsers,
+  editProfile,
+  getUser,
 } = require("../controllers/authController");
 const {
   viewAllFeedbacks,
@@ -34,6 +36,8 @@ router.post("/upload/feedbacks", uploadMiddleware, uploadFiles);
 router.post("/login", loginUser);
 router.post("/refresh-token", getAccessToken);
 router.get("/view/feedbacks", viewAllFeedbacks);
-router.get("/users", getAllRegisteredUsers); // Add this line
+router.get("/users", getAllRegisteredUsers); 
+router.patch("/edit-profile/:id", registerMiddleware, editProfile); 
+router.get("/user/:id", getUser);
 
 module.exports = router;

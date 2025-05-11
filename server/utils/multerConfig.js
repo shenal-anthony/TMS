@@ -5,7 +5,6 @@ const fs = require("fs");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let folder = req.body.folder || "others"; // default to "others" if no category sent
-
     const uploadPath = path.join(__dirname, "../public/uploads", folder);
 
     console.log("🚀 ~ multerConfig.js:11 ~ folder:", folder); // console log
