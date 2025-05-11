@@ -107,9 +107,8 @@ const YourVehicles = ({ userId }) => {
                   <TableRow
                     key={vehicle.vehicle_id}
                     sx={{
-                      "&:hover": {
-                        backgroundColor: "#f5f5f5",
-                        cursor: "default",
+                      "&:hover td": {
+                        backgroundColor: "#e3f2fd !important",
                       },
                     }}
                   >

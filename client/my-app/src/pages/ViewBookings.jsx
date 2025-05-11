@@ -256,9 +256,8 @@ const ViewBookings = () => {
                       <TableRow
                         key={booking.booking_id}
                         sx={{
-                          "&:hover": {
-                            backgroundColor: "#f5f5f5",
-                            cursor: "default",
+                          "&:hover td": {
+                            backgroundColor: "#e3f2fd",
                           },
                         }}
                       >
@@ -360,9 +359,8 @@ const ViewBookings = () => {
                       <TableRow
                         key={booking.booking_id}
                         sx={{
-                          "&:hover": {
-                            backgroundColor: "#f5f5f5",
-                            cursor: "default",
+                          "&:hover td": {
+                            backgroundColor: "#e3f2fd !important",
                           },
                         }}
                       >

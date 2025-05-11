@@ -273,14 +273,23 @@ const GuideAvailability = () => {
             {sortedGuides
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((guide, index) => (
-                <TableRow key={guide.user_id}>
+                <TableRow
+                  key={guide.user_id}
+                  sx={{
+                    "&:hover td": {
+                      backgroundColor: "#e3f2fd !important",
+                    },
+                  }}
+                >
                   <TableCell padding="checkbox">
                     <Checkbox
                       checked={selectedIds.includes(guide.user_id)}
                       onChange={() => handleSelectRow(guide.user_id)}
                     />
                   </TableCell>
-                  <TableCell align="center">{index + 1 + page * rowsPerPage}</TableCell>
+                  <TableCell align="center">
+                    {index + 1 + page * rowsPerPage}
+                  </TableCell>
                   <TableCell align="center">{guide.user_id}</TableCell>
                   <TableCell align="center">{`${guide.first_name} ${guide.last_name}`}</TableCell>
                   <TableCell align="center">{guide.email_address}</TableCell>

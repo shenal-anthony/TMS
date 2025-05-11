@@ -386,7 +386,12 @@ const Dashboard = ({ userId }) => {
                   {sortedGuideRequests.map((req, index) => (
                     <TableRow
                       key={`${req.booking_id}-${req.guide_id}`}
-                      sx={{ height: 40 }}
+                      sx={{
+                        height: 40,
+                        "&:hover td": {
+                          backgroundColor: "#e3f2fd !important",
+                        },
+                      }}
                     >
                       <TableCell align="center">{index + 1}</TableCell>
                       <TableCell align="center">{req.booking_id}</TableCell>
@@ -527,6 +532,9 @@ const Dashboard = ({ userId }) => {
                             0
                               ? "#f7f8f8" // light gray for even rows
                               : "inherit",
+                          "&:hover td": {
+                            backgroundColor: "#e3f2fd !important",
+                          },
                         }}
                       >
                         <TableCell align="center" padding="checkbox">

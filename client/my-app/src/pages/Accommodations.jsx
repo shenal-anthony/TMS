@@ -432,9 +432,8 @@ const Destinations = () => {
                   <TableRow
                     key={destination.destination_id}
                     sx={{
-                      "&:hover": {
-                        backgroundColor: "#f5f5f5",
-                        cursor: "default",
+                      "&:hover td": {
+                        backgroundColor: "#e3f2fd !important",
                       },
                     }}
                   >

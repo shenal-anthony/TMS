@@ -30,7 +30,7 @@ const ManageVehicles = ({ userId }) => {
   });
   const [selectedIds, setSelectedIds] = useState([]);
   const apiUrl = import.meta.env.VITE_API_URL;
-  const adminId = userId;;
+  const adminId = userId;
 
   useEffect(() => {
     axiosInstance
@@ -250,7 +250,14 @@ const ManageVehicles = ({ userId }) => {
               sortedVehicles
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((vehicle, index) => (
-                  <TableRow key={vehicle.vehicle_id}>
+                  <TableRow
+                    key={vehicle.vehicle_id}
+                    sx={{
+                      "&:hover td": {
+                        backgroundColor: "#e3f2fd !important",
+                      },
+                    }}
+                  >
                     <TableCell padding="checkbox">
                       <Checkbox
                         checked={selectedIds.includes(vehicle.vehicle_id)}
