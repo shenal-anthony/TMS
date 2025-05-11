@@ -42,6 +42,10 @@ const addDestination = async (req, res) => {
     const uploadedImage = files?.destination?.[0];
     let pictureUrl = null;
 
+    if (!uploadedImage) {
+      return res.status(400).json({ message: "Destination image is required" });
+    }
+
     if (uploadedImage) {
       const filePath = `/uploads/destinations/${uploadedImage.filename}`;
       pictureUrl = `${baseUrl}${filePath}`;
@@ -242,7 +246,6 @@ const updatePackage = async (req, res) => {
     // Initialize the update data object
     const updatedPackageData = {};
 
-
     if (body.package_name) {
       if (typeof body.package_name !== "string" || !body.package_name.trim()) {
         return res.status(400).json({ message: "Invalid package name" });
@@ -417,7 +420,13 @@ const addAccommodation = async (req, res) => {
       updatedAt: new Date().toISOString(),
     };
 
-    const uploadedImage = files?.picture?.[0];
+    const uploadedImage = files?.accommodation?.[0];
+
+    if (!uploadedImage) {
+      return res
+        .status(400)
+        .json({ message: "Accommodation image is required" });
+    }
 
     if (uploadedImage) {
       const fileUrl = `/uploads/accommodations/${uploadedImage.filename}`;
@@ -522,14 +531,27 @@ const getAllEvents = async (req, res) => {
 };
 // add
 const addEvent = async (req, res) => {
-  const { body } = req;
   try {
-    const newContent = await event.addEvent(body);
-    res.json(newContent);
+    // For FormData, the fields are available in req.body
+    const { body, file } = req;
+
+    const eventData = {
+      eventName: body.eventName,
+      startDate: body.startDate,
+      groupSize: body.groupSize || null, // Handle optional fields
+      description: body.description || null,
+    };
+
+    console.log("Creating event with data:", eventData);
+    const newContent = await event.addEvent(eventData);
+
+    res.status(201).json(newContent);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error adding event", error: error.message });
+    console.error("Error adding event:", error);
+    res.status(500).json({
+      message: "Error adding event",
+      error: error.message,
+    });
   }
 };
 

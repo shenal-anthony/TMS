@@ -18,8 +18,10 @@ import {
   DialogTitle,
   Typography,
   Divider,
+  Box,
 } from "@mui/material";
 import dayjs from "dayjs";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 const Events = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -169,9 +171,9 @@ const Events = () => {
   const handleAddOrUpdateAccommodation = () => {
     const formDataToSend = new FormData();
 
-    formDataToSend.append("name", formData.accommodationName);
+    formDataToSend.append("accommodationName", formData.accommodationName);
     formDataToSend.append("locationUrl", formData.locationUrl);
-    formDataToSend.append("contact", formData.contactNumber);
+    formDataToSend.append("contactNumber", formData.contactNumber);
     formDataToSend.append("amenities", formData.amenities);
     formDataToSend.append("serviceUrl", formData.serviceUrl);
     formDataToSend.append("accommodationType", formData.accommodationType);
@@ -214,44 +216,45 @@ const Events = () => {
       .finally(() => setModalOpen(true));
   };
 
-  const handleEventSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleAddOrUpdateEvent = () => {
     const formDataToSend = new FormData();
+
     Object.keys(eventFormData).forEach((key) => {
       if (eventFormData[key] !== null) {
         formDataToSend.append(key, eventFormData[key]);
       }
     });
+    console.log("🚀 ~ Events.jsx:226 ~ Object.keys ~ formDataToSend:", formDataToSend);
 
-    try {
-      const url =
-        isEditing && currentId
-          ? `${apiUrl}/api/contents/events/${currentId}`
-          : `${apiUrl}/api/contents/events`;
+    const request =
+      isEditing && currentId
+        ? axios.patch(
+            `${apiUrl}/api/contents/events/${currentId}`,
+            formDataToSend,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          )
+        : axios.post(`${apiUrl}/api/contents/events`, formDataToSend, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
 
-      const method = isEditing ? "put" : "post";
-
-      const response = await axios[method](url, formDataToSend);
-
-      setModalMessage(
-        response.data.message ||
-          `Event ${isEditing ? "updated" : "registered"} successfully!`
-      );
-      setIsSuccess(true);
-      setModalOpen(true);
-      fetchEvents();
-      setEventDialogOpen(false);
-      resetEventForm();
-    } catch (error) {
-      console.error("Error:", error);
-      setModalMessage(
-        error.response?.data?.message ||
-          "An error occurred during the operation."
-      );
-      setIsSuccess(false);
-      setModalOpen(true);
-    }
+    request
+      .then((response) => {
+        setModalMessage(
+          response.data.message ||
+            `Event ${isEditing ? "updated" : "registered"} successfully!`
+        );
+        setIsSuccess(true);
+        fetchEvents();
+        setEventDialogOpen(false);
+        resetEventForm();
+      })
+      .catch((err) => {
+        setModalMessage("Error saving event: " + err.message);
+        setIsSuccess(false);
+      })
+      .finally(() => setModalOpen(true));
   };
 
   const handleRemoveAccommodation = async (id) => {
@@ -298,18 +301,6 @@ const Events = () => {
     setCurrentId(acc.accommodation_id);
     setIsEditing(true);
     setDialogOpen(true);
-  };
-
-  const handleEditEvent = (event) => {
-    setEventFormData({
-      eventName: event.event_name,
-      startDate: event.start_date,
-      groupSize: event.group_size,
-      description: event.description,
-    });
-    setCurrentId(event.event_id);
-    setIsEditing(true);
-    setEventDialogOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -390,9 +381,9 @@ const Events = () => {
                 </TableCell>
                 <TableCell align="center">
                   <Button
-                    onClick={() => handleSort("name")}
+                    onClick={() => handleSort("accommodationName")}
                     endIcon={
-                      sortField === "name"
+                      sortField === "accommodationName"
                         ? sortDirection === "asc"
                           ? " ⬆️"
                           : " ⬇️"
@@ -427,7 +418,15 @@ const Events = () => {
                       <TableCell align="center">
                         {accommodation.accommodation_id}
                       </TableCell>
-                      <TableCell align="center">
+                      <TableCell
+                        align="center"
+                        sx={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "150px", // adjust this value as needed
+                        }}
+                      >
                         {accommodation.accommodation_name}
                       </TableCell>
                       <TableCell align="center">
@@ -493,91 +492,151 @@ const Events = () => {
           fullWidth
           maxWidth="md"
         >
-          <DialogTitle>
-            {isEditing ? "Edit Accommodation" : "Add Accommodation"}
+          <DialogTitle sx={{ pb: 1 }}>
+            {isEditing ? "Edit Accommodation" : "Add New Accommodation"}
           </DialogTitle>
-          <DialogContent>
-            <TextField
-              size="small"
-              label="Accommodation Name"
-              name="accommodationName"
-              value={formData.accommodationName}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              size="small"
-              label="Location URL"
-              name="locationUrl"
-              value={formData.locationUrl}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              size="small"
-              label="Contact Number"
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              size="small"
-              label="Amenities"
-              name="amenities"
-              multiline
-              rows={4}
-              value={formData.amenities}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              size="small"
-              label="Service URL"
-              name="serviceUrl"
-              value={formData.serviceUrl}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              size="small"
-              select
-              label="Type"
-              name="accommodationType"
-              value={formData.accommodationType}
-              onChange={handleChange}
-              fullWidth
-              margin="dense"
-            >
-              <MenuItem value="hotel">Hotel</MenuItem>
-              <MenuItem value="resort">Resort</MenuItem>
-              <MenuItem value="apartment">Apartment</MenuItem>
-            </TextField>
 
-            <div style={{ marginTop: "10px" }}>
-              <input type="file" accept="image/*" onChange={handleFileChange} />
-              {picturePreview && (
-                <img
-                  src={picturePreview}
-                  alt="Preview"
-                  style={{
-                    maxWidth: "200px",
-                    maxHeight: "200px",
-                    marginTop: "10px",
-                  }}
-                />
-              )}
-            </div>
+          <DialogContent>
+            <Box sx={{ display: "grid", gap: 2, pt: 1 }}>
+              <TextField
+                size="small"
+                label="Accommodation Name *"
+                name="accommodationName"
+                value={formData.accommodationName}
+                onChange={handleChange}
+                fullWidth
+              />
+
+              <TextField
+                size="small"
+                label="Location URL"
+                name="locationUrl"
+                value={formData.locationUrl}
+                onChange={handleChange}
+                fullWidth
+              />
+
+              <TextField
+                size="small"
+                label="Contact Number *"
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleChange}
+                fullWidth
+              />
+
+              <TextField
+                size="small"
+                select
+                label="Type *"
+                name="accommodationType"
+                value={formData.accommodationType}
+                onChange={handleChange}
+                fullWidth
+              >
+                <MenuItem value="hotel">Hotel</MenuItem>
+                <MenuItem value="resort">Resort</MenuItem>
+                <MenuItem value="bungalow">Bungalow</MenuItem>
+                <MenuItem value="homestay">Homestay</MenuItem>
+                <MenuItem value="villa">Villa</MenuItem>
+                <MenuItem value="cabin">Cabin</MenuItem>
+                <MenuItem value="cabana">Cabana</MenuItem>
+                <MenuItem value="lodge">Lodge</MenuItem>
+                <MenuItem value="camp">Camping Site</MenuItem>
+                <MenuItem value="tent">Tent</MenuItem>
+              </TextField>
+
+              <TextField
+                size="small"
+                label="Amenities"
+                name="amenities"
+                multiline
+                rows={4}
+                value={formData.amenities}
+                onChange={handleChange}
+                fullWidth
+              />
+
+              <TextField
+                size="small"
+                label="Service URL"
+                name="serviceUrl"
+                value={formData.serviceUrl}
+                onChange={handleChange}
+                fullWidth
+              />
+
+              {/* Improved File Upload Section */}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Accommodation Image
+                </Typography>
+
+                <Button
+                  variant="outlined"
+                  component="label"
+                  size="small"
+                  startIcon={<CloudUploadIcon />}
+                >
+                  Upload Image
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </Button>
+
+                {picturePreview && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      border: "1px dashed",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      p: 2,
+                      display: "flex",
+                      justifyContent: "center",
+                      bgcolor: "background.paper",
+                    }}
+                  >
+                    <img
+                      src={picturePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "300px",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button color="primary" onClick={handleAddOrUpdateAccommodation}>
-              {isEditing ? "Update" : "Add"}
+
+          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              onClick={() => setDialogOpen(false)}
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "none" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              variant="contained"
+              size="small"
+              onClick={handleAddOrUpdateAccommodation}
+              sx={{ textTransform: "none" }}
+              disabled={
+                !formData.accommodationName ||
+                !formData.contactNumber ||
+                !formData.accommodationType
+              }
+            >
+              {isEditing ? "Save Changes" : "Add Accommodation"}
             </Button>
           </DialogActions>
         </Dialog>
@@ -731,7 +790,7 @@ const Events = () => {
               margin="dense"
             />
             <TextField
-              placeholder="Description"
+              label="Description"
               name="description"
               size="small"
               value={eventFormData.description}
@@ -744,7 +803,9 @@ const Events = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setEventDialogOpen(false)}>Cancel</Button>
-            <Button color="primary">{isEditing ? "Update" : "Add"}</Button>
+            <Button color="primary" onClick={handleAddOrUpdateEvent}>
+              {isEditing ? "Update" : "Add"}
+            </Button>
           </DialogActions>
         </Dialog>
       </div>
