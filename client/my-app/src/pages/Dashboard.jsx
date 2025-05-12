@@ -260,20 +260,19 @@ const Dashboard = ({ userId }) => {
           {/* --- Status Cards Section --- */}
           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
             <Box>
-              <Typography variant="h4">Dashboard</Typography>
-              <Typography variant="subtitle1" gutterBottom>
-                A quick data overview of the system.
+              <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                Dashboard
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: "text.secondary", marginLeft: "2px" }}
+              >
+                Welcome to the dashboard! Here you can find an overview of your
+                system.
               </Typography>
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.1 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ color: "text.secondary", fontSize: "0.8rem" }}
-              >
-                Refresh Cards
-              </Typography>
-
               <IconButton
                 onClick={fetchStatusCardsData}
                 disabled={loadingCards}
@@ -284,6 +283,12 @@ const Dashboard = ({ userId }) => {
                   <RefreshIcon />
                 )}
               </IconButton>
+              <Typography
+                variant="subtitle2"
+                sx={{ color: "text.secondary", fontSize: "0.7rem" }}
+              >
+                Refresh Cards
+              </Typography>
             </Box>
           </Box>
 
@@ -310,10 +315,10 @@ const Dashboard = ({ userId }) => {
           {/* sent guide requests */}
           <div>
             {" "}
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" sx={{ fontWeight: "bold" }}>
               Sent Guide Requests
             </Typography>
-            <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 2 }}>
               Shows guide requests sent by admin with their status
             </Typography>
           </div>
@@ -444,8 +449,10 @@ const Dashboard = ({ userId }) => {
 
         {/* booking status */}
         <div>
-          <Typography variant="h5">Booking Status</Typography>
-          <Typography variant="body1" sx={{ mb: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+            Booking Status
+          </Typography>
+          <Typography variant="body1" sx={{ mb: -2 }}>
             Date view of pending bookings
           </Typography>
         </div>

@@ -14,8 +14,6 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import axiosInstance from "../api/axiosInstance";
 
 const ManageVehicles = ({ userId }) => {
@@ -202,11 +200,9 @@ const ManageVehicles = ({ userId }) => {
                   onClick={() => handleSort("vehicle_id")}
                   endIcon={
                     sortConfig.key === "vehicle_id" &&
-                    sortConfig.order === "asc" ? (
-                      <ArrowUpwardIcon fontSize="small" />
-                    ) : (
-                      <ArrowDownwardIcon fontSize="small" />
-                    )
+                    sortConfig.order === "asc"
+                      ? "⬆️"
+                      : "⬇️"
                   }
                 >
                   Vehicle ID
@@ -217,11 +213,9 @@ const ManageVehicles = ({ userId }) => {
                 <Button
                   onClick={() => handleSort("brand")}
                   endIcon={
-                    sortConfig.key === "brand" && sortConfig.order === "asc" ? (
-                      <ArrowUpwardIcon fontSize="small" />
-                    ) : (
-                      <ArrowDownwardIcon fontSize="small" />
-                    )
+                    sortConfig.key === "brand" && sortConfig.order === "asc"
+                      ? "⬆️"
+                      : "⬇️"
                   }
                 >
                   Manufacture
@@ -232,16 +226,18 @@ const ManageVehicles = ({ userId }) => {
                 <Button
                   onClick={() => handleSort("model")}
                   endIcon={
-                    sortConfig.key === "model" && sortConfig.order === "asc" ? (
-                      <ArrowUpwardIcon fontSize="small" />
-                    ) : (
-                      <ArrowDownwardIcon fontSize="small" />
-                    )
+                    sortConfig.key === "model" && sortConfig.order === "asc"
+                      ? "⬆️"
+                      : "⬇️"
                   }
                 >
                   Model
                 </Button>
               </TableCell>
+              <TableCell align="center">Vehicle Type</TableCell>
+              <TableCell align="center">Fuel Type</TableCell>
+              <TableCell align="center">Air Condition</TableCell>
+              <TableCell align="center">No Plate</TableCell>
               <TableCell align="center">Status</TableCell>
             </TableRow>
           </TableHead>
@@ -268,10 +264,17 @@ const ManageVehicles = ({ userId }) => {
                     <TableCell align="center">{vehicle.vehicle_id}</TableCell>
                     <TableCell align="center">{vehicle.brand}</TableCell>
                     <TableCell align="center">{vehicle.model}</TableCell>
+                    <TableCell align="center">{vehicle.vehicle_type}</TableCell>
+                    <TableCell align="center">{vehicle.fuel_type}</TableCell>
+                    <TableCell align="center">
+                      {vehicle.air_condition ? "✅" : "❌"}
+                    </TableCell>
+                    <TableCell align="center">{vehicle.number_plate}</TableCell>
                     <TableCell style={{ minWidth: 150 }} align="center">
                       <FormControlLabel
                         control={
                           <Switch
+                            size="small"
                             checked={vehicle.status === "Functional"}
                             onChange={() =>
                               handleToggleStatus(
@@ -282,7 +285,21 @@ const ManageVehicles = ({ userId }) => {
                             color="primary"
                           />
                         }
-                        label={vehicle.status}
+                        label={
+                          <span
+                            style={{
+                              color:
+                                vehicle.status === "Functional"
+                                  ? "green"
+                                  : "orange",
+                              fontWeight: 400,
+                              fontSize: "0.9rem",
+                              marginLeft: "4px",
+                            }}
+                          >
+                            {vehicle.status}
+                          </span>
+                        }
                       />
                     </TableCell>
                   </TableRow>

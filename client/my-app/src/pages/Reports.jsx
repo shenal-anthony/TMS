@@ -108,19 +108,26 @@ const Reports = ({ userId }) => {
     if (!window.confirm("Are you sure you want to download this report?")) {
       return;
     }
+
     try {
-      const params = {
-        startDate: startDate.format("YYYY-MM-DD"),
-        endDate: endDate.format("YYYY-MM-DD"),
-        reportType: reportType.toLowerCase(),
-        downloadType,
-        userId: userId,
+      const reportDetails = {
+        generated_date: dayjs().toISOString(),
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        comment,
+        report_data: JSON.stringify(chartData),
+        report_type: reportType.toLowerCase(),
+        user_id: userId,
+        downloadType, // Add this to tell server whether PDF or Excel
       };
 
-      const response = await axiosInstance.get("/api/reports/download", {
-        params,
-        responseType: "blob",
-      });
+      const response = await axiosInstance.post(
+        "/api/reports/download",
+        reportDetails,
+        {
+          responseType: "blob", // Important for file download
+        }
+      );
 
       // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));

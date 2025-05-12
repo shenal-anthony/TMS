@@ -24,33 +24,9 @@ const addEvent = async (eventData) => {
   return result.rows[0];
 };
 
-const updateEventById = async (id, destinationData) => {
-  const {
-    locationUrl,
-    pictureUrl,
-    description,
-    destinationName,
-    weatherCondition,
-  } = destinationData;
-
-  const query = `UPDATE destinations SET location_url = $1, picture_url = $2, description = $3, destination_name = $4, weather_condition = $5 WHERE destination_id = $6 RETURNING *;`;
-  const values = [
-    locationUrl,
-    pictureUrl,
-    description,
-    destinationName,
-    weatherCondition,
-    id,
-  ];
-  const result = await pool.query(query, values);
-  // console.log(result.rows[0]); // debug
-  // console.log("Received data:", destinationData); // debug
-  return result.rows[0];
-};
-
 const deleteEventById = async (id) => {
   const query = "DELETE FROM events WHERE event_id = $1";
   await pool.query(query, [id]);
 };
 
-module.exports = { getAllEvents, addEvent, updateEventById, deleteEventById };
+module.exports = { getAllEvents, addEvent, deleteEventById };
