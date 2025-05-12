@@ -389,7 +389,7 @@ const sendEmailToTourist = async (req, res) => {
 
     const formattedAmount = new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "LKR",
     }).format(amount);
 
     // Prepare email

@@ -5,6 +5,18 @@ const event = require("../models/eventModel");
 
 const baseUrl = process.env.BASE_URL;
 
+const extractLatLonFromUrl = (url) => {
+  const lonMatch = url.match(/2d([-.\d]+)/);
+  const latMatch = url.match(/3d([-.\d]+)/);
+  if (latMatch && lonMatch) {
+    return {
+      lat: parseFloat(latMatch[1]),
+      lon: parseFloat(lonMatch[1]),
+    };
+  }
+  return null;
+};
+
 // destinations controller
 // get all
 const getAllDestinations = async (req, res) => {
@@ -26,8 +38,19 @@ const getDestination = async (req, res) => {
     if (!content) {
       return res.status(404).json({ message: "Destination not found" });
     }
+
+    // Extract lat/lon from location_url
+    const coords = extractLatLonFromUrl(content.location_url);
+    if (!coords) {
+      return res.status(400).json({ message: "Invalid location_url format" });
+    }
+
+    content.latitude = coords.lat;
+    content.longitude = coords.lon;
+
     res.json(content);
   } catch (error) {
+    console.error("Error in getDestination:", error.message);
     res
       .status(500)
       .json({ message: "Error fetching destination", error: error.message });
