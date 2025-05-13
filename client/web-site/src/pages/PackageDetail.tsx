@@ -11,7 +11,6 @@ const weatherApiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
 const PackageDetail = () => {
   const params = useParams();
   const navigate = useNavigate();
-  const [heroLoaded, setHeroLoaded] = createSignal(false);
   const [isBooking, setIsBooking] = createSignal(false);
   const [weather, setWeather] = createSignal("Loading...");
 
@@ -108,20 +107,26 @@ const PackageDetail = () => {
           }
         >
           {/* Hero Section */}
-          <div class="relative">
-            <div class="w-full h-80 overflow-hidden rounded-xs">
+          <div class="relative w-full h-80 overflow-hidden rounded-xs">
+            <div class="absolute inset-0 bg-gradient-to-b from-black to-gray-800 opacity-70 z-5" />
+            <div class="relative w-full h-full">
               <img
                 src={pkg().picture_url || pic}
                 alt={pkg().package_name}
-                onLoad={() => setHeroLoaded(true)}
-                class="w-full h-full object-cover"
-                classList={{
-                  "opacity-0": !heroLoaded(),
-                  "opacity-100 transition-opacity duration-500": heroLoaded(),
-                }}
+                class="absolute top-0 left-0 w-full object-cover"
+                // style={{ height: "100%", min-height: "320px" }}
               />
+              <div class="relative flex items-center justify-center w-full h-full z-10">
+                <div class="h-80 w-3/4">
+                  <img
+                    src={pkg().picture_url || pic}
+                    alt={pkg().package_name}
+                    class="w-full h-full object-contain rounded-xs"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+            <div class="absolute inset-0 flex items-center justify-center z-15">
               <div class="text-center">
                 <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">
                   {pkg().package_name}
@@ -231,21 +236,8 @@ const PackageDetail = () => {
                     </h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <img
-                        src={
-                          pkg().accommodation_picture_url ||
-                          "https://placekitten.com/400/300"
-                        }
-                        alt="Accommodation Image 1"
-                        class="w-full h-48 object-cover rounded-xs"
-                      />
-                      <img
-                        src="https://placekitten.com/401/300"
-                        alt="Accommodation Image 2"
-                        class="w-full h-48 object-cover rounded-xs"
-                      />
-                      <img
-                        src="https://placekitten.com/402/300"
-                        alt="Accommodation Image 3"
+                        src={pkg().accommodation_picture_url}
+                        alt="Accommodation Image"
                         class="w-full h-48 object-cover rounded-xs"
                       />
                     </div>
