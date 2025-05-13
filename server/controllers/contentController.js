@@ -3,6 +3,8 @@ const pkg = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 const tour = require("../models/tourModel");
+const pkgDest = require("../models/packageDestinationModel");
+const pkgAcc = require("../models/packageAccommodationModel");
 
 const baseUrl = process.env.BASE_URL;
 
@@ -211,10 +213,10 @@ const getPackageDetails = async (req, res) => {
     content.longitude = coords.lon;
 
     res.json(content);
-    console.log(
-      "🚀 ~ contentController.js:219 ~ getPackageDetails ~ content:",
-      content
-    );
+    // console.log(
+    //   "🚀 ~ contentController.js:219 ~ getPackageDetails ~ content:",
+    //   content
+    // );
   } catch (error) {
     res
       .status(500)
@@ -514,10 +516,10 @@ const updateAccommodation = async (req, res) => {
 
   try {
     const updatedData = {
-      accommodationName: body.name,
+      accommodationName: body.accommodationName,
       amenities: body.amenities,
       serviceUrl: body.serviceUrl,
-      contactNumber: body.contact,
+      contactNumber: body.contactNumber,
       locationUrl: body.locationUrl,
       updatedAt: new Date().toISOString(),
       accommodationType: body.accommodationType,
@@ -641,31 +643,123 @@ const addTour = async (req, res) => {
       pictureUrl = `${baseUrl}${filePath}`;
     }
 
-    const newData = {
-      activity: body.activity,
-      pictureUrl: pictureUrl,
+    const newTourData = {
+      body,
+      picture_url: pictureUrl,
     };
 
-    if (Object.keys(newData).length === 0 || !uploadedImage) {
+    if (!uploadedImage) {
       return res.status(400).json({
         success: false,
-        message: "No data or image provided to create tour",
+        message: "Activity and image are required to create tour",
       });
     }
 
-    const createdTour = await tourist.addTour(newData);
+    // Create the tour
+    const createdTour = await tour.addTour(newTourData);
+    console.log("🚀 ~ contentController.js:662 ~ addTour ~ createdTour:", createdTour);
+
+    // Handle packageDestination
+    const packageDestinationData = {
+      tourId: createdTour.tour_id, 
+      destinationId: body.destination_id,
+    };
+
+    if (!packageDestinationData.destinationId) {
+      return res.status(400).json({
+        success: false,
+        message: "Destination ID is required for package destination",
+      });
+    }
+
+    await pkgDest.addPackageDestination(packageDestinationData);
+
+    // Handle packageAccommodation
+    const packageAccommodationData = {
+      tourId: createdTour.tour_id,
+      accommodationId: body.accommodation_id,
+    };
+
+    if (!packageAccommodationData.accommodationId) {
+      return res.status(400).json({
+        success: false,
+        message: "Accommodation ID is required for package accommodation",
+      });
+    }
+
+    await pkgAcc.addPackageAccommodation(packageAccommodationData);
 
     res.status(201).json({
       success: true,
-      message: "Tour created successfully",
-      data: createdTour,
+      message: "Tour and associated packages created successfully",
+      data: {
+        tour: createdTour,
+        packageDestination: packageDestinationData,
+        packageAccommodation: packageAccommodationData,
+      },
     });
   } catch (error) {
-    console.error("Error creating tour:", error);
+    console.error("Error creating tour and packages:", error);
     res.status(500).json({
       success: false,
       error: "Internal server error",
     });
+  }
+};
+
+// update Tour
+const updateTour = async (req, res) => {
+  const { id } = req.params;
+  const { body, files } = req;
+
+  try {
+    const updatedData = {
+      activity: body.activity,
+    };
+
+    const uploadedImage = files?.tour?.[0];
+
+    if (uploadedImage) {
+      const fileUrl = `/uploads/tours/${uploadedImage.filename}`;
+      const fullUrl = `${baseUrl}${fileUrl}`;
+      updatedData.pictureUrl = fullUrl;
+    } else if (body.pictureUrl) {
+      updatedData.pictureUrl = body.pictureUrl; // fallback to existing image
+    }
+
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No data provided to update",
+      });
+    }
+
+    const updatedContent = await tour.updateTour(id, updatedData);
+
+    res.json({
+      success: true,
+      message: "Tour updated successfully",
+      data: updatedContent,
+    });
+  } catch (error) {
+    console.error("Error updating Tour:", error);
+    res.status(500).json({
+      message: "Error updating Tour",
+      error: error.message,
+    });
+  }
+};
+
+// delete Tour
+const deleteTour = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await tour.deleteTourById(id);
+    res.json({ message: "Tour deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting Tour", error: error.message });
   }
 };
 
@@ -719,5 +813,7 @@ module.exports = {
   addTour,
   getAllTours,
   getTour,
+  updateTour,
   getPackageDetails,
+  deleteTour,
 };

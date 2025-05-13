@@ -2,8 +2,8 @@ import { createResource, createSignal, For, Show } from "solid-js";
 import axios from "axios";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
-import NewsLetter from "../components/NewsLetter";
-import Filter from "../components/Filter";
+// import NewsLetter from "../components/NewsLetter";
+// import Filter from "../components/Filter";
 import { A } from "@solidjs/router";
 
 const apiUrl = import.meta.env.VITE_API_URL;

@@ -1,37 +1,6 @@
 const path = require("path");
 const feedback = require("../models/feedbackModel"); // adjust path as needed
 
-const uploadFeedbackFiles = async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "No files uploaded" });
-    }
-
-    const uploadedFiles = req.files.map(
-      (file) => `/uploads/feedbacks/${file.filename}`
-    );
-    const storedValue = uploadedFiles.join(",");
-
-    const { touristId, rating, dateSubmitted } = req.body;
-
-    const feedbackData = {
-      touristId,
-      rating,
-      feedbackText: storedValue,
-      dateSubmitted,
-    };
-
-    const savedFeedback = await feedback.createFeedback(feedbackData);
-
-    return res.status(201).json({
-      message: "Feedback and files uploaded successfully",
-      feedback: savedFeedback,
-    });
-  } catch (error) {
-    console.error("Upload failed:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
 
 const uploadFiles = async (req, res) => {
   try {
@@ -82,6 +51,7 @@ const uploadFiles = async (req, res) => {
 const viewAllFeedbacks = async (req, res) => {
   try {
     const feedbacks = await feedback.getAllFeedbacks(); // assuming it returns all rows
+    console.log("🚀 ~ feedbackController.js:54 ~ viewAllFeedbacks ~ feedbacks:", feedbacks);
 
     const parsedFeedbacks = feedbacks.map((fb) => {
       const fileUrls = fb.feedback_text ? fb.feedback_text.split(",") : [];
@@ -101,7 +71,6 @@ const viewAllFeedbacks = async (req, res) => {
 };
 
 module.exports = {
-  uploadFeedbackFiles,
   viewAllFeedbacks,
   uploadFiles
 };

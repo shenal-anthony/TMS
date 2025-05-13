@@ -44,12 +44,22 @@ const Events = () => {
     groupSize: "",
     description: "",
   });
+  const [tourFormData, setTourFormData] = useState({
+    activity: "",
+    destination_id: "",
+    accommodation_id: "",
+    picture: null,
+  });
   const [picturePreview, setPicturePreview] = useState("");
+  const [tourPicturePreview, setTourPicturePreview] = useState("");
   const [accommodationContents, setAccommodationContents] = useState([]);
   const [eventContents, setEventContents] = useState([]);
+  const [destinationContents, setDestinationContents] = useState([]);
+  const [tourContents, setTourContents] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [tourDialogOpen, setTourDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
 
@@ -60,15 +70,19 @@ const Events = () => {
 
   const [loading, setLoading] = useState(true);
   const [eventLoading, setEventLoading] = useState(true);
+  const [tourLoading, setTourLoading] = useState(true);
 
   const [error, setError] = useState(null);
   const [eventError, setEventError] = useState(null);
+  const [tourError, setTourError] = useState(null);
 
   const [page, setPage] = useState(0);
   const [eventPage, setEventPage] = useState(0);
+  const [tourPage, setTourPage] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [eventRowsPerPage, setEventRowsPerPage] = useState(8);
+  const [tourRowsPerPage, setTourRowsPerPage] = useState(8);
 
   // Sorting handler function
   const handleSort = (field) => {
@@ -96,6 +110,11 @@ const Events = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleTourChange = (e) => {
+    const { name, value } = e.target;
+    setTourFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleEventChange = (e) => {
     const { name, value } = e.target;
     setEventFormData((prev) => ({ ...prev, [name]: value }));
@@ -108,6 +127,16 @@ const Events = () => {
 
       const reader = new FileReader();
       reader.onloadend = () => setPicturePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTourFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setTourFormData((prev) => ({ ...prev, picture: file }));
+      const reader = new FileReader();
+      reader.onloadend = () => setTourPicturePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -134,6 +163,18 @@ const Events = () => {
       groupSize: "",
       description: "",
     });
+    setCurrentId(null);
+    setIsEditing(false);
+  };
+
+  const resetTourForm = () => {
+    setTourFormData({
+      activity: "",
+      destination_id: "",
+      accommodation_id: "",
+      picture: null,
+    });
+    setTourPicturePreview("");
     setCurrentId(null);
     setIsEditing(false);
   };
@@ -165,6 +206,34 @@ const Events = () => {
       setEventError("Error fetching events: " + err.message);
     } finally {
       setEventLoading(false);
+    }
+  };
+
+  const fetchDestinations = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/contents/destinations`);
+      if (Array.isArray(response.data)) {
+        setDestinationContents(response.data);
+      } else {
+        setTourError("Destination response data is not an array");
+      }
+    } catch (err) {
+      setTourError("Error fetching destinations: " + err.message);
+    }
+  };
+
+  const fetchTours = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/contents/tours`);
+      if (Array.isArray(response.data)) {
+        setTourContents(response.data);
+      } else {
+        setTourError("Response data is not an array");
+      }
+    } catch (err) {
+      setTourError("Error fetching tours: " + err.message);
+    } finally {
+      setTourLoading(false);
     }
   };
 
@@ -224,7 +293,10 @@ const Events = () => {
         formDataToSend.append(key, eventFormData[key]);
       }
     });
-    console.log("🚀 ~ Events.jsx:226 ~ Object.keys ~ formDataToSend:", formDataToSend);
+    // console.log(
+    //   "🚀 ~ Events.jsx:226 ~ Object.keys ~ formDataToSend:",
+    //   formDataToSend
+    // );
 
     const request =
       isEditing && currentId
@@ -257,6 +329,47 @@ const Events = () => {
       .finally(() => setModalOpen(true));
   };
 
+  const handleAddOrUpdateTour = async () => {
+    const formDataToSend = new FormData();
+    formDataToSend.append("activity", tourFormData.activity);
+    formDataToSend.append("destination_id", tourFormData.destination_id);
+    formDataToSend.append("accommodation_id", tourFormData.accommodation_id);
+    if (tourFormData.picture) {
+      formDataToSend.append("tour", tourFormData.picture);
+    } else if (tourPicturePreview && isEditing) {
+      formDataToSend.append("picture_url", tourPicturePreview);
+    }
+
+    try {
+      const response =
+        isEditing && currentId
+          ? await axios.patch(
+              `${apiUrl}/api/contents/tours/${currentId}`,
+              formDataToSend,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              }
+            )
+          : await axios.post(`${apiUrl}/api/contents/tours`, formDataToSend, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+
+      setModalMessage(
+        response.data.message ||
+          `Tour ${isEditing ? "updated" : "added"} successfully!`
+      );
+      setIsSuccess(true);
+      fetchTours();
+      setTourDialogOpen(false);
+      resetTourForm();
+    } catch (err) {
+      setModalMessage("Error saving tour: " + err.message);
+      setIsSuccess(false);
+    } finally {
+      setModalOpen(true);
+    }
+  };
+
   const handleRemoveAccommodation = async (id) => {
     try {
       await axios.delete(`${apiUrl}/api/contents/accommodations/${id}`);
@@ -287,6 +400,20 @@ const Events = () => {
     }
   };
 
+  const handleRemoveTour = async (id) => {
+    try {
+      await axios.delete(`${apiUrl}/api/contents/tours/${id}`);
+      setTourContents(tourContents.filter((tour) => tour.tour_id !== id));
+      setModalMessage("Tour deleted successfully!");
+      setIsSuccess(true);
+    } catch (err) {
+      setModalMessage("Error deleting tour: " + err.message);
+      setIsSuccess(false);
+    } finally {
+      setModalOpen(true);
+    }
+  };
+
   const handleEditAccommodation = (acc) => {
     setFormData({
       accommodationName: acc.accommodation_name,
@@ -301,6 +428,19 @@ const Events = () => {
     setCurrentId(acc.accommodation_id);
     setIsEditing(true);
     setDialogOpen(true);
+  };
+
+  const handleEditTour = (tour) => {
+    setTourFormData({
+      activity: tour.activity,
+      destination_id: tour.destination_id || "", 
+      accommodation_id: tour.accommodation_id || "",
+      picture: null,
+    });
+    setTourPicturePreview(tour.picture_url);
+    setCurrentId(tour.tour_id);
+    setIsEditing(true);
+    setTourDialogOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -332,6 +472,8 @@ const Events = () => {
   useEffect(() => {
     fetchAccommodations();
     fetchEvents();
+    fetchTours();
+    fetchDestinations();
   }, []);
 
   if (loading || eventLoading) return <div>Loading...</div>;
@@ -805,6 +947,233 @@ const Events = () => {
             <Button onClick={() => setEventDialogOpen(false)}>Cancel</Button>
             <Button color="primary" onClick={handleAddOrUpdateEvent}>
               {isEditing ? "Update" : "Add"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
+
+      <Divider sx={{ my: 4 }} />
+
+      <div>
+        <div className="mb-4 mt-4">
+          <Typography variant="h5">Tours</Typography>
+          <div className="mt-4">
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => {
+                resetTourForm();
+                setTourDialogOpen(true);
+              }}
+            >
+              Add Tour
+            </Button>
+          </div>
+        </div>
+
+        {/* Tour Table */}
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell align="center">#</TableCell>
+                <TableCell align="center">ID</TableCell>
+                <TableCell align="center">Activity</TableCell>
+                <TableCell align="center">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tourContents.length > 0 ? (
+                tourContents
+                  .slice(
+                    tourPage * tourRowsPerPage,
+                    tourPage * tourRowsPerPage + tourRowsPerPage
+                  )
+                  .map((tour, index) => (
+                    <TableRow
+                      key={tour.tour_id}
+                      sx={{
+                        "&:hover td": {
+                          backgroundColor: "#e3f2fd",
+                        },
+                      }}
+                    >
+                      <TableCell align="center">
+                        {tourPage * tourRowsPerPage + index + 1}
+                      </TableCell>
+                      <TableCell align="center">{tour.tour_id}</TableCell>
+                      <TableCell align="center">{tour.activity}</TableCell>
+                      <TableCell
+                        align="center"
+                        style={{ display: "flex", justifyContent: "center" }}
+                      >
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEditTour(tour)}
+                          sx={{ mr: 1 }}
+                        >
+                          Update
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          size="small"
+                          onClick={() => handleRemoveTour(tour.tour_id)}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    No Tours found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Pagination */}
+        <TablePagination
+          rowsPerPageOptions={[8, 10, 25]}
+          component="div"
+          count={tourContents.length}
+          rowsPerPage={tourRowsPerPage}
+          page={tourPage}
+          onPageChange={(event, newPage) => setTourPage(newPage)}
+          onRowsPerPageChange={(event) => {
+            setTourRowsPerPage(parseInt(event.target.value, 10));
+            setTourPage(0);
+          }}
+        />
+
+        {/* Add/Edit Tour Dialog */}
+        <Dialog
+          open={tourDialogOpen}
+          onClose={() => setTourDialogOpen(false)}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>{isEditing ? "Edit Tour" : "Add Tour"}</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "grid", gap: 2, pt: 1 }}>
+              <TextField
+                size="small"
+                label="Activity *"
+                name="activity"
+                value={tourFormData.activity}
+                onChange={handleTourChange}
+                fullWidth
+              />
+              <TextField
+                size="small"
+                select
+                label="Destination *"
+                name="destination_id"
+                value={tourFormData.destination_id}
+                onChange={handleTourChange}
+                fullWidth
+              >
+                {destinationContents.map((dest) => (
+                  <MenuItem
+                    key={dest.destination_id}
+                    value={dest.destination_id}
+                  >
+                    {dest.destination_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                size="small"
+                select
+                label="Accommodation *"
+                name="accommodation_id"
+                value={tourFormData.accommodation_id}
+                onChange={handleTourChange}
+                fullWidth
+              >
+                {accommodationContents.map((acc) => (
+                  <MenuItem
+                    key={acc.accommodation_id}
+                    value={acc.accommodation_id}
+                  >
+                    {acc.accommodation_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Tour Image *
+                </Typography>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  size="small"
+                  startIcon={<CloudUploadIcon />}
+                >
+                  Upload Image
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleTourFileChange}
+                  />
+                </Button>
+                {tourPicturePreview && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      border: "1px dashed",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      p: 2,
+                      display: "flex",
+                      justifyContent: "center",
+                      bgcolor: "background.paper",
+                    }}
+                  >
+                    <img
+                      src={tourPicturePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "300px",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              onClick={() => setTourDialogOpen(false)}
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "none" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              variant="contained"
+              size="small"
+              onClick={handleAddOrUpdateTour}
+              sx={{ textTransform: "none" }}
+              disabled={
+                !tourFormData.activity ||
+                !tourFormData.destination_id ||
+                !tourFormData.accommodation_id ||
+                (!tourFormData.picture && !tourPicturePreview)
+              }
+            >
+              {isEditing ? "Save Changes" : "Add Tour"}
             </Button>
           </DialogActions>
         </Dialog>

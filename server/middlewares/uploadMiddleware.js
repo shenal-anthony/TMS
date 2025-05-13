@@ -10,15 +10,21 @@ const createMulterMiddleware = (fieldsConfig) => {
 
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      const fieldConfig = fieldsConfig.find((field) => field.fieldName === file.fieldname);
+      const fieldConfig = fieldsConfig.find(
+        (field) => field.fieldName === file.fieldname
+      );
       const uploadFolder = fieldConfig ? fieldConfig.folder : "others";
-      const uploadPath = path.join(__dirname, "../public/uploads", uploadFolder);
-      
+      const uploadPath = path.join(
+        __dirname,
+        "../public/uploads",
+        uploadFolder
+      );
+
       // Create directory if it doesn't exist
       if (!fs.existsSync(uploadPath)) {
         fs.mkdirSync(uploadPath, { recursive: true });
       }
-      
+
       cb(null, uploadPath);
       console.log("Received file field:", file.fieldname);
     },
@@ -52,7 +58,19 @@ const createMulterMiddleware = (fieldsConfig) => {
     maxCount: maxCount || 1, // Default to 1 if not specified
   }));
 
-  return upload.fields(fields);
+  // Middleware to log req.body and req.files
+  const middleware = upload.fields(fields);
+  return (req, res, next) => {
+    // console.log("req.body before multer:", req.body);
+    middleware(req, res, (err) => {
+      console.log("req.body after multer:", req.body);
+      // console.log("req.files:", req.files);
+      if (err) {
+        return res.status(400).json({ success: false, error: err.message });
+      }
+      next();
+    });
+  };
 };
 
 module.exports = createMulterMiddleware;

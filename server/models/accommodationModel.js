@@ -100,6 +100,7 @@ const updateAccommodationById = async (id, accommodationData) => {
   values.push(id); // accommodation_id as last value
 
   const result = await pool.query(query, values);
+  // console.log("🚀 ~ accommodationModel.js:103 ~ updateAccommodationById ~ result:", result);
   return result.rows[0];
 };
 
