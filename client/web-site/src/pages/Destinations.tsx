@@ -29,6 +29,7 @@ const CardSkeleton = () => (
 );
 
 const Destinations = () => {
+
   const [destinations] = createResource(async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/contents/destinations`);
@@ -47,7 +48,7 @@ const Destinations = () => {
           {/* Header Section */}
           <div class="text-center mb-12">
             <h1 class="text-4xl font-bold mb-4">Look at our Destinations</h1>
-            <Filter />
+            {/* <Filter /> */}
           </div>
 
           {/* Destinations Grid */}
@@ -69,7 +70,7 @@ const Destinations = () => {
                     class="block h-full" // Important for proper link behavior
                   >
                     {/* Destination Card */}
-                    <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
+                    <div class="bg-white rounded-xs overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
                       <Show
                         when={destination.picture_url}
                         fallback={
@@ -120,8 +121,6 @@ const Destinations = () => {
               </For>
             </Show>
           </div>
-
-          <NewsLetter />
         </div>
       </main>
       <Footer />

@@ -11,7 +11,7 @@ const [imageLoaded, setImageLoaded] = createSignal(false);
 
 // Skeleton loader component for individual cards
 const CardSkeleton = () => (
-  <div class="bg-white rounded-lg overflow-hidden shadow-md h-full flex flex-col">
+  <div class="bg-white rounded-xs overflow-hidden shadow-md h-full flex flex-col">
     <div class="h-48 w-full bg-gray-200 animate-pulse"></div>
     <div class="p-6 flex-grow flex flex-col">
       <div class="h-6 w-3/4 bg-gray-200 rounded mb-3 animate-pulse"></div>
@@ -69,7 +69,7 @@ const Packages = () => {
                     class="block h-full" // Important for proper link behavior
                   >
                     {/* Packages Card */}
-                    <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
+                    <div class="bg-white rounded-xs overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
                       <Show
                         when={pkg.picture_url}
                         fallback={
@@ -122,8 +122,6 @@ const Packages = () => {
               </For>
             </Show>
           </div>
-
-          <NewsLetter />
         </div>
       </main>
       <Footer />

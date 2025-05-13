@@ -19,6 +19,10 @@ const {
   deleteEvent,
   getPackage,
   getAccommodation,
+  getAllTours,
+  getTour,
+  addTour,
+  getPackageDetails,
 } = require("../controllers/contentController");
 const MulterMiddleware = require("../middlewares/uploadMiddleware");
 
@@ -42,8 +46,14 @@ router.get("/events", getAllEvents);
 router.post("/events", MulterMiddleware(), addEvent);
 router.delete("/events/:id", deleteEvent);
 
+// Tours routes
+router.get("/tours", getAllTours);
+router.get("/tour/:id", getTour);
+router.post("/tours", addTour);
+
 // packages routes
 router.get("/packages", getAllPackages);
+router.get("/detailed_package/:id", getPackageDetails);
 router.get("/package/:id", getPackage);
 router.post("/packages", addPackage);
 router.patch("/packages/:id", updatePackage);

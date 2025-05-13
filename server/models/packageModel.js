@@ -15,6 +15,46 @@ const getPackageById = async (id) => {
   return result.rows[0];
 };
 
+const getPackageDetailsById = async (id) => {
+  try {
+    const query = `
+      SELECT 
+        p.package_id,
+        p.package_name,
+        p.description AS package_description,
+        p.price,
+        p.duration,
+        p.accommodation_id,
+        p.destination_id, 
+        a.accommodation_name,
+        a.location_url AS accommodation_location_url,
+        a.picture_url AS accommodation_picture_url,
+        a.contact_number,
+        a.amenities,
+        a.updated_at,
+        a.service_url,
+        a.accommodation_type,
+        d.*,
+        d.description AS destination_description
+      FROM packages p
+      JOIN accommodations a ON p.accommodation_id = a.accommodation_id
+      JOIN destinations d ON p.destination_id = d.destination_id
+      WHERE p.package_id = $1;
+    `;
+    const values = [id];
+    const result = await pool.query(query, values);
+
+    if (!result.rows[0]) {
+      throw new Error("Package not found");
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    console.error("Database error:", error);
+    throw new Error("Error fetching package details");
+  }
+};
+
 const addPackage = async (packageData) => {
   const {
     packageName,
@@ -106,4 +146,5 @@ module.exports = {
   updatePackageById,
   deletePackageById,
   getPackageById,
+  getPackageDetailsById,
 };

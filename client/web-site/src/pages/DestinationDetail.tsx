@@ -172,8 +172,8 @@ const DestinationDetail = () => {
                     allowfullscreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    class="rounded shadow"
-                  ></iframe>
+                    class="w-1/3 rounded-xs shadow-2xl"
+                  />
                 </section>
               </div>
             );

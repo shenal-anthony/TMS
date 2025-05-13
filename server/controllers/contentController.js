@@ -2,6 +2,7 @@ const tourist = require("../models/destinationModel");
 const pkg = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
+const tour = require("../models/tourModel");
 
 const baseUrl = process.env.BASE_URL;
 
@@ -174,6 +175,7 @@ const getAllPackages = async (req, res) => {
       .json({ message: "Error fetching destination", error: error.message });
   }
 };
+
 // get by id
 const getPackage = async (req, res) => {
   const { id } = req.params;
@@ -183,6 +185,36 @@ const getPackage = async (req, res) => {
       return res.status(404).json({ message: "package not found" });
     }
     res.json(content);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching package", error: error.message });
+  }
+};
+
+// get package details
+const getPackageDetails = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const content = await pkg.getPackageDetailsById(id);
+    if (!content) {
+      return res.status(404).json({ message: "package not found" });
+    }
+
+    // Extract lat/lon from location_url
+    const coords = extractLatLonFromUrl(content.location_url);
+    if (!coords) {
+      return res.status(400).json({ message: "Invalid location_url format" });
+    }
+
+    content.latitude = coords.lat;
+    content.longitude = coords.lon;
+
+    res.json(content);
+    console.log(
+      "🚀 ~ contentController.js:219 ~ getPackageDetails ~ content:",
+      content
+    );
   } catch (error) {
     res
       .status(500)
@@ -591,6 +623,80 @@ const deleteEvent = async (req, res) => {
   }
 };
 
+// add Tour
+// activity, picture_url
+const addTour = async (req, res) => {
+  const { body, files } = req;
+
+  try {
+    const uploadedImage = files?.tour?.[0];
+    let pictureUrl = null;
+
+    if (!uploadedImage) {
+      return res.status(400).json({ message: "Tour image is required" });
+    }
+
+    if (uploadedImage) {
+      const filePath = `/uploads/tours/${uploadedImage.filename}`;
+      pictureUrl = `${baseUrl}${filePath}`;
+    }
+
+    const newData = {
+      activity: body.activity,
+      pictureUrl: pictureUrl,
+    };
+
+    if (Object.keys(newData).length === 0 || !uploadedImage) {
+      return res.status(400).json({
+        success: false,
+        message: "No data or image provided to create tour",
+      });
+    }
+
+    const createdTour = await tourist.addTour(newData);
+
+    res.status(201).json({
+      success: true,
+      message: "Tour created successfully",
+      data: createdTour,
+    });
+  } catch (error) {
+    console.error("Error creating tour:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+};
+
+// get all tours
+const getAllTours = async (req, res) => {
+  try {
+    const contents = await tour.getAllTours();
+    res.json(contents);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching tours", error: error.message });
+  }
+};
+
+// get tour by id
+const getTour = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const content = await tour.getTourById(id);
+    if (!content) {
+      return res.status(404).json({ message: "Tour not found" });
+    }
+    res.json(content);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching tour", error: error.message });
+  }
+};
+
 module.exports = {
   getAllDestinations,
   getDestination,
@@ -610,4 +716,8 @@ module.exports = {
   getAllEvents,
   addEvent,
   deleteEvent,
+  addTour,
+  getAllTours,
+  getTour,
+  getPackageDetails,
 };

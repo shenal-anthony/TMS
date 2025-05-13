@@ -1,27 +1,24 @@
-import { createResource, Show, createSignal } from "solid-js";
+import { createResource, Show, createSignal, createEffect } from "solid-js";
 import { useParams, A, useNavigate } from "@solidjs/router";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import pic from "../assets/Background.png";
-import AccommodationSection from "../components/AccommodationSection";
-import Testimonial from "../components/Testimonial";
-import lake from "../assets/lake.png";
-import mountain from "../assets/mountain.png";
-import dock from "../assets/dock.png";
 
 const apiUrl = import.meta.env.VITE_API_URL;
+const weatherApiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
 const PackageDetail = () => {
   const params = useParams();
   const navigate = useNavigate();
   const [heroLoaded, setHeroLoaded] = createSignal(false);
   const [isBooking, setIsBooking] = createSignal(false);
+  const [weather, setWeather] = createSignal("Loading...");
 
   const [pkg] = createResource(async () => {
     try {
       const response = await axios.get(
-        `${apiUrl}/api/contents/package/${params.id}`
+        `${apiUrl}/api/contents/detailed_package/${params.id}`
       );
       return response.data;
     } catch (error) {
@@ -30,9 +27,36 @@ const PackageDetail = () => {
     }
   });
 
+  createEffect(async () => {
+    const packageData = pkg();
+    if (packageData && packageData.latitude && packageData.longitude) {
+      try {
+        const res = await axios.get(
+          "https://api.openweathermap.org/data/2.5/weather",
+          {
+            params: {
+              lat: packageData.latitude,
+              lon: packageData.longitude,
+              appid: weatherApiKey,
+              units: "metric",
+            },
+          }
+        );
+
+        const w = res.data;
+        setWeather(`${w.weather[0].main}, ${w.main.temp}°C`);
+      } catch (err) {
+        console.error("Weather fetch error:", err);
+        setWeather("Weather unavailable");
+      }
+    } else {
+      setWeather("Weather unavailable");
+    }
+  });
+
   const handleBookNow = async () => {
     setIsBooking(true);
-    const bookingDate = Date(); // Replace with actual date selection logic
+    const bookingDate = new Date().toISOString();
 
     try {
       const response = await axios.post(
@@ -49,7 +73,7 @@ const PackageDetail = () => {
       }
 
       if (response.status === 200 && response.data.bookingKey) {
-        sessionStorage.setItem("bookingKey", response.data.bookingKey); // Store booking key in session storage
+        sessionStorage.setItem("bookingKey", response.data.bookingKey);
         console.log("Booking key stored:", response.data.bookingKey);
 
         navigate(`/booking/${params.id}`, {
@@ -70,7 +94,7 @@ const PackageDetail = () => {
   };
 
   return (
-    <div class="min-h-screen flex flex-col">
+    <div class="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
 
       <main class="flex-grow pt-16">
@@ -83,39 +107,12 @@ const PackageDetail = () => {
             </div>
           }
         >
-          {/* Hero Image Section with Loading State */}
+          {/* Hero Section */}
           <div class="relative">
-            {/* Breadcrumb Navigation */}
-            <div class="absolute top-4 left-0 right-0 z-10">
-              <div class="container mx-auto px-4">
-                <nav class="text-sm">
-                  <ol class="flex space-x-2">
-                    <li>
-                      <A href="/" class="text-white hover:text-blue-200">
-                        Home
-                      </A>
-                    </li>
-                    <li class="text-white">/</li>
-                    <li>
-                      <A
-                        href="/packages"
-                        class="text-white hover:text-blue-200"
-                      >
-                        Packages
-                      </A>
-                    </li>
-                    <li class="text-white">/</li>
-                    <li class="text-white font-medium">{pkg().package_name}</li>
-                  </ol>
-                </nav>
-              </div>
-            </div>
-
-            {/* Hero Image */}
-            <div class="w-full h-96 overflow-hidden">
+            <div class="w-full h-80 overflow-hidden rounded-xs">
               <img
-                src={pic}
-                alt="Package Image"
+                src={pkg().picture_url || pic}
+                alt={pkg().package_name}
                 onLoad={() => setHeroLoaded(true)}
                 class="w-full h-full object-cover"
                 classList={{
@@ -124,110 +121,158 @@ const PackageDetail = () => {
                 }}
               />
             </div>
-
-            {/* Gradient Overlay */}
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent h-32"></div>
-
-            {/* Title and Back Button - Positioned above gradient */}
-            <div class="absolute bottom-8 left-0 right-0 z-10">
-              <div class="container mx-auto px-4">
-                <div class="flex justify-between items-center">
-                  <h1 class="text-4xl font-bold text-white">
-                    {pkg().package_name}
-                  </h1>
-                  <A
-                    href="/packages"
-                    class="text-white hover:text-blue-200 px-4 py-2 rounded-lg transition-colors"
-                  >
-                    Back to Packages
-                  </A>
-                </div>
+            <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+              <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">
+                  {pkg().package_name}
+                </h1>
+                <p class="text-lg text-white opacity-80">
+                  {pkg().destination_name}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Main Content Container */}
-          <div class="container mx-auto px-4 py-6">
-            {/* Package Details and Sidebar Grid */}
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-16">
-              {/* Package Details (3/4 width) */}
-              <div class="lg:col-span-3">
-                <section class="mb-12">
-                  <h2 class="text-2xl font-bold mb-4">
-                    Explore the heart of Sunny Lake
+          {/* Breadcrumb Navigation */}
+          <div class="container mx-auto px-4 py-4">
+            <nav class="text-sm text-gray-600">
+              <ol class="flex space-x-2 items-center">
+                <li>
+                  <A href="/" class="hover:text-blue-600">
+                    Home
+                  </A>
+                </li>
+                <li>/</li>
+                <li>
+                  <A href="/packages" class="hover:text-blue-600">
+                    Packages
+                  </A>
+                </li>
+                <li>/</li>
+                <li class="font-medium text-gray-800">{pkg().package_name}</li>
+              </ol>
+            </nav>
+          </div>
+
+          {/* Main Content */}
+          <div class="container mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Content Sections */}
+              <div class="lg:col-span-2 space-y-12">
+                {/* Package Details Section (Card) */}
+                <section class="bg-white p-6 rounded-xs shadow-md">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    Package Details
                   </h2>
-                  <p class="mb-6 text-gray-700 leading-relaxed">
-                    {pkg().description}
-                  </p>
+                  <div class="space-y-4">
+                    <p class="text-gray-600 leading-relaxed">
+                      {pkg().package_description}
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <span class="font-medium text-gray-700">Duration:</span>{" "}
+                        {pkg().duration} minutes
+                      </div>
+                      <div>
+                        <span class="font-medium text-gray-700">Price:</span> $
+                        {pkg().price}
+                      </div>
+                    </div>
+                  </div>
                 </section>
 
-                <section class="mb-12">
-                  <h2 class="text-2xl font-bold mb-4">
-                    Comfortable, scenic, and unforgettable
-                  </h2>
-                  <p class="mb-6 text-gray-700 leading-relaxed">
-                    The boat is equipped with comfortable seating and shaded
-                    areas, ensuring a relaxing experience for everyone on board.
-                    Feel the gentle breeze as you cruise the calm waters, and
-                    enjoy light refreshments provided during the tour.
-                  </p>
+                {/* Duration, Location, Weather Section */}
+                <section class="bg-yellow-50 p-6 rounded-xs">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div>
+                      <h3 class="text-sm font-semibold text-gray-600 uppercase">
+                        Duration
+                      </h3>
+                      <p class="text-lg font-medium">
+                        {Math.floor(pkg().duration / 60)} Hours
+                      </p>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-semibold text-gray-600 uppercase">
+                        Location
+                      </h3>
+                      <p class="text-lg font-medium">
+                        {pkg().destination_name}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-semibold text-gray-600 uppercase">
+                        Weather Now
+                      </h3>
+                      <p class="text-lg font-medium">{weather()}</p>
+                    </div>
+                  </div>
                 </section>
 
-                <section class="mb-12">
-                  <h2 class="text-2xl font-bold mb-4">
-                    Tour duration and booking information
+                {/* Accommodation Section */}
+                <section class="bg-transparent p-0">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    Accommodation
                   </h2>
-                  <p class="mb-6 text-gray-700 leading-relaxed">
-                    The {pkg().package_name} typically lasts {pkg().duration}.
-                    Tours operate daily, weather permitting. To secure your
-                    spot, advance booking is recommended, especially during peak
-                    season.
-                  </p>
-                </section>
-
-                {/* Destination Images */}
-                <section class="mb-12">
-                  <h2 class="text-2xl font-bold mb-4">Destinations Covered</h2>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <img
-                      src={lake}
-                      alt="Sunny Lake"
-                      class="w-full h-64 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <img
-                      src={dock}
-                      alt="Dock area"
-                      class="w-full h-64 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <img
-                      src={mountain}
-                      alt="Mountain view"
-                      class="w-full h-64 object-cover rounded-lg hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
+                  <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-700">
+                      {pkg().accommodation_name}
+                    </h3>
+                    <p class="text-gray-600">
+                      Type: {pkg().accommodation_type}
+                    </p>
+                    <p class="text-gray-600">Amenities: {pkg().amenities}</p>
+                    <p class="text-gray-600">Contact: {pkg().contact_number}</p>
+                  </div>
+                  {/* Accommodation Pictures */}
+                  <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                      Accommodation Gallery
+                    </h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <img
+                        src={
+                          pkg().accommodation_picture_url ||
+                          "https://placekitten.com/400/300"
+                        }
+                        alt="Accommodation Image 1"
+                        class="w-full h-48 object-cover rounded-xs"
+                      />
+                      <img
+                        src="https://placekitten.com/401/300"
+                        alt="Accommodation Image 2"
+                        class="w-full h-48 object-cover rounded-xs"
+                      />
+                      <img
+                        src="https://placekitten.com/402/300"
+                        alt="Accommodation Image 3"
+                        class="w-full h-48 object-cover rounded-xs"
+                      />
+                    </div>
                   </div>
                 </section>
               </div>
 
-              {/* Sidebar (1/4 width) */}
+              {/* Sidebar */}
               <div class="lg:col-span-1">
-                <div class=" p-4 rounded-lg top-4 sticky">
-                  {/* booking button */}
-                  <div class="bg-blue-50 p-4 rounded-sm">
-                    <p class="text-sm font-medium mb-6">
-                      Paddle your way through the crystal-clear waters of Sunny
-                      Lake with options that suit all ages and skill levels.
+                <div class="sticky top-22 space-y-6">
+                  {/* Booking Card */}
+                  <div class="bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-xs shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                      Book This Package
+                    </h3>
+                    <p class="text-gray-600 mb-4">
+                      Secure your spot for an unforgettable experience!
                     </p>
                     <button
                       onClick={handleBookNow}
-                      class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-75 disabled:cursor-not-allowed"
+                      disabled={isBooking()}
+                      class="w-full bg-blue-600 text-white py-3 rounded-xs hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isBooking() ? (
-                        <span class="inline-flex items-center justify-center">
+                        <span class="flex items-center justify-center">
                           <svg
-                            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            class="animate-spin h-5 w-5 mr-2 text-white"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -249,46 +294,32 @@ const PackageDetail = () => {
                           Processing...
                         </span>
                       ) : (
-                        "Book Here"
+                        "Book Now"
                       )}
                     </button>
                   </div>
 
-                  {/* map section */}
-                  <div>
-                    <div class="mb-4 pt-4">
-                      <h3 class="text-xl font-bold mb-4">View on a map</h3>
-                      <div class="bg-gray-200 h-48 rounded-lg flex items-center justify-center text-gray-500">
-                        Map Preview
-                      </div>
+                  {/* Map Card */}
+                  <div class="bg-white bg-opacity-80 backdrop-blur-md p-6 rounded-xs shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                      Location
+                    </h3>
+                    <div class="relative">
+                      <iframe
+                        src={pkg().location_url}
+                        width="100%"
+                        height="192"
+                        style={{ border: "0" }}
+                        allowfullscreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        class="rounded-xs"
+                      ></iframe>
                     </div>
-
-                    <A
-                      href="/news"
-                      class="text-blue-600 font-medium block mb-6 hover:text-blue-800"
-                    >
-                      Latest news →
-                    </A>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Accommodation Section */}
-            <section class="mb-16 py-8 border-t border-gray-200">
-              <h2 class="text-3xl font-bold mb-8 text-center">
-                Accommodation Options
-              </h2>
-              <AccommodationSection />
-            </section>
-
-            {/* Testimonials Section */}
-            <section class="py-16 bg-gray-50 rounded-lg">
-              <h2 class="text-3xl font-bold mb-8 text-center">
-                What Our Guests Say
-              </h2>
-              <Testimonial />
-            </section>
           </div>
         </Show>
       </main>
