@@ -246,10 +246,10 @@ const getChartData = async (req, res) => {
     );
 
     res.status(200).json(chartData);
-    console.log(
-      "🚀 ~ reportController.js:194 ~ getChartData ~ chartData:",
-      chartData
-    );
+    // console.log(
+    // "🚀 ~ reportController.js:194 ~ getChartData ~ chartData:",
+    // chartData
+    // );
   } catch (error) {
     console.error("Error fetching chart data:", error);
     res.status(500).json({ error: "Server error while fetching chart data." });

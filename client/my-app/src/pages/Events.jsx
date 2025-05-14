@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  TextField,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -12,148 +10,38 @@ import {
   Paper,
   Button,
   TablePagination,
+  TextField,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Typography,
-  Divider,
-  Box,
 } from "@mui/material";
 import dayjs from "dayjs";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 const Events = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
-
-  const [sortField, setSortField] = useState("id");
-  const [sortDirection, setSortDirection] = useState("asc");
-
-  const [formData, setFormData] = useState({
-    accommodationName: "",
-    locationUrl: "",
-    contactNumber: "",
-    amenities: "",
-    serviceUrl: "",
-    accommodationType: "hotel",
-    picture: null,
-  });
   const [eventFormData, setEventFormData] = useState({
     eventName: "",
     startDate: "",
     groupSize: "",
     description: "",
   });
-  const [tourFormData, setTourFormData] = useState({
-    activity: "",
-    destination_id: "",
-    accommodation_id: "",
-    picture: null,
-  });
-  const [picturePreview, setPicturePreview] = useState("");
-  const [tourPicturePreview, setTourPicturePreview] = useState("");
-  const [accommodationContents, setAccommodationContents] = useState([]);
   const [eventContents, setEventContents] = useState([]);
-  const [destinationContents, setDestinationContents] = useState([]);
-  const [tourContents, setTourContents] = useState([]);
-
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
-  const [tourDialogOpen, setTourDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
-
   const [modalOpen, setModalOpen] = useState(false);
-
   const [modalMessage, setModalMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
-
-  const [loading, setLoading] = useState(true);
   const [eventLoading, setEventLoading] = useState(true);
-  const [tourLoading, setTourLoading] = useState(true);
-
-  const [error, setError] = useState(null);
   const [eventError, setEventError] = useState(null);
-  const [tourError, setTourError] = useState(null);
-
-  const [page, setPage] = useState(0);
   const [eventPage, setEventPage] = useState(0);
-  const [tourPage, setTourPage] = useState(0);
-
-  const [rowsPerPage, setRowsPerPage] = useState(8);
   const [eventRowsPerPage, setEventRowsPerPage] = useState(8);
-  const [tourRowsPerPage, setTourRowsPerPage] = useState(8);
-
-  // Sorting handler function
-  const handleSort = (field) => {
-    const isAsc = sortField === field && sortDirection === "asc";
-    setSortDirection(isAsc ? "desc" : "asc");
-    setSortField(field);
-
-    const sorted = [...accommodationContents].sort((a, b) => {
-      if (field === "id") {
-        return isAsc
-          ? a.accommodation_id - b.accommodation_id
-          : b.accommodation_id - a.accommodation_id;
-      } else {
-        return isAsc
-          ? a.accommodation_name.localeCompare(b.accommodation_name)
-          : b.accommodation_name.localeCompare(a.accommodation_name);
-      }
-    });
-
-    setAccommodationContents(sorted);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleTourChange = (e) => {
-    const { name, value } = e.target;
-    setTourFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleEventChange = (e) => {
     const { name, value } = e.target;
     setEventFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({ ...formData, picture: file });
-
-      const reader = new FileReader();
-      reader.onloadend = () => setPicturePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleTourFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setTourFormData((prev) => ({ ...prev, picture: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => setTourPicturePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const resetAccommodationForm = () => {
-    setFormData({
-      accommodationName: "",
-      locationUrl: "",
-      contactNumber: "",
-      amenities: "",
-      serviceUrl: "",
-      accommodationType: "hotel",
-      picture: null,
-    });
-    setPicturePreview("");
-    setCurrentId(null);
-    setIsEditing(false);
   };
 
   const resetEventForm = () => {
@@ -165,33 +53,6 @@ const Events = () => {
     });
     setCurrentId(null);
     setIsEditing(false);
-  };
-
-  const resetTourForm = () => {
-    setTourFormData({
-      activity: "",
-      destination_id: "",
-      accommodation_id: "",
-      picture: null,
-    });
-    setTourPicturePreview("");
-    setCurrentId(null);
-    setIsEditing(false);
-  };
-
-  const fetchAccommodations = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/api/contents/accommodations`);
-      if (Array.isArray(response.data)) {
-        setAccommodationContents(response.data);
-      } else {
-        setError("Response data is not an array");
-      }
-    } catch (err) {
-      setError("Error fetching accommodations: " + err.message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const fetchEvents = async () => {
@@ -209,94 +70,13 @@ const Events = () => {
     }
   };
 
-  const fetchDestinations = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/api/contents/destinations`);
-      if (Array.isArray(response.data)) {
-        setDestinationContents(response.data);
-      } else {
-        setTourError("Destination response data is not an array");
-      }
-    } catch (err) {
-      setTourError("Error fetching destinations: " + err.message);
-    }
-  };
-
-  const fetchTours = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/api/contents/tours`);
-      if (Array.isArray(response.data)) {
-        setTourContents(response.data);
-      } else {
-        setTourError("Response data is not an array");
-      }
-    } catch (err) {
-      setTourError("Error fetching tours: " + err.message);
-    } finally {
-      setTourLoading(false);
-    }
-  };
-
-  const handleAddOrUpdateAccommodation = () => {
-    const formDataToSend = new FormData();
-
-    formDataToSend.append("accommodationName", formData.accommodationName);
-    formDataToSend.append("locationUrl", formData.locationUrl);
-    formDataToSend.append("contactNumber", formData.contactNumber);
-    formDataToSend.append("amenities", formData.amenities);
-    formDataToSend.append("serviceUrl", formData.serviceUrl);
-    formDataToSend.append("accommodationType", formData.accommodationType);
-
-    // File handling
-    if (formData.picture) {
-      formDataToSend.append("accommodation", formData.picture); // field must match multer config
-    } else if (picturePreview) {
-      formDataToSend.append("pictureUrl", picturePreview); // use existing image if not replaced
-    }
-
-    const request =
-      isEditing && currentId
-        ? axios.patch(
-            `${apiUrl}/api/contents/accommodations/${currentId}`,
-            formDataToSend,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            }
-          )
-        : axios.post(`${apiUrl}/api/contents/accommodations`, formDataToSend, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-
-    request
-      .then((response) => {
-        setModalMessage(
-          response.data.message ||
-            `Accommodation ${isEditing ? "updated" : "added"} successfully!`
-        );
-        setIsSuccess(true);
-        fetchAccommodations();
-        setDialogOpen(false);
-        resetAccommodationForm();
-      })
-      .catch((err) => {
-        setModalMessage("Error saving accommodation: " + err.message);
-        setIsSuccess(false);
-      })
-      .finally(() => setModalOpen(true));
-  };
-
   const handleAddOrUpdateEvent = () => {
     const formDataToSend = new FormData();
-
     Object.keys(eventFormData).forEach((key) => {
       if (eventFormData[key] !== null) {
         formDataToSend.append(key, eventFormData[key]);
       }
     });
-    // console.log(
-    //   "🚀 ~ Events.jsx:226 ~ Object.keys ~ formDataToSend:",
-    //   formDataToSend
-    // );
 
     const request =
       isEditing && currentId
@@ -329,63 +109,6 @@ const Events = () => {
       .finally(() => setModalOpen(true));
   };
 
-  const handleAddOrUpdateTour = async () => {
-    const formDataToSend = new FormData();
-    formDataToSend.append("activity", tourFormData.activity);
-    formDataToSend.append("destination_id", tourFormData.destination_id);
-    formDataToSend.append("accommodation_id", tourFormData.accommodation_id);
-    if (tourFormData.picture) {
-      formDataToSend.append("tour", tourFormData.picture);
-    } else if (tourPicturePreview && isEditing) {
-      formDataToSend.append("picture_url", tourPicturePreview);
-    }
-
-    try {
-      const response =
-        isEditing && currentId
-          ? await axios.patch(
-              `${apiUrl}/api/contents/tours/${currentId}`,
-              formDataToSend,
-              {
-                headers: { "Content-Type": "multipart/form-data" },
-              }
-            )
-          : await axios.post(`${apiUrl}/api/contents/tours`, formDataToSend, {
-              headers: { "Content-Type": "multipart/form-data" },
-            });
-
-      setModalMessage(
-        response.data.message ||
-          `Tour ${isEditing ? "updated" : "added"} successfully!`
-      );
-      setIsSuccess(true);
-      fetchTours();
-      setTourDialogOpen(false);
-      resetTourForm();
-    } catch (err) {
-      setModalMessage("Error saving tour: " + err.message);
-      setIsSuccess(false);
-    } finally {
-      setModalOpen(true);
-    }
-  };
-
-  const handleRemoveAccommodation = async (id) => {
-    try {
-      await axios.delete(`${apiUrl}/api/contents/accommodations/${id}`);
-      setAccommodationContents(
-        accommodationContents.filter((acc) => acc.accommodation_id !== id)
-      );
-      setModalMessage("Accommodation deleted successfully!");
-      setIsSuccess(true);
-      setModalOpen(true);
-    } catch (error) {
-      setModalMessage("Error deleting accommodation: " + error.message);
-      setIsSuccess(false);
-      setModalOpen(true);
-    }
-  };
-
   const handleRemoveEvent = async (id) => {
     try {
       await axios.delete(`${apiUrl}/api/contents/events/${id}`);
@@ -400,68 +123,15 @@ const Events = () => {
     }
   };
 
-  const handleRemoveTour = async (id) => {
-    try {
-      await axios.delete(`${apiUrl}/api/contents/tours/${id}`);
-      setTourContents(tourContents.filter((tour) => tour.tour_id !== id));
-      setModalMessage("Tour deleted successfully!");
-      setIsSuccess(true);
-    } catch (err) {
-      setModalMessage("Error deleting tour: " + err.message);
-      setIsSuccess(false);
-    } finally {
-      setModalOpen(true);
-    }
-  };
-
-  const handleEditAccommodation = (acc) => {
-    setFormData({
-      accommodationName: acc.accommodation_name,
-      locationUrl: acc.location_url,
-      contactNumber: acc.contact_number,
-      amenities: acc.amenities,
-      serviceUrl: acc.service_url,
-      accommodationType: acc.accommodation_type,
-      picture: null,
-    });
-    setPicturePreview(acc.picture_url);
-    setCurrentId(acc.accommodation_id);
-    setIsEditing(true);
-    setDialogOpen(true);
-  };
-
-  const handleEditTour = (tour) => {
-    setTourFormData({
-      activity: tour.activity,
-      destination_id: tour.destination_id || "", 
-      accommodation_id: tour.accommodation_id || "",
-      picture: null,
-    });
-    setTourPicturePreview(tour.picture_url);
-    setCurrentId(tour.tour_id);
-    setIsEditing(true);
-    setTourDialogOpen(true);
-  };
-
   const handleCloseModal = () => {
     setModalOpen(false);
     if (isSuccess) {
-      resetAccommodationForm();
       resetEventForm();
     }
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
   const handleEventChangePage = (event, newPage) => {
     setEventPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
   };
 
   const handleEventChangeRowsPerPage = (event) => {
@@ -470,714 +140,172 @@ const Events = () => {
   };
 
   useEffect(() => {
-    fetchAccommodations();
     fetchEvents();
-    fetchTours();
-    fetchDestinations();
   }, []);
 
-  if (loading || eventLoading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  if (eventLoading) return <div>Loading...</div>;
   if (eventError) return <div>{eventError}</div>;
 
   return (
     <div>
-      {/* accommodation part  */}
-      <div>
-        <div className="mb-4 mt-4">
-          <Typography variant="h5">Accommodations</Typography>
-          <div className="mt-4">
-            <Button
-              size="small"
-              variant="contained"
-              onClick={() => {
-                resetAccommodationForm();
-                setDialogOpen(true);
-              }}
-            >
-              Add Accommodation
-            </Button>
-          </div>
+      <div className="mb-4 mt-4">
+        <Typography variant="h5">Events</Typography>
+        <div className="mt-4">
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => {
+              resetEventForm();
+              setEventDialogOpen(true);
+            }}
+          >
+            Add Event
+          </Button>
         </div>
+      </div>
 
-        {/* Accommodation Table */}
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell align="center">#</TableCell>
-                <TableCell align="center">
-                  <Button
-                    onClick={() => handleSort("id")}
-                    endIcon={
-                      sortField === "id"
-                        ? sortDirection === "asc"
-                          ? " ⬆️"
-                          : " ⬇️"
-                        : null
-                    }
-                    sx={{ p: 0, textTransform: "none", fontWeight: "bold" }}
-                  >
-                    ID
-                  </Button>
-                </TableCell>
-                <TableCell align="center">
-                  <Button
-                    onClick={() => handleSort("accommodationName")}
-                    endIcon={
-                      sortField === "accommodationName"
-                        ? sortDirection === "asc"
-                          ? " ⬆️"
-                          : " ⬇️"
-                        : null
-                    }
-                    sx={{ p: 0, textTransform: "none", fontWeight: "bold" }}
-                  >
-                    Name
-                  </Button>
-                </TableCell>
-                <TableCell align="center">Type</TableCell>
-                <TableCell align="center">Contact</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {accommodationContents.length > 0 ? (
-                accommodationContents
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((accommodation, index) => (
-                    <TableRow
-                      key={accommodation.accommodation_id}
-                      sx={{
-                        "&:hover td": {
-                          backgroundColor: "#e3f2fd",
-                        },
-                      }}
-                    >
-                      <TableCell align="center">
-                        {page * rowsPerPage + index + 1}
-                      </TableCell>
-                      <TableCell align="center">
-                        {accommodation.accommodation_id}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: "150px", // adjust this value as needed
-                        }}
-                      >
-                        {accommodation.accommodation_name}
-                      </TableCell>
-                      <TableCell align="center">
-                        {accommodation.accommodation_type}
-                      </TableCell>
-                      <TableCell align="center">
-                        {accommodation.contact_number}
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        style={{ display: "flex", justifyContent: "center" }}
-                      >
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={() => handleEditAccommodation(accommodation)}
-                          sx={{ mr: 1 }}
-                        >
-                          Update
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          size="small"
-                          onClick={() =>
-                            handleRemoveAccommodation(
-                              accommodation.accommodation_id
-                            )
-                          }
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No accommodations found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Pagination */}
-        <TablePagination
-          rowsPerPageOptions={[8, 10, 25]}
-          component="div"
-          count={accommodationContents.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-
-        {/* Add/Edit Accommodation Dialog */}
-        <Dialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          fullWidth
-          maxWidth="md"
-        >
-          <DialogTitle sx={{ pb: 1 }}>
-            {isEditing ? "Edit Accommodation" : "Add New Accommodation"}
-          </DialogTitle>
-
-          <DialogContent>
-            <Box sx={{ display: "grid", gap: 2, pt: 1 }}>
-              <TextField
-                size="small"
-                label="Accommodation Name *"
-                name="accommodationName"
-                value={formData.accommodationName}
-                onChange={handleChange}
-                fullWidth
-              />
-
-              <TextField
-                size="small"
-                label="Location URL"
-                name="locationUrl"
-                value={formData.locationUrl}
-                onChange={handleChange}
-                fullWidth
-              />
-
-              <TextField
-                size="small"
-                label="Contact Number *"
-                name="contactNumber"
-                value={formData.contactNumber}
-                onChange={handleChange}
-                fullWidth
-              />
-
-              <TextField
-                size="small"
-                select
-                label="Type *"
-                name="accommodationType"
-                value={formData.accommodationType}
-                onChange={handleChange}
-                fullWidth
-              >
-                <MenuItem value="hotel">Hotel</MenuItem>
-                <MenuItem value="resort">Resort</MenuItem>
-                <MenuItem value="bungalow">Bungalow</MenuItem>
-                <MenuItem value="homestay">Homestay</MenuItem>
-                <MenuItem value="villa">Villa</MenuItem>
-                <MenuItem value="cabin">Cabin</MenuItem>
-                <MenuItem value="cabana">Cabana</MenuItem>
-                <MenuItem value="lodge">Lodge</MenuItem>
-                <MenuItem value="camp">Camping Site</MenuItem>
-                <MenuItem value="tent">Tent</MenuItem>
-              </TextField>
-
-              <TextField
-                size="small"
-                label="Amenities"
-                name="amenities"
-                multiline
-                rows={4}
-                value={formData.amenities}
-                onChange={handleChange}
-                fullWidth
-              />
-
-              <TextField
-                size="small"
-                label="Service URL"
-                name="serviceUrl"
-                value={formData.serviceUrl}
-                onChange={handleChange}
-                fullWidth
-              />
-
-              {/* Improved File Upload Section */}
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Accommodation Image
-                </Typography>
-
-                <Button
-                  variant="outlined"
-                  component="label"
-                  size="small"
-                  startIcon={<CloudUploadIcon />}
-                >
-                  Upload Image
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleFileChange}
-                  />
-                </Button>
-
-                {picturePreview && (
-                  <Box
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell align="center">#</TableCell>
+              <TableCell align="center">ID</TableCell>
+              <TableCell align="center">Name</TableCell>
+              <TableCell align="center">Start Date</TableCell>
+              <TableCell align="center">Group Size</TableCell>
+              <TableCell align="center">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {eventContents.length > 0 ? (
+              eventContents
+                .slice(
+                  eventPage * eventRowsPerPage,
+                  eventPage * eventRowsPerPage + eventRowsPerPage
+                )
+                .map((event, index) => (
+                  <TableRow
+                    key={event.event_id}
                     sx={{
-                      mt: 2,
-                      border: "1px dashed",
-                      borderColor: "divider",
-                      borderRadius: 1,
-                      p: 2,
-                      display: "flex",
-                      justifyContent: "center",
-                      bgcolor: "background.paper",
+                      "&:hover td": {
+                        backgroundColor: "#e3f2fd",
+                      },
                     }}
                   >
-                    <img
-                      src={picturePreview}
-                      alt="Preview"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "300px",
-                        objectFit: "contain",
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </DialogContent>
-
-          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-            <Button
-              onClick={() => setDialogOpen(false)}
-              variant="outlined"
-              size="small"
-              sx={{ textTransform: "none" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              variant="contained"
-              size="small"
-              onClick={handleAddOrUpdateAccommodation}
-              sx={{ textTransform: "none" }}
-              disabled={
-                !formData.accommodationName ||
-                !formData.contactNumber ||
-                !formData.accommodationType
-              }
-            >
-              {isEditing ? "Save Changes" : "Add Accommodation"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Message Modal */}
-        <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs">
-          <DialogTitle sx={{ p: 2, pb: 1 }}>
-            {isSuccess ? "✅ Success" : "❌ Error"}
-          </DialogTitle>
-          <DialogContent sx={{ p: 2 }}>
-            <Typography>{modalMessage}</Typography>
-          </DialogContent>
-          <DialogActions sx={{ p: 1 }}>
-            <Button
-              onClick={handleCloseModal}
-              size="small"
-              sx={{ textTransform: "none" }}
-            >
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </div>
-
-      <Divider sx={{ my: 4 }} />
-
-      {/* event part */}
-      <div>
-        <div className="mb-4 mt-4">
-          <Typography variant="h5">Events</Typography>
-          <div className="mt-4">
-            <Button
-              size="small"
-              variant="contained"
-              onClick={() => {
-                resetEventForm();
-                setEventDialogOpen(true);
-              }}
-            >
-              Add Event
-            </Button>
-          </div>
-        </div>
-        {/* Event Table */}
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell align="center">#</TableCell>
-                <TableCell align="center">ID</TableCell>
-                <TableCell align="center">Name</TableCell>
-                <TableCell align="center">Start Date</TableCell>
-                <TableCell align="center">Group size</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {eventContents.length > 0 ? (
-                eventContents
-                  .slice(
-                    eventPage * eventRowsPerPage,
-                    eventPage * eventRowsPerPage + eventRowsPerPage
-                  )
-                  .map((event, index) => (
-                    <TableRow
-                      key={event.event_id}
-                      sx={{
-                        "&:hover td": {
-                          backgroundColor: "#e3f2fd",
-                        },
-                      }}
-                    >
-                      <TableCell align="center">
-                        {page * rowsPerPage + index + 1}
-                      </TableCell>
-                      <TableCell align="center">{event.event_id}</TableCell>
-                      <TableCell align="center">{event.event_id}</TableCell>
-                      {/* change to event name */}
-                      <TableCell align="center">
-                        {dayjs(event.start_date).format("YYYY-MM-DD")}
-                      </TableCell>
-                      <TableCell align="center">{event.group_size}</TableCell>
-                      <TableCell align="center">
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          size="small"
-                          onClick={() => handleRemoveEvent(event.event_id)}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    No Events found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Pagination */}
-        <TablePagination
-          rowsPerPageOptions={[8, 10, 25]}
-          component="div"
-          count={eventContents.length}
-          rowsPerPage={eventRowsPerPage}
-          page={eventPage}
-          onPageChange={handleEventChangePage}
-          onRowsPerPageChange={handleEventChangeRowsPerPage}
-        />
-
-        {/* Add/Edit Dialog */}
-        <Dialog
-          open={eventDialogOpen}
-          onClose={() => setEventDialogOpen(false)}
-          fullWidth
-          maxWidth="md"
-        >
-          <DialogTitle>{isEditing ? "Edit Event" : "Add Event"}</DialogTitle>
-          <DialogContent>
-            <TextField
-              size="small"
-              label="Event Name"
-              name="eventName"
-              value={eventFormData.eventName}
-              onChange={handleEventChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              type="date"
-              size="small"
-              name="startDate"
-              value={eventFormData.startDate}
-              onChange={handleEventChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              label="Group Size"
-              name="groupSize"
-              size="small"
-              value={eventFormData.groupSize}
-              onChange={handleEventChange}
-              fullWidth
-              margin="dense"
-            />
-            <TextField
-              label="Description"
-              name="description"
-              size="small"
-              value={eventFormData.description}
-              onChange={handleEventChange}
-              multiline
-              minRows={4}
-              fullWidth
-              style={{ marginTop: "10px" }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEventDialogOpen(false)}>Cancel</Button>
-            <Button color="primary" onClick={handleAddOrUpdateEvent}>
-              {isEditing ? "Update" : "Add"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </div>
-
-      <Divider sx={{ my: 4 }} />
-
-      <div>
-        <div className="mb-4 mt-4">
-          <Typography variant="h5">Tours</Typography>
-          <div className="mt-4">
-            <Button
-              size="small"
-              variant="contained"
-              onClick={() => {
-                resetTourForm();
-                setTourDialogOpen(true);
-              }}
-            >
-              Add Tour
-            </Button>
-          </div>
-        </div>
-
-        {/* Tour Table */}
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell align="center">#</TableCell>
-                <TableCell align="center">ID</TableCell>
-                <TableCell align="center">Activity</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tourContents.length > 0 ? (
-                tourContents
-                  .slice(
-                    tourPage * tourRowsPerPage,
-                    tourPage * tourRowsPerPage + tourRowsPerPage
-                  )
-                  .map((tour, index) => (
-                    <TableRow
-                      key={tour.tour_id}
-                      sx={{
-                        "&:hover td": {
-                          backgroundColor: "#e3f2fd",
-                        },
-                      }}
-                    >
-                      <TableCell align="center">
-                        {tourPage * tourRowsPerPage + index + 1}
-                      </TableCell>
-                      <TableCell align="center">{tour.tour_id}</TableCell>
-                      <TableCell align="center">{tour.activity}</TableCell>
-                      <TableCell
-                        align="center"
-                        style={{ display: "flex", justifyContent: "center" }}
+                    <TableCell align="center">
+                      {eventPage * eventRowsPerPage + index + 1}
+                    </TableCell>
+                    <TableCell align="center">{event.event_id}</TableCell>
+                    <TableCell align="center">{event.event_name}</TableCell>
+                    <TableCell align="center">
+                      {dayjs(event.start_date).format("YYYY-MM-DD")}
+                    </TableCell>
+                    <TableCell align="center">{event.group_size}</TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        size="small"
+                        onClick={() => handleRemoveEvent(event.event_id)}
                       >
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={() => handleEditTour(tour)}
-                          sx={{ mr: 1 }}
-                        >
-                          Update
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          size="small"
-                          onClick={() => handleRemoveTour(tour.tour_id)}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    No Tours found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                        Remove
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  No Events found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-        {/* Pagination */}
-        <TablePagination
-          rowsPerPageOptions={[8, 10, 25]}
-          component="div"
-          count={tourContents.length}
-          rowsPerPage={tourRowsPerPage}
-          page={tourPage}
-          onPageChange={(event, newPage) => setTourPage(newPage)}
-          onRowsPerPageChange={(event) => {
-            setTourRowsPerPage(parseInt(event.target.value, 10));
-            setTourPage(0);
-          }}
-        />
+      <TablePagination
+        rowsPerPageOptions={[8, 10, 25]}
+        component="div"
+        count={eventContents.length}
+        rowsPerPage={eventRowsPerPage}
+        page={eventPage}
+        onPageChange={handleEventChangePage}
+        onRowsPerPageChange={handleEventChangeRowsPerPage}
+      />
 
-        {/* Add/Edit Tour Dialog */}
-        <Dialog
-          open={tourDialogOpen}
-          onClose={() => setTourDialogOpen(false)}
-          fullWidth
-          maxWidth="md"
-        >
-          <DialogTitle>{isEditing ? "Edit Tour" : "Add Tour"}</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: "grid", gap: 2, pt: 1 }}>
-              <TextField
-                size="small"
-                label="Activity *"
-                name="activity"
-                value={tourFormData.activity}
-                onChange={handleTourChange}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                select
-                label="Destination *"
-                name="destination_id"
-                value={tourFormData.destination_id}
-                onChange={handleTourChange}
-                fullWidth
-              >
-                {destinationContents.map((dest) => (
-                  <MenuItem
-                    key={dest.destination_id}
-                    value={dest.destination_id}
-                  >
-                    {dest.destination_name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                size="small"
-                select
-                label="Accommodation *"
-                name="accommodation_id"
-                value={tourFormData.accommodation_id}
-                onChange={handleTourChange}
-                fullWidth
-              >
-                {accommodationContents.map((acc) => (
-                  <MenuItem
-                    key={acc.accommodation_id}
-                    value={acc.accommodation_id}
-                  >
-                    {acc.accommodation_name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Tour Image *
-                </Typography>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  size="small"
-                  startIcon={<CloudUploadIcon />}
-                >
-                  Upload Image
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleTourFileChange}
-                  />
-                </Button>
-                {tourPicturePreview && (
-                  <Box
-                    sx={{
-                      mt: 2,
-                      border: "1px dashed",
-                      borderColor: "divider",
-                      borderRadius: 1,
-                      p: 2,
-                      display: "flex",
-                      justifyContent: "center",
-                      bgcolor: "background.paper",
-                    }}
-                  >
-                    <img
-                      src={tourPicturePreview}
-                      alt="Preview"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "300px",
-                        objectFit: "contain",
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-            <Button
-              onClick={() => setTourDialogOpen(false)}
-              variant="outlined"
-              size="small"
-              sx={{ textTransform: "none" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              variant="contained"
-              size="small"
-              onClick={handleAddOrUpdateTour}
-              sx={{ textTransform: "none" }}
-              disabled={
-                !tourFormData.activity ||
-                !tourFormData.destination_id ||
-                !tourFormData.accommodation_id ||
-                (!tourFormData.picture && !tourPicturePreview)
-              }
-            >
-              {isEditing ? "Save Changes" : "Add Tour"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </div>
+      <Dialog
+        open={eventDialogOpen}
+        onClose={() => setEventDialogOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>{isEditing ? "Edit Event" : "Add Event"}</DialogTitle>
+        <DialogContent>
+          <TextField
+            size="small"
+            label="Event Name"
+            name="eventName"
+            value={eventFormData.eventName}
+            onChange={handleEventChange}
+            fullWidth
+            margin="dense"
+          />
+          <TextField
+            type="date"
+            size="small"
+            name="startDate"
+            value={eventFormData.startDate}
+            onChange={handleEventChange}
+            fullWidth
+            margin="dense"
+          />
+          <TextField
+            label="Group Size"
+            name="groupSize"
+            size="small"
+            value={eventFormData.groupSize}
+            onChange={handleEventChange}
+            fullWidth
+            margin="dense"
+          />
+          <TextField
+            label="Description"
+            name="description"
+            size="small"
+            value={eventFormData.description}
+            onChange={handleEventChange}
+            multiline
+            minRows={4}
+            fullWidth
+            style={{ marginTop: "10px" }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEventDialogOpen(false)}>Cancel</Button>
+          <Button color="primary" onClick={handleAddOrUpdateEvent}>
+            {isEditing ? "Update" : "Add"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs">
+        <DialogTitle sx={{ p: 2, pb: 1 }}>
+          {isSuccess ? "✅ Success" : "❌ Error"}
+        </DialogTitle>
+        <DialogContent sx={{ p: 2 }}>
+          <Typography>{modalMessage}</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 1 }}>
+          <Button
+            onClick={handleCloseModal}
+            size="small"
+            sx={{ textTransform: "none" }}
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

@@ -7,10 +7,10 @@ const addPackageDestination = async ({ tourId, destinationId }) => {
       [tourId, destinationId]
     );
 
-    return result.rows[0]; // return the created packageDestination
+    return result.rows[0];
   } catch (error) {
     console.error("Error adding package destination:", error);
-    throw error; // let the caller handle the response
+    throw error; 
   }
 };
 

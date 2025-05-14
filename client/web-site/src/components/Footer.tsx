@@ -2,43 +2,40 @@ import { Component } from 'solid-js';
 
 const Footer: Component = () => {
   return (
-    <footer class="bg-gray-800 text-white content-center p-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-sm">
+    <footer class="bg-blue-950 backdrop-blur-md text-white py-12 px-4">
+      <div class="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
         <div>
-          <h3 class="font-bold mb-3">Contact Us</h3>
-          <p>oeyjontani@gmail.com</p>
-          <p>94 052-3452</p>
-          <p>123 Ave, New York, USA</p>
+          <h3 class="text-lg font-bold mb-4 text-amber-200">About Us</h3>
+          <p class="text-gray-200 mb-2">
+            Paradise Tours is dedicated to crafting unforgettable travel experiences, connecting you with the world's most stunning destinations.
+          </p>
+          <p class="text-gray-200">
+            Our passionate team ensures every journey is seamless and memorable.
+          </p>
         </div>
         
         <div>
-          <h3 class="font-bold mb-3">About</h3>
-          <p>Egestia vitae, our team</p>
-          <p>services</p>
+          <h3 class="text-lg font-bold mb-4 text-amber-200">Contact</h3>
+          <p class="text-gray-200 mb-2">Email: info@paradisetours.com</p>
+          <p class="text-gray-200 mb-2">Phone: +1 (555) 123-4567</p>
+          <p class="text-gray-200">Address: 456 Wanderlust Lane, Miami, FL, USA</p>
         </div>
         
         <div>
-          <h3 class="font-bold mb-3">Our Accomplishments</h3>
-          <p>Best i.h.</p>
-          <p>Lankan best website</p>
-          <p>GEO</p>
-        </div>
-        
-        <div>
-          <h3 class="font-bold mb-3">Visitor info</h3>
-          <p>Season 4.3 Climate</p>
-          <p>Getting here</p>
-          <p>Get in touch</p>
+          <h3 class="text-lg font-bold mb-4 text-amber-200">Accomplishments</h3>
+          <p class="text-gray-200 mb-2">Global Travel Award 2024</p>
+          <p class="text-gray-200 mb-2">Top Adventure Tour Operator 2023</p>
+          <p class="text-gray-200">Certified Sustainable Tourism Partner</p>
         </div>
       </div>
 
-      <div class="border-t mt-8 pt-8 text-center text-sm text-gray-500">
-      <p>© {new Date().getFullYear()} My Website. All rights reserved.</p>
-        <div class="flex justify-center gap-4 mt-2">
-          <span>Instructions</span>
-          <span>Licence</span>
-          <span>Styleguide</span>
-          <span>Charging</span>
+      <div class="border-t border-gray-600/50 mt-8 pt-8 text-center text-sm text-gray-400">
+        <p>© {new Date().getFullYear()} Paradise Tours. All rights reserved.</p>
+        <div class="flex justify-center gap-6 mt-4">
+          <a href="/terms" class="hover:text-amber-200 transition-colors">Terms & Conditions</a>
+          <a href="/privacy" class="hover:text-amber-200 transition-colors">Privacy Policy</a>
+          <a href="/faq" class="hover:text-amber-200 transition-colors">FAQ</a>
+          <a href="/contact" class="hover:text-amber-200 transition-colors">Get in Touch</a>
         </div>
       </div>
     </footer>

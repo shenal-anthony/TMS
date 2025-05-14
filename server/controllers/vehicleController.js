@@ -1,119 +1,126 @@
 const vehicle = require("../models/vehicleModel");
 const user = require("../models/userModel");
-
-const { findUserByEmail } = require("../models/userModel");
 const { body, validationResult } = require("express-validator");
 const path = require("path");
 
 const registerVehicle = async (req, res) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     const {
       email,
       brand,
       model,
       vehicleColor,
       vehicleType,
+      seatCapacity,
+      luggageCapacity,
       fuelType,
       airCondition,
       registrationNumber,
       vehicleNumberPlate,
-      agreeTerms,
     } = req.body;
 
-    // Check if the user agreed to the terms
-    if (agreeTerms !== "true") {
+    // Validation
+    const errors = {};
+    if (!email) errors.email = "Email is required";
+    if (!brand) errors.brand = "Brand is required";
+    if (!model) errors.model = "Model is required";
+    if (!vehicleColor) errors.vehicleColor = "Vehicle color is required";
+    if (!vehicleType) errors.vehicleType = "Vehicle type is required";
+    if (!seatCapacity) errors.seatCapacity = "Seat capacity is required";
+    if (!luggageCapacity)
+      errors.luggageCapacity = "Luggage capacity is required";
+    if (!fuelType) errors.fuelType = "Fuel type is required";
+    if (!registrationNumber)
+      errors.registrationNumber = "Registration number is required";
+    if (!vehicleNumberPlate)
+      errors.vehicleNumberPlate = "Vehicle number plate is required";
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ errors });
+    }
+
+    // Validate numeric fields
+    const seatCapacityNum = parseInt(seatCapacity, 10);
+    const luggageCapacityNum = parseFloat(luggageCapacity);
+    if (isNaN(seatCapacityNum) || seatCapacityNum < 1) {
       return res
         .status(400)
-        .json({ message: "You must agree to the terms and conditions" });
+        .json({ error: "Seat capacity must be at least 1" });
+    }
+    if (isNaN(luggageCapacityNum) || luggageCapacityNum < 0) {
+      return res
+        .status(400)
+        .json({ error: "Luggage capacity cannot be negative" });
     }
 
-    // Find user_id from the database using email
-    const user = await findUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    // Find user by email
+    const userData = await user.findUserByEmail(email.trim().toLowerCase());
+    if (!userData) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    const userId = user.user_id;
-    // console.log("User ID:", userId); // Debug
+    // Process files
+    const fileFields = req.files || {};
+    const vehiclePicture = fileFields["vehiclePicture"]?.[0] || null;
+    const vehicleLicenses = fileFields["vehicleLicense"] || [];
 
-    let vehiclePicturePath = null;
-    let touristLicensePath = null;
-
-    // Handle file uploads
-    if (req.files) {
-      if (req.files.vehiclePicture) {
-        const vehiclePicture = req.files.vehiclePicture;
-        const allowedMimeTypes = ["image/jpeg", "image/png"];
-        if (!allowedMimeTypes.includes(vehiclePicture.mimetype)) {
-          return res
-            .status(400)
-            .json({ message: "Invalid file type for vehicle picture" });
-        }
-
-        // 16MB limit
-        if (vehiclePicture.size > 16 * 1024 * 1024) {
-          return res
-            .status(400)
-            .json({ message: "Vehicle picture size exceeds 16MB" });
-        }
-        vehiclePicturePath = `/uploads/vehicles/${Date.now()}_${
-          vehiclePicture.name
-        }`;
-        await vehiclePicture.mv(
-          path.join(__dirname, "../public", vehiclePicturePath)
-        );
-      }
-
-      if (req.files.touristLicense) {
-        const touristLicense = req.files.touristLicense;
-        const allowedMimeTypes = ["image/jpeg", "image/png", "application/pdf"];
-        if (!allowedMimeTypes.includes(touristLicense.mimetype)) {
-          return res
-            .status(400)
-            .json({ message: "Invalid file type for tourist license" });
-        }
-        if (touristLicense.size > 16 * 1024 * 1024) {
-          // 16MB limit
-          return res
-            .status(400)
-            .json({ message: "Tourist license size exceeds 16MB" });
-        }
-        touristLicensePath = `/uploads/vehicles/${Date.now()}_${
-          touristLicense.name
-        }`;
-        await touristLicense.mv(
-          path.join(__dirname, "../public", touristLicensePath)
-        );
-      }
+    if (!vehiclePicture) {
+      return res.status(400).json({ error: "Vehicle picture is required" });
+    }
+    if (vehicleLicenses.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "At least one vehicle license is required" });
     }
 
-    // Create vehicle record in database
-    const newVehicle = await vehicle.createVehicle({
-      userId,
-      brand,
-      model,
-      vehicleColor,
-      vehicleType,
-      fuelType,
+    const vehiclePictureUrl = vehiclePicture
+      ? path.join("/uploads/vehicle_pics", vehiclePicture.filename)
+      : null;
+    const vehicleLicenseUrls = vehicleLicenses.map((file) =>
+      path.join("/uploads/vehicle_licenses", file.filename)
+    );
+
+    // Normalize text fields
+    const normalizedData = {
+      email: email.trim().toLowerCase(),
+      brand: brand.trim().toLowerCase(),
+      model: model.trim().toLowerCase(),
+      vehicleColor: vehicleColor.trim().toLowerCase(),
+      vehicleType: vehicleType.trim().toLowerCase(),
+      fuelType: fuelType.trim().toLowerCase(),
+      registrationNumber: registrationNumber.trim().toUpperCase(),
+      vehicleNumberPlate: vehicleNumberPlate.trim().toUpperCase(),
       airCondition: airCondition === "true",
-      registrationNumber,
-      vehicleNumberPlate,
-      vehiclePicturePath,
-      touristLicensePath,
-    });
+      seatCapacity: seatCapacityNum,
+      luggageCapacity: luggageCapacityNum,
+      userId: userData.user_id,
+      vehiclePictureUrl: vehiclePictureUrl
+        ? `${vehiclePictureUrl}`
+        : null,
+      vehicleLicenseUrls: vehicleLicenseUrls
+        .map((url) => `${url}`)
+        .join(","),
+      status: "Functional",
+    };
+
+    // Create vehicle
+    const newVehicle = await vehicle.createVehicle(normalizedData);
+
+    // console.log(
+    //   "🚀 ~ vehicleController.js:113 ~ registerVehicle ~ normalizedData:",
+    //   normalizedData
+    // );
 
     res.status(201).json({
       message: "Vehicle registered successfully",
-      data: newVehicle,
+      vehicle: newVehicle,
     });
   } catch (error) {
-    console.error("Vehicle registration error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Vehicle registration failed:", error);
+    if (error.message.includes("already exists")) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: "Vehicle registration failed" });
   }
 };
 
@@ -143,7 +150,7 @@ const getAllVehicles = async (req, res) => {
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
     }
-    if (admin.role !== "Admin") {
+    if (admin.role !== "Admin" && admin.role !== "SuperAdmin") {
       return res.status(403).json({ message: "Access denied" });
     }
   } catch (error) {

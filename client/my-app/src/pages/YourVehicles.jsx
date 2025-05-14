@@ -16,6 +16,7 @@ import {
   DialogContentText,
   DialogActions,
   Typography,
+  Chip,
 } from "@mui/material";
 import axiosInstance from "../api/axiosInstance";
 
@@ -80,7 +81,7 @@ const YourVehicles = ({ userId }) => {
         <Typography variant="h5" sx={{ fontWeight: "bold" }}>
           Your Vehicles
         </Typography>
-        <h1 className="ml-2">View your vehicles here</h1>
+        <Typography>View your vehicles here</Typography>
       </div>
       <div className="mb-4">
         <Button variant="contained" color="primary" onClick={handleRegister}>
@@ -119,14 +120,17 @@ const YourVehicles = ({ userId }) => {
                     <TableCell align="center">{vehicle.vehicle_id}</TableCell>
                     <TableCell align="center">{vehicle.brand}</TableCell>
                     <TableCell align="center">{vehicle.model}</TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        color:
-                          vehicle.status === "Functional" ? "green" : "orange",
-                      }}
-                    >
-                      {vehicle.status}
+                    <TableCell align="center">
+                      <Chip
+                        label={vehicle.status}
+                        size="small"
+                        color={
+                          vehicle.status === "Functional"
+                            ? "success"
+                            : "warning"
+                        }
+                        variant="filled"
+                      />
                     </TableCell>
                     {/* action button for view */}
                     <TableCell align="center">

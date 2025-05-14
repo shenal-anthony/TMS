@@ -184,6 +184,43 @@ const Sidebar = ({ isCollapsed }) => {
               </li>
               <li>
                 <NavLink
+                  to="/contents/packages"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" /> {!isCollapsed && "Packages"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contents/Accommodations"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Accommodations"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contents/tour"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" /> {!isCollapsed && "Tour"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
                   to="/contents/events"
                   className={({ isActive }) =>
                     `flex items-center gap-2 p-2 hover:bg-gray-700 ${

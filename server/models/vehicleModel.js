@@ -7,39 +7,56 @@ const createVehicle = async (vehicleData) => {
     model,
     vehicleColor,
     vehicleType,
+    seatCapacity,
+    luggageCapacity,
     fuelType,
     airCondition,
     registrationNumber,
     vehicleNumberPlate,
-    vehiclePicturePath,
-    touristLicensePath,
+    vehiclePictureUrl,
+    vehicleLicenseUrls,
+    status,
   } = vehicleData;
 
-  const query = `
-    INSERT INTO vehicles 
-    (user_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate, vehicle_picture, tourist_license)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *;
-  `;
-
-  const values = [
-    userId,
-    brand,
-    model,
-    vehicleColor,
-    vehicleType,
-    fuelType,
-    airCondition,
-    registrationNumber,
-    vehicleNumberPlate,
-    vehiclePicturePath,
-    touristLicensePath,
-  ];
-
   try {
+    // Check for existing vehicle by registration number
+    const existingVehicle = await pool.query(
+      `SELECT * FROM vehicles WHERE REGISTRATION_NUMBER = $1`,
+      [registrationNumber]
+    );
+    if (existingVehicle.rows.length > 0) {
+      throw new Error("Vehicle with this registration number already exists");
+    }
+
+    // Insert vehicle
+    const query = `
+      INSERT INTO vehicles (
+        USER_ID, BRAND, MODEL, COLOR, VEHICLE_TYPE, seat_capacity,
+        luggage_capacity, FUEL_TYPE, AIR_CONDITION, REGISTRATION_NUMBER,
+        NUMBER_PLATE, VEHICLE_PICTURE, TOURIST_LICENSE, STATUS
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING *`;
+    const values = [
+      userId,
+      brand,
+      model,
+      vehicleColor,
+      vehicleType,
+      seatCapacity,
+      luggageCapacity,
+      fuelType,
+      airCondition,
+      registrationNumber,
+      vehicleNumberPlate,
+      vehiclePictureUrl,
+      vehicleLicenseUrls,
+      status,
+    ];
+
     const result = await pool.query(query, values);
     return result.rows[0];
   } catch (error) {
+    console.error("Error in createVehicle:", error);
     throw error;
   }
 };

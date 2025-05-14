@@ -7,8 +7,14 @@ const {
   changeVehicleStatus,
 } = require("../controllers/vehicleController");
 const validateVehicleRegistration = require("../middlewares/validateVehicleRegis");
+const MulterMiddleware = require("../middlewares/uploadMiddleware");
 
-router.post("/register", validateVehicleRegistration, registerVehicle);
+const vehicleRegistrationMiddleware = MulterMiddleware([
+  { fieldName: "vehiclePicture", folder: "vehicle_pics", maxCount: 1 },
+  { fieldName: "vehicleLicense", folder: "vehicle_licenses", maxCount: 3 }
+]);
+
+router.post("/register", vehicleRegistrationMiddleware, registerVehicle);
 router.get("/:id", getVehiclesForUser);
 router.get("/manage/:id", getAllVehicles);
 router.patch("/status/:id", changeVehicleStatus);

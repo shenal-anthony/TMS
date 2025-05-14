@@ -266,13 +266,9 @@ const PendingBookings = () => {
                     <Button
                       onClick={() => handleSort("booking_id")}
                       endIcon={
-                        sortField === "booking_id" ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUpwardIcon fontSize="small" />
-                          ) : (
-                            <ArrowDownwardIcon fontSize="small" />
-                          )
-                        ) : null
+                        sortField === "booking_id" && sortOrder === "asc"
+                          ? "⬆️"
+                          : "⬇️"
                       }
                     >
                       Booking ID
@@ -282,13 +278,9 @@ const PendingBookings = () => {
                     <Button
                       onClick={() => handleSort("booking_date")}
                       endIcon={
-                        sortField === "booking_date" ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUpwardIcon fontSize="small" />
-                          ) : (
-                            <ArrowDownwardIcon fontSize="small" />
-                          )
-                        ) : null
+                        sortField === "booking_date" && sortOrder === "asc"
+                          ? "⬆️"
+                          : "⬇️"
                       }
                     >
                       Booking Date

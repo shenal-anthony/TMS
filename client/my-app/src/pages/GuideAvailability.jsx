@@ -14,8 +14,6 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
 const GuideAvailability = () => {
   const [guides, setGuides] = useState([]);
@@ -238,12 +236,9 @@ const GuideAvailability = () => {
                 <Button
                   onClick={() => handleSort("user_id")}
                   endIcon={
-                    sortConfig.key === "user_id" &&
-                    sortConfig.order === "asc" ? (
-                      <ArrowUpwardIcon fontSize="small" />
-                    ) : (
-                      <ArrowDownwardIcon fontSize="small" />
-                    )
+                    sortConfig.key === "user_id" && sortConfig.order === "asc"
+                      ? "⬆️"
+                      : "⬇️"
                   }
                 >
                   Guide ID
@@ -254,11 +249,9 @@ const GuideAvailability = () => {
                   onClick={() => handleSort("first_name")}
                   endIcon={
                     sortConfig.key === "first_name" &&
-                    sortConfig.order === "asc" ? (
-                      <ArrowUpwardIcon fontSize="small" />
-                    ) : (
-                      <ArrowDownwardIcon fontSize="small" />
-                    )
+                    sortConfig.order === "asc"
+                      ? "⬆️"
+                      : "⬇️"
                   }
                 >
                   Guide Name
@@ -297,7 +290,7 @@ const GuideAvailability = () => {
                     <FormControlLabel
                       control={
                         <Switch
-                        size="small"
+                          size="small"
                           checked={guide.status === "Active"}
                           onChange={() =>
                             handleToggleStatus(guide.user_id, guide.status)

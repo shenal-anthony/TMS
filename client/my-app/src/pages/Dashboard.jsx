@@ -18,6 +18,7 @@ import {
   Alert,
   IconButton,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import {
   DirectionsCar as VehicleIcon,
@@ -31,6 +32,11 @@ import {
   Tour as TourIcon,
   Refresh as RefreshIcon,
   FollowTheSigns as GuideIcon,
+  CheckCircle,
+  CheckCircleOutline,
+  CheckCircleOutlineRounded,
+  CheckCircleOutlineTwoTone,
+  CheckCircleOutlineOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
@@ -344,11 +350,10 @@ const Dashboard = ({ userId }) => {
                       <Button
                         onClick={() => handleRequestSort("booking_id")}
                         endIcon={
-                          requestSortField === "booking_id"
-                            ? requestSortOrder === "asc"
-                              ? " ⬆️"
-                              : " ⬇️"
-                            : null
+                          requestSortField === "booking_id" &&
+                          requestSortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
                         }
                       >
                         Booking ID
@@ -359,11 +364,10 @@ const Dashboard = ({ userId }) => {
                       <Button
                         onClick={() => handleRequestSort("sent_at")}
                         endIcon={
-                          requestSortField === "sent_at"
-                            ? requestSortOrder === "asc"
-                              ? " ⬆️"
-                              : " ⬇️"
-                            : null
+                          requestSortField === "sent_at" &&
+                          requestSortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
                         }
                       >
                         Sent At
@@ -373,11 +377,10 @@ const Dashboard = ({ userId }) => {
                       <Button
                         onClick={() => handleRequestSort("updated_at")}
                         endIcon={
-                          requestSortField === "updated_at"
-                            ? requestSortOrder === "asc"
-                              ? " ⬆️"
-                              : " ⬇️"
-                            : null
+                          requestSortField === "updated_at" &&
+                          requestSortOrder === "asc"
+                            ? " ⬆️"
+                            : " ⬇️"
                         }
                       >
                         Updated At
@@ -420,22 +423,24 @@ const Dashboard = ({ userId }) => {
                           : dayjs(req.updated_at).format("YYYY-MM-DD HH:mm")}
                       </TableCell>
                       <TableCell align="center">
-                        <span
-                          style={{
-                            color:
-                              req.status === true
-                                ? "green"
-                                : req.status === false
-                                ? "orange"
-                                : "gray",
-                          }}
-                        >
-                          {req.status === true
-                            ? "Accepted"
-                            : req.status === false
-                            ? "Pending"
-                            : "Pending"}
-                        </span>
+                        {req.status === true ? (
+                          <Chip
+                            label="Accepted"
+                            color="success"
+                            size="small"
+                            variant="filled"
+                            icon={<CheckCircle />}
+                            sx={{ borderRadius: "16px" }} // Oval-like shape
+                          />
+                        ) : (
+                          <Chip
+                            label="Pending"
+                            color="warning"
+                            size="small"
+                            variant="outlined"
+                            sx={{ borderRadius: "16px" }} // Oval-like shape
+                          />
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -493,11 +498,9 @@ const Dashboard = ({ userId }) => {
                     <Button
                       onClick={() => handleSort("booking_id")}
                       endIcon={
-                        sortField === "booking_id"
-                          ? sortOrder === "asc"
-                            ? " ⬆️"
-                            : " ⬇️"
-                          : null
+                        sortField === "booking_id" && sortOrder === "asc"
+                          ? " ⬆️"
+                          : " ⬇️"
                       }
                     >
                       Booking ID
@@ -508,11 +511,9 @@ const Dashboard = ({ userId }) => {
                     <Button
                       onClick={() => handleSort("booking_date")}
                       endIcon={
-                        sortField === "booking_date"
-                          ? sortOrder === "asc"
-                            ? " ⬆️"
-                            : " ⬇️"
-                          : null
+                        sortField === "booking_date" && sortOrder === "asc"
+                          ? " ⬆️"
+                          : " ⬇️"
                       }
                     >
                       Booking Date
