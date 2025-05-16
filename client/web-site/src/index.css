@@ -10,3 +10,39 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+
+.sky-hero {
+  background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1950&q=80');
+  background-size: cover;
+  background-position: center;
+  animation: skyScroll 60s linear infinite;
+}
+
+@keyframes skyScroll {
+  0% {
+    background-position: center 0%;
+  }
+  100% {
+    background-position: center 100%;
+  }
+}
+
+.text-bottom-glow {
+  text-shadow: 0 6px 12px rgba(26, 26, 34, 0.6); /* blue bottom glow */
+  transition: text-shadow 0.3s ease;
+}
+
+.text-bottom-glow:hover {
+  text-shadow: 0 8px 18px rgba(37, 32, 2, 0.836);
+}
+
+
+/* Hide scrollbar globally (scrollbar-hide class) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

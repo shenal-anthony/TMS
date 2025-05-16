@@ -10,6 +10,7 @@ import Booking from "./pages/BookingConfiguration";
 import PaymentForm from "./pages/PaymentForm";
 import Contact from "./pages/Contact";
 import Tours from "./pages/Tours";
+import TourDetails from "./pages/TourDetails";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Route path="/package/:id" component={PackageDetail} />
       <Route path="/booking/:id" component={Booking} />
       <Route path="/tours" component={Tours} />
+      <Route path="/tours/:id" component={TourDetails} />
       <Route path="/checkout" component={PaymentForm} />
       <Route path="/events" component={Events} />
       <Route path="/about" component={About} />

@@ -139,25 +139,27 @@ const PackageDetail = () => {
           </div>
 
           {/* Breadcrumb Navigation */}
-          <div class="container mx-auto px-4 py-4">
-            <nav class="text-sm text-gray-600">
-              <ol class="flex space-x-2 items-center">
-                <li>
-                  <A href="/" class="hover:text-blue-600">
-                    Home
-                  </A>
-                </li>
-                <li>/</li>
-                <li>
-                  <A href="/packages" class="hover:text-blue-600">
-                    Packages
-                  </A>
-                </li>
-                <li>/</li>
-                <li class="font-medium text-gray-800">{pkg().package_name}</li>
-              </ol>
-            </nav>
-          </div>
+  <div class="container mx-auto px-1 py-2">
+          <nav class="text-sm text-gray-600">
+            <ol class="flex items-center space-x-1.5">
+              <li>
+                <A href="/" class="hover:text-blue-600 font-medium">
+                  Home
+                </A>
+              </li>
+              <li class="text-gray-400">/</li>
+              <li>
+                <A href="/tours" class="hover:text-blue-600 font-medium">
+                  Tours
+                </A>
+              </li>
+              <li class="text-gray-400">/</li>
+              <li class="font-semibold text-blue-800 truncate max-w-[160px]">
+                {pkg().package_name}
+              </li>
+            </ol>
+          </nav>
+        </div>
 
           {/* Main Content */}
           <div class="container mx-auto px-4 py-12">
