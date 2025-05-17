@@ -26,6 +26,7 @@ const {
   deleteTour,
   getPackageDetails,
   getTourDetails,
+  getAllPackagesDetails,
 } = require("../controllers/contentController");
 const MulterMiddleware = require("../middlewares/uploadMiddleware");
 
@@ -62,7 +63,8 @@ router.patch("/tours/:id", tourMiddleware, updateTour);
 router.delete("/tours/:id", deleteTour);
 
 // packages routes
-router.get("/packages", getPackageDetailsWithTours);
+router.get("/packages", getAllPackagesDetails);
+router.get("/packages_tours", getPackageDetailsWithTours);
 router.get("/detailed_package/:id", getPackageDetails);
 router.get("/package/:id", getPackage);
 router.get("/related_packages/:id", getPackage);

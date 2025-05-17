@@ -123,21 +123,39 @@ const Packages = () => {
       .get(`${apiUrl}/api/contents/packages`)
       .then((response) => {
         if (Array.isArray(response.data)) {
-          const normalizedPackages = response.data.map((item) => ({
-            package_id: item.package.packageId,
-            package_name: item.package.packageName,
-            description: item.package.description,
-            price: parseFloat(item.package.price),
-            duration: item.package.duration,
-            accommodation_ids: item.package.accommodationId
-              ? [item.package.accommodationId]
-              : [],
-            destination_ids: item.package.destinationId
-              ? [item.package.destinationId]
-              : [],
-            accommodation: item.accommodation || {},
-            destination: item.destination || {},
-          }));
+          const normalizedPackages = response.data.map((item) => {
+            // Normalize accommodation_ids
+            const accommodationIds = Array.isArray(item.accommodation)
+              ? item.accommodation.map((acc) => acc.accommodation_id)
+              : item.accommodation && item.accommodation.accommodation_id
+              ? [item.accommodation.accommodation_id]
+              : [];
+            // Normalize destination_ids
+            const destinationIds = Array.isArray(item.destination)
+              ? item.destination.map((dest) => dest.destination_id)
+              : item.destination && item.destination.destination_id
+              ? [item.destination.destination_id]
+              : [];
+            return {
+              package_id: item.package.packageId,
+              package_name: item.package.packageName,
+              description: item.package.description,
+              price: parseFloat(item.package.price),
+              duration: item.package.duration,
+              accommodation_ids: accommodationIds,
+              destination_ids: destinationIds,
+              accommodation: Array.isArray(item.accommodation)
+                ? item.accommodation
+                : item.accommodation
+                ? [item.accommodation]
+                : [],
+              destination: Array.isArray(item.destination)
+                ? item.destination
+                : item.destination
+                ? [item.destination]
+                : [],
+            };
+          });
           setPackageContents(normalizedPackages);
         } else {
           setPackageError("Response data is not an array");
@@ -190,13 +208,39 @@ const Packages = () => {
             packageContents.map((pkg) =>
               pkg.package_id === currentPackage.packageId
                 ? {
-                    ...pkg,
-                    package_name: response.data.package_name,
-                    description: response.data.description,
-                    price: response.data.price,
-                    duration: response.data.duration,
-                    accommodation_ids: response.data.accommodation_ids,
-                    destination_ids: response.data.destination_ids,
+                    package_id: response.data.package.packageId,
+                    package_name: response.data.package.packageName,
+                    description: response.data.package.description,
+                    price: parseFloat(response.data.package.price),
+                    duration: response.data.package.duration,
+                    accommodation_ids: Array.isArray(
+                      response.data.accommodation
+                    )
+                      ? response.data.accommodation.map(
+                          (acc) => acc.accommodation_id
+                        )
+                      : response.data.accommodation &&
+                        response.data.accommodation.accommodation_id
+                      ? [response.data.accommodation.accommodation_id]
+                      : [],
+                    destination_ids: Array.isArray(response.data.destination)
+                      ? response.data.destination.map(
+                          (dest) => dest.destination_id
+                        )
+                      : response.data.destination &&
+                        response.data.destination.destination_id
+                      ? [response.data.destination.destination_id]
+                      : [],
+                    accommodation: Array.isArray(response.data.accommodation)
+                      ? response.data.accommodation
+                      : response.data.accommodation
+                      ? [response.data.accommodation]
+                      : [],
+                    destination: Array.isArray(response.data.destination)
+                      ? response.data.destination
+                      : response.data.destination
+                      ? [response.data.destination]
+                      : [],
                   }
                 : pkg
             )
@@ -223,10 +267,28 @@ const Packages = () => {
               description: response.data.description,
               price: response.data.price,
               duration: response.data.duration,
-              accommodation_ids: response.data.accommodation_ids,
-              destination_ids: response.data.destination_ids,
-              accommodation: {},
-              destination: {},
+              accommodation_ids: Array.isArray(response.data.accommodation)
+                ? response.data.accommodation.map((acc) => acc.accommodation_id)
+                : response.data.accommodation &&
+                  response.data.accommodation.accommodation_id
+                ? [response.data.accommodation.accommodation_id]
+                : [],
+              destination_ids: Array.isArray(response.data.destination)
+                ? response.data.destination.map((dest) => dest.destination_id)
+                : response.data.destination &&
+                  response.data.destination.destination_id
+                ? [response.data.destination.destination_id]
+                : [],
+              accommodation: Array.isArray(response.data.accommodation)
+                ? response.data.accommodation
+                : response.data.accommodation
+                ? [response.data.accommodation]
+                : [],
+              destination: Array.isArray(response.data.destination)
+                ? response.data.destination
+                : response.data.destination
+                ? [response.data.destination]
+                : [],
             },
           ]);
           setOpenPackageDialog(false);

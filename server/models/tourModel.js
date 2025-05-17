@@ -28,16 +28,16 @@ const getTourDetailsById = async (id) => {
       a.accommodation_name,
       a.amenities
     FROM tours t
-    JOIN package_destinations pd ON t.tour_id = pd.tour_id
+    JOIN tours_destinations pd ON t.tour_id = pd.tour_id
     JOIN destinations d ON pd.destination_id = d.destination_id
-    JOIN package_accommodations pa ON t.tour_id = pa.tour_id
+    JOIN tours_accommodations pa ON t.tour_id = pa.tour_id
     JOIN accommodations a ON pa.accommodation_id = a.accommodation_id
     WHERE t.tour_id = $1;
   `;
   const result = await pool.query(query, [id]);
   console.log("🚀 ~ tourModel.js:36 ~ getTourDetailsById ~ result:", result);
   return result.rows[0];
-}
+};
 
 // add a new tour
 const addTour = async (newTourData) => {
@@ -169,13 +169,14 @@ const deleteTourById = async (id) => {
       await client.query("BEGIN");
 
       // Delete from package_destination
-      await client.query("DELETE FROM package_destinations WHERE tour_id = $1", [
-        id,
-      ]);
+      await client.query(
+        "DELETE FROM tours_accommodations WHERE tour_id = $1",
+        [id]
+      );
 
       // Delete from package_accommodation
       await client.query(
-        "DELETE FROM package_accommodations WHERE tour_id = $1",
+        "DELETE FROM tours_accommodations WHERE tour_id = $1",
         [id]
       );
 

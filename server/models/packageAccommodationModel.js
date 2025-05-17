@@ -1,56 +1,119 @@
 const pool = require("../db");
 
-const addPackageAccommodation = async ({ tourId, accommodationId }) => {
+const addPackageAccommodation = async (packageId, accommodationIds) => {
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
-      "INSERT INTO package_accommodations (tour_id, accommodation_id) VALUES ($1, $2) RETURNING *",
-      [tourId, accommodationId]
-    );
+    await client.query("BEGIN");
+    if (!Number.isInteger(packageId) || packageId <= 0) {
+      throw new Error("Invalid package ID");
+    }
+    if (!Array.isArray(accommodationIds) || accommodationIds.length === 0) {
+      throw new Error("At least one accommodation ID is required");
+    }
+    if (!accommodationIds.every((id) => Number.isInteger(id) && id > 0)) {
+      throw new Error("All accommodation IDs must be positive integers");
+    }
 
-    return result.rows[0]; // return the created packageDestination
+    // Validate packageId exists
+    const packageCheck = await client.query(
+      'SELECT 1 FROM PUBLIC."packages" WHERE PACKAGE_ID = $1',
+      [packageId]
+    );
+    if (packageCheck.rowCount === 0) {
+      throw new Error("Package ID does not exist");
+    }
+
+    // Validate accommodationIds exist
+    const validAccommodationIds = (
+      await client.query(
+        'SELECT ACCOMMODATION_ID FROM PUBLIC."accommodations" WHERE ACCOMMODATION_ID = ANY($1)',
+        [accommodationIds]
+      )
+    ).rows.map((row) => row.accommodation_id);
+    if (validAccommodationIds.length !== accommodationIds.length) {
+      throw new Error("One or more accommodation IDs do not exist");
+    }
+
+    const insertedRows = [];
+    for (const accommodationId of accommodationIds) {
+      const result = await client.query(
+        'INSERT INTO PUBLIC."packages_accommodations" (PACKAGE_ID, ACCOMMODATION_ID) VALUES ($1, $2) RETURNING *',
+        [packageId, accommodationId]
+      );
+      insertedRows.push(result.rows[0]);
+    }
+    // console.log(
+    // "🚀 ~ packageAccommodationModel.js:45 ~ addPackageAccommodation ~ insertedRows:",
+    // insertedRows
+    // );
+
+    await client.query("COMMIT");
+    return insertedRows;
   } catch (error) {
-    console.error("Error adding package accommodation:", error);
-    throw error; // let the caller handle the response
+    await client.query("ROLLBACK");
+    console.error("Error adding package accommodations:", error);
+    throw error;
+  } finally {
+    client.release();
   }
 };
 
-const getAccommodationsByTourId = async (tourId) => {
+const getAccommodationsByPackageId = async (packageId) => {
   const query = `
     SELECT 
       a.accommodation_id,
       a.accommodation_name,
-      a.location_url,
-      a.picture_url,
-      a.amenities,
       a.accommodation_type
-    FROM PUBLIC."accommodations" a
-    JOIN PUBLIC."package_accommodations" pa ON a.accommodation_id = pa.accommodation_id
-    WHERE pa.tour_id = $1;
+    FROM PUBLIC."packages_accommodations" pa
+    JOIN PUBLIC."accommodations" a ON pa.accommodation_id = a.accommodation_id
+    WHERE pa.package_id = $1
   `;
-  const result = await pool.query(query, [tourId]);
-  return result.rows;
+  try {
+    const result = await pool.query(query, [packageId]);
+    return result.rows;
+  } catch (error) {
+    console.error(
+      `Error fetching accommodations for package ${packageId}:`,
+      error
+    );
+    throw error;
+  }
 };
 
-// get tour details by accommodation id
-const getTourDetailsByAccId = async (id) => {
-  const query = `
-    SELECT 
-      t.tour_id,
-      t.activity,
-      t.picture_url,
-      a.accommodation_name,
-      a.accommodation_type
-    FROM tours t
-    JOIN package_accommodations pa ON t.tour_id = pa.tour_id
-    JOIN accommodations a ON pa.accommodation_id = a.accommodation_id
-    WHERE a.accommodation_id = $1;
-  `;
-  const result = await pool.query(query, [id]);
-  return result.rows[0];
+// update package accommodation
+const updatePackageAccommodation = async (packageId, accommodationId) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Validate accommodationId exists
+    const accommodationCheck = await client.query(
+      'SELECT 1 FROM PUBLIC."accommodations" WHERE ACCOMMODATION_ID = $1',
+      [accommodationId]
+    );
+
+    if (accommodationCheck.rowCount === 0) {
+      throw new Error("Accommodation ID does not exist");
+    }
+
+    const result = await client.query(
+      'UPDATE PUBLIC."packages_accommodations" SET ACCOMMODATION_ID = $2 WHERE PACKAGE_ID = $1 RETURNING *',
+      [packageId, accommodationId]
+    );
+
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error updating package accommodation:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 module.exports = {
   addPackageAccommodation,
-  getAccommodationsByTourId,
-  getTourDetailsByAccId,
+  getAccommodationsByPackageId,
+  updatePackageAccommodation,
 };

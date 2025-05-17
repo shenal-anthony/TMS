@@ -3,6 +3,8 @@ const pkg = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 const tour = require("../models/tourModel");
+const TourDest = require("../models/tourDestinationModel");
+const TourAcc = require("../models/tourAccommodationModel");
 const pkgDest = require("../models/packageDestinationModel");
 const pkgAcc = require("../models/packageAccommodationModel");
 
@@ -179,13 +181,13 @@ const getPackageDetailsWithTours = async (req, res) => {
     const responses = await Promise.all(
       packages.map(async (packageData) => {
         // Fetch accommodation-related tours
-        const accommodationTours = await pkgAcc.getTourDetailsByAccId(
-          packageData.accommodationId || packageData.accommodation_id
+        const accommodationTours = await TourAcc.getTourDetailsByAccId(
+          packageData.accommodation_id
         );
 
         // Fetch destination-related tours
-        const destinationTours = await pkgDest.getTourDetailsByDesId(
-          packageData.destinationId || packageData.destination_id
+        const destinationTours = await TourDest.getTourDetailsByDesId(
+          packageData.destination_id
         );
 
         // Structure the response for this package
@@ -196,10 +198,8 @@ const getPackageDetailsWithTours = async (req, res) => {
             description: packageData.description,
             price: packageData.price,
             duration: packageData.duration,
-            accommodationId:
-              packageData.accommodation_id,
-            destinationId:
-              packageData.destination_id,
+            accommodationId: packageData.accommodation_id,
+            destinationId: packageData.destination_id,
           },
           accommodation: accommodationTours || [],
           destination: destinationTours || [],
@@ -207,15 +207,58 @@ const getPackageDetailsWithTours = async (req, res) => {
       })
     );
 
-    console.log(
-      "🚀 ~ packageController.js ~ getPackageDetailsWithTours ~ responses:",
-      responses
-    );
+    // console.log(
+    //   "🚀 ~ packageController.js ~ getPackageDetailsWithTours ~ responses:",
+    //   responses
+    // );
 
     res.status(200).json(responses);
   } catch (error) {
     console.error("Error in getPackageDetailsWithTours:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// get all
+const getAllPackagesDetails = async (req, res) => {
+  try {
+    // Fetch all packages
+    const packages = await pkg.getAllPackages();
+
+    // Build response by fetching accommodations and destinations for each package
+    const response = await Promise.all(
+      packages.map(async (pkg) => {
+        // Fetch accommodations
+        const accommodations = await pkgAcc.getAccommodationsByPackageId(
+          pkg.package_id
+        );
+
+        // Fetch destinations
+        const destinations = await pkgDest.getDestinationsByPackageId(
+          pkg.package_id
+        );
+
+        // Construct package object
+        return {
+          package: {
+            packageId: pkg.package_id,
+            packageName: pkg.package_name,
+            description: pkg.description,
+            price: parseFloat(pkg.price),
+            duration: pkg.duration,
+          },
+          accommodation: accommodations,
+          destination: destinations,
+        };
+      })
+    );
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error fetching packages:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching packages", error: error.message });
   }
 };
 
@@ -271,13 +314,21 @@ const addPackage = async (req, res) => {
 
   try {
     // Validations
-    if (!body.package_name || typeof body.package_name !== "string") {
+    if (
+      !body.package_name ||
+      typeof body.package_name !== "string" ||
+      !body.package_name.trim()
+    ) {
       return res
         .status(400)
         .json({ message: "Invalid or missing package name" });
     }
 
-    if (!body.description || typeof body.description !== "string") {
+    if (
+      !body.description ||
+      typeof body.description !== "string" ||
+      !body.description.trim()
+    ) {
       return res
         .status(400)
         .json({ message: "Invalid or missing description" });
@@ -299,28 +350,91 @@ const addPackage = async (req, res) => {
         .json({ message: "Duration must be a positive integer" });
     }
 
-    if (!body.accommodation_id || isNaN(body.accommodation_id)) {
-      return res.status(400).json({ message: "Invalid accommodation ID" });
+    // Validate accommodation_ids (array or comma-separated string)
+    let accommodationIds = [];
+    if (body.accommodation_ids) {
+      if (Array.isArray(body.accommodation_ids)) {
+        accommodationIds = body.accommodation_ids
+          .map((id) => parseInt(id))
+          .filter((id) => !isNaN(id));
+      } else if (typeof body.accommodation_ids === "string") {
+        accommodationIds = body.accommodation_ids
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
+      }
+    }
+    if (accommodationIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one valid accommodation ID is required" });
     }
 
-    if (!body.destination_id || isNaN(body.destination_id)) {
-      return res.status(400).json({ message: "Invalid destination ID" });
+    // Validate destination_ids (array or comma-separated string)
+    let destinationIds = [];
+    if (body.destination_ids) {
+      if (Array.isArray(body.destination_ids)) {
+        destinationIds = body.destination_ids
+          .map((id) => parseInt(id))
+          .filter((id) => !isNaN(id));
+      } else if (typeof body.destination_ids === "string") {
+        destinationIds = body.destination_ids
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
+      }
+    }
+    if (destinationIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one valid destination ID is required" });
     }
 
-    // Construct data for the model
+    // Construct data for the package model
     const newPackageData = {
       packageName: body.package_name.trim(),
       description: body.description.trim(),
       price: parseFloat(body.price),
       duration: parseInt(body.duration),
-      accommodationId: parseInt(body.accommodation_id),
-      destinationId: parseInt(body.destination_id),
+      // Use the first accommodation and destination as defaults for the packages table
+      accommodationId: accommodationIds[0], // Optional: Remove if not needed
+      destinationId: destinationIds[0], // Optional: Remove if not needed
     };
 
-    // Send to the model
+    // Create the package
     const newContent = await pkg.addPackage(newPackageData);
 
-    res.json(newContent);
+    // Add associations to junction tables
+    if (accommodationIds.length > 0) {
+      await pkgAcc.addPackageAccommodation(
+        newContent.package_id,
+        accommodationIds
+      );
+    }
+
+    if (destinationIds.length > 0) {
+      await pkgDest.addPackageDestination(
+        newContent.package_id,
+        destinationIds
+      );
+    }
+
+    // add a delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const fullPackage = {
+      package: {
+        packageId: newContent.package_id,
+        packageName: newContent.package_name,
+        description: newContent.description,
+        price: parseFloat(newContent.price),
+        duration: parseInt(newContent.duration),
+      },
+      accommodation: accommodationIds,
+      destination: destinationIds,
+    };
+
+    res.json(fullPackage);
   } catch (error) {
     console.error("Error adding package:", error);
     res.status(500).json({
@@ -344,22 +458,28 @@ const updatePackage = async (req, res) => {
     // Initialize the update data object
     const updatedPackageData = {};
 
-    if (body.package_name) {
+    // Validate and update package_name
+    if (body.package_name !== undefined) {
       if (typeof body.package_name !== "string" || !body.package_name.trim()) {
-        return res.status(400).json({ message: "Invalid package name" });
+        return res
+          .status(400)
+          .json({ message: "Invalid or missing package name" });
       }
       updatedPackageData.packageName = body.package_name.trim();
     }
 
-    if (body.description) {
+    // Validate and update description
+    if (body.description !== undefined) {
       if (typeof body.description !== "string" || !body.description.trim()) {
-        return res.status(400).json({ message: "Invalid description" });
+        return res
+          .status(400)
+          .json({ message: "Invalid or missing description" });
       }
       updatedPackageData.description = body.description.trim();
     }
 
-    // Validate and update `price`
-    if (body.price) {
+    // Validate and update price
+    if (body.price !== undefined) {
       const price = parseFloat(body.price);
       if (isNaN(price) || price <= 0) {
         return res
@@ -369,8 +489,8 @@ const updatePackage = async (req, res) => {
       updatedPackageData.price = price;
     }
 
-    // Validate and update `duration`
-    if (body.duration) {
+    // Validate and update duration
+    if (body.duration !== undefined) {
       const duration = parseInt(body.duration);
       if (isNaN(duration) || duration <= 0) {
         return res
@@ -380,36 +500,105 @@ const updatePackage = async (req, res) => {
       updatedPackageData.duration = duration;
     }
 
-    // Validate and update `accommodationId`
-    if (body.accommodation_id) {
-      const accommodation_id = parseInt(body.accommodation_id);
-      if (isNaN(accommodation_id)) {
-        return res.status(400).json({ message: "Invalid accommodation ID" });
+    // Validate and update accommodation_ids (array or comma-separated string)
+    let accommodationIds = [];
+    if (body.accommodation_ids !== undefined) {
+      if (Array.isArray(body.accommodation_ids)) {
+        accommodationIds = body.accommodation_ids
+          .map((id) => parseInt(id))
+          .filter((id) => !isNaN(id));
+      } else if (typeof body.accommodation_ids === "string") {
+        accommodationIds = body.accommodation_ids
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
       }
-      updatedPackageData.accommodationId = accommodation_id;
+      if (accommodationIds.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "At least one valid accommodation ID is required" });
+      }
+      updatedPackageData.accommodationId = accommodationIds[0]; // Use first ID for packages table
     }
 
-    // Validate and update `destinationId`
-    if (body.destination_id) {
-      const destination_id = parseInt(body.destination_id);
-      if (isNaN(destination_id)) {
-        return res.status(400).json({ message: "Invalid destination ID" });
+    // Validate and update destination_ids (array or comma-separated string)
+    let destinationIds = [];
+    if (body.destination_ids !== undefined) {
+      if (Array.isArray(body.destination_ids)) {
+        destinationIds = body.destination_ids
+          .map((id) => parseInt(id))
+          .filter((id) => !isNaN(id));
+      } else if (typeof body.destination_ids === "string") {
+        destinationIds = body.destination_ids
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id));
       }
-      updatedPackageData.destinationId = destination_id;
+      if (destinationIds.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "At least one valid destination ID is required" });
+      }
+      updatedPackageData.destinationId = destinationIds[0]; // Use first ID for packages table
     }
 
-    // Ensure that at least one field is being updated
-    if (Object.keys(updatedPackageData).length === 0) {
+    // Ensure at least one field is being updated
+    if (
+      Object.keys(updatedPackageData).length === 0 &&
+      !accommodationIds.length &&
+      !destinationIds.length
+    ) {
       return res.status(400).json({ message: "No valid fields to update" });
     }
 
     // Update the package in the model
-    const updatedPackageContent = await pkg.updatePackageById(
-      id,
-      updatedPackageData
-    );
+    let updatedPackageContent;
+    if (Object.keys(updatedPackageData).length > 0) {
+      updatedPackageContent = await pkg.updatePackageById(
+        id,
+        updatedPackageData
+      );
+    } else {
+      // If only associations are updated, fetch the current package
+      updatedPackageContent = await pkg.getPackageById(id);
+      if (!updatedPackageContent) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+    }
 
-    res.json(updatedPackageContent);
+    // Update associations in junction tables
+    if (accommodationIds.length > 0) {
+      await pkgAcc.updatePackageAccommodation(id, accommodationIds);
+    }
+
+    if (destinationIds.length > 0) {
+      await pkgDest.updatePackageDestination(id, destinationIds);
+    }
+
+    // Fetch updated associations
+    const updatedAccommodationIds =
+      accommodationIds.length > 0
+        ? accommodationIds
+        : (await pkgAcc.getAccommodationsByPackageId(id)) || [];
+    const updatedDestinationIds =
+      destinationIds.length > 0
+        ? destinationIds
+        : (await pkgDest.getDestinationsByPackageId(id)) || [];
+
+    // Construct response
+    const fullPackage = {
+      package: {
+        packageId: updatedPackageContent.package_id || id,
+        packageName: updatedPackageContent.package_name,
+        description: updatedPackageContent.description,
+        price: parseFloat(updatedPackageContent.price),
+        duration: parseInt(updatedPackageContent.duration),
+      },
+      accommodation: updatedAccommodationIds,
+      destination: updatedDestinationIds,
+    };
+
+    res.json(fullPackage);
   } catch (error) {
     console.error("Error updating package:", error);
     res.status(500).json({
@@ -716,7 +905,7 @@ const addTour = async (req, res) => {
       });
     }
 
-    await pkgDest.addPackageDestination(packageDestinationData);
+    await TourDest.addPackageDestination(packageDestinationData);
 
     // Handle packageAccommodation
     const packageAccommodationData = {
@@ -731,7 +920,7 @@ const addTour = async (req, res) => {
       });
     }
 
-    await pkgAcc.addPackageAccommodation(packageAccommodationData);
+    await TourAcc.addPackageAccommodation(packageAccommodationData);
 
     res.status(201).json({
       success: true,
@@ -846,8 +1035,8 @@ const getTourDetails = async (req, res) => {
     }
 
     // Fetch destinations and accommodations
-    const destinations = await pkgDest.getDestinationsByTourId(id);
-    const accommodations = await pkgAcc.getAccommodationsByTourId(id);
+    const destinations = await TourDest.getDestinationsByTourId(id);
+    const accommodations = await TourAcc.getAccommodationsByTourId(id);
 
     // Combine results
     const response = {
@@ -893,4 +1082,5 @@ module.exports = {
   getPackageDetails,
   deleteTour,
   getTourDetails,
+  getAllPackagesDetails,
 };
