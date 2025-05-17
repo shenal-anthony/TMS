@@ -6,7 +6,7 @@ const {
   addDestination,
   updateDestination,
   deleteDestination,
-  getAllPackages,
+  getPackageDetailsWithTours,
   addPackage,
   updatePackage,
   deletePackage,
@@ -62,7 +62,7 @@ router.patch("/tours/:id", tourMiddleware, updateTour);
 router.delete("/tours/:id", deleteTour);
 
 // packages routes
-router.get("/packages", getAllPackages);
+router.get("/packages", getPackageDetailsWithTours);
 router.get("/detailed_package/:id", getPackageDetails);
 router.get("/package/:id", getPackage);
 router.get("/related_packages/:id", getPackage);

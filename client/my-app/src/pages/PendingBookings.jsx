@@ -80,19 +80,22 @@ const PendingBookings = () => {
   };
 
   const handleAssignGuide = (bookingId, guideId) => {
-    axios
-      .put(`${apiUrl}/api/bookings/${bookingId}/assign`, { guideId })
-      .then(() => {
-        const updated = { ...groupedBookings };
-        delete updated[bookingId];
-        setGroupedBookings(updated);
-        // Remove from selectedIds if it was selected
-        setSelectedIds((prev) => prev.filter((id) => id !== bookingId));
-        setError(null);
-      })
-      .catch((error) => {
-        setError("Error assigning guide: " + error.message);
-      });
+    if (
+      window.confirm(`Are you sure you want to assign this guide: ${guideId}?`)
+    ) {
+      axios
+        .put(`${apiUrl}/api/bookings/${bookingId}/assign`, { guideId })
+        .then(() => {
+          const updated = { ...groupedBookings };
+          delete updated[bookingId];
+          setGroupedBookings(updated);
+          setSelectedIds((prev) => prev.filter((id) => id !== bookingId));
+          setError(null);
+        })
+        .catch((error) => {
+          setError("Error assigning guide: " + error.message);
+        });
+    }
   };
 
   const handleSelectRow = (bookingId) => {
@@ -182,6 +185,7 @@ const PendingBookings = () => {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             <DatePicker
               label="Start Date"
+   
               value={startDate}
               onChange={(newValue) => setStartDate(newValue)}
               format="YYYY-MM-DD"
@@ -190,6 +194,7 @@ const PendingBookings = () => {
 
             <DatePicker
               label="End Date"
+    
               value={endDate}
               onChange={(newValue) => setEndDate(newValue)}
               format="YYYY-MM-DD"
@@ -287,7 +292,7 @@ const PendingBookings = () => {
                     </Button>
                   </TableCell>
                   <TableCell align="center">Guide ID</TableCell>
-                  <TableCell align="justify">Guide Name</TableCell>
+                  <TableCell align="justify">Available Guide Name</TableCell>
                   <TableCell align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -336,6 +341,7 @@ const PendingBookings = () => {
                         <TableCell align="center">
                           <Button
                             variant="contained"
+                            size="small"
                             onClick={() =>
                               handleAssignGuide(bookingId, booking.guide_id)
                             }

@@ -22,10 +22,38 @@ import {
   Select,
   MenuItem,
   FormHelperText,
+  OutlinedInput,
+  Chip,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import CheckIcon from "@mui/icons-material/Check";
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
+function getStyles(value, selectedValues, theme) {
+  return {
+    fontWeight: selectedValues.includes(value)
+      ? theme.typography.fontWeightMedium
+      : theme.typography.fontWeightRegular,
+    backgroundColor: selectedValues.includes(value)
+      ? theme.palette.action.selected
+      : "inherit",
+  };
+}
 
 const Packages = () => {
+  const theme = useTheme();
   const [packageSortDirection, setPackageSortDirection] = useState("asc");
+  const [nameSortDirection, setNameSortDirection] = useState("asc");
   const [destinations, setDestinations] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [formErrors, setFormErrors] = useState({});
@@ -41,8 +69,9 @@ const Packages = () => {
     description: "",
     price: "",
     duration: "",
-    accommodationId: "",
-    destinationId: "",
+    accommodationIds: [],
+    destinationIds: [],
+    packageId: null,
   });
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -66,10 +95,8 @@ const Packages = () => {
         }
         setPackageLoading(false);
       })
-      .catch((packageError) => {
-        setPackageError(
-          "Error fetching accommodations: " + packageError.message
-        );
+      .catch((error) => {
+        setPackageError("Error fetching accommodations: " + error.message);
         setPackageLoading(false);
       });
   };
@@ -96,14 +123,29 @@ const Packages = () => {
       .get(`${apiUrl}/api/contents/packages`)
       .then((response) => {
         if (Array.isArray(response.data)) {
-          setPackageContents(response.data);
+          const normalizedPackages = response.data.map((item) => ({
+            package_id: item.package.packageId,
+            package_name: item.package.packageName,
+            description: item.package.description,
+            price: parseFloat(item.package.price),
+            duration: item.package.duration,
+            accommodation_ids: item.package.accommodationId
+              ? [item.package.accommodationId]
+              : [],
+            destination_ids: item.package.destinationId
+              ? [item.package.destinationId]
+              : [],
+            accommodation: item.accommodation || {},
+            destination: item.destination || {},
+          }));
+          setPackageContents(normalizedPackages);
         } else {
           setPackageError("Response data is not an array");
         }
         setPackageLoading(false);
       })
-      .catch((packageError) => {
-        setPackageError("Error fetching packages: " + packageError.message);
+      .catch((error) => {
+        setPackageError("Error fetching packages: " + error.message);
         setPackageLoading(false);
       });
   };
@@ -116,8 +158,8 @@ const Packages = () => {
           packageContents.filter((pkg) => pkg.package_id !== id)
         );
       })
-      .catch((packageError) => {
-        setPackageError("Error deleting package: " + packageError.message);
+      .catch((error) => {
+        setPackageError("Error deleting package: " + error.message);
       });
   };
 
@@ -133,20 +175,30 @@ const Packages = () => {
       description: currentPackage.description,
       price: parseFloat(currentPackage.price),
       duration: parseInt(currentPackage.duration),
-      destination_id: currentPackage.destinationId,
-      accommodation_id: currentPackage.accommodationId,
+      destination_ids: currentPackage.destinationIds,
+      accommodation_ids: currentPackage.accommodationIds,
     };
 
     if (isEditingPackage) {
       axios
         .patch(
-          `${apiUrl}/api/contents/packages/${currentPackage.package_id}`,
+          `${apiUrl}/api/contents/packages/${currentPackage.packageId}`,
           packageData
         )
         .then((response) => {
           setPackageContents(
             packageContents.map((pkg) =>
-              pkg.package_id === currentPackage.package_id ? response.data : pkg
+              pkg.package_id === currentPackage.packageId
+                ? {
+                    ...pkg,
+                    package_name: response.data.package_name,
+                    description: response.data.description,
+                    price: response.data.price,
+                    duration: response.data.duration,
+                    accommodation_ids: response.data.accommodation_ids,
+                    destination_ids: response.data.destination_ids,
+                  }
+                : pkg
             )
           );
           setOpenPackageDialog(false);
@@ -163,7 +215,20 @@ const Packages = () => {
       axios
         .post(`${apiUrl}/api/contents/packages`, packageData)
         .then((response) => {
-          setPackageContents([...packageContents, response.data]);
+          setPackageContents([
+            ...packageContents,
+            {
+              package_id: response.data.package_id,
+              package_name: response.data.package_name,
+              description: response.data.description,
+              price: response.data.price,
+              duration: response.data.duration,
+              accommodation_ids: response.data.accommodation_ids,
+              destination_ids: response.data.destination_ids,
+              accommodation: {},
+              destination: {},
+            },
+          ]);
           setOpenPackageDialog(false);
           resetPackageForm();
           setFormErrors({});
@@ -179,13 +244,13 @@ const Packages = () => {
 
   const handleEditPackage = (pkg) => {
     setCurrentPackage({
-      package_id: pkg.package_id,
+      packageId: pkg.package_id,
       packageName: pkg.package_name,
       description: pkg.description,
       price: pkg.price,
       duration: pkg.duration,
-      accommodationId: pkg.accommodation_id,
-      destinationId: pkg.destination_id,
+      accommodationIds: pkg.accommodation_ids,
+      destinationIds: pkg.destination_ids,
     });
     setIsEditingPackage(true);
     setOpenPackageDialog(true);
@@ -218,16 +283,22 @@ const Packages = () => {
       errors.duration = "Duration is required";
     } else if (isNaN(currentPackage.duration)) {
       errors.duration = "Duration must be a number";
-    } else if (currentPackage.duration <= 0) {
+    } else if (currentPackage.duration <= 30) {
       errors.duration = "Duration must be at least 30 minutes";
     }
 
-    if (!currentPackage.destinationId) {
-      errors.destinationId = "Please select a destination";
+    if (
+      !currentPackage.destinationIds ||
+      currentPackage.destinationIds.length === 0
+    ) {
+      errors.destinationIds = "Please select at least one destination";
     }
 
-    if (!currentPackage.accommodationId) {
-      errors.accommodationId = "Please select an accommodation";
+    if (
+      !currentPackage.accommodationIds ||
+      currentPackage.accommodationIds.length === 0
+    ) {
+      errors.accommodationIds = "Please select at least one accommodation";
     }
 
     return errors;
@@ -239,8 +310,9 @@ const Packages = () => {
       description: "",
       price: "",
       duration: "",
-      accommodationId: "",
-      destinationId: "",
+      accommodationIds: [],
+      destinationIds: [],
+      packageId: null,
     });
     setIsEditingPackage(false);
   };
@@ -262,6 +334,60 @@ const Packages = () => {
     });
     setPackageContents(sorted);
     setPackageSortDirection(packageSortDirection === "asc" ? "desc" : "asc");
+  };
+
+  const sortPackagesByName = () => {
+    const sorted = [...packageContents].sort((a, b) => {
+      if (nameSortDirection === "asc") {
+        return a.package_name.localeCompare(b.package_name);
+      } else {
+        return b.package_name.localeCompare(a.package_name);
+      }
+    });
+    setPackageContents(sorted);
+    setNameSortDirection(nameSortDirection === "asc" ? "desc" : "asc");
+  };
+
+  const getDestinationNames = (destinationIds, destinations) => {
+    if (!destinationIds || destinationIds.length === 0) return "N/A";
+    return destinationIds
+      .map((id) => {
+        const dest = destinations.find((d) => d.destination_id === id);
+        return dest ? dest.destination_name : "Unknown";
+      })
+      .join(", ");
+  };
+
+  const getAccommodationNames = (accommodationIds, accommodations) => {
+    if (!accommodationIds || accommodationIds.length === 0) return "N/A";
+    return accommodationIds
+      .map((id) => {
+        const acc = accommodations.find((a) => a.accommodation_id === id);
+        return acc ? acc.accommodation_name : "Unknown";
+      })
+      .join(", ");
+  };
+
+  const handleDestinationChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setCurrentPackage({
+      ...currentPackage,
+      destinationIds: typeof value === "string" ? value.split(",") : value,
+    });
+    validatePackageForm();
+  };
+
+  const handleAccommodationChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setCurrentPackage({
+      ...currentPackage,
+      accommodationIds: typeof value === "string" ? value.split(",") : value,
+    });
+    validatePackageForm();
   };
 
   if (packageLoading) return <div>Loading...</div>;
@@ -379,64 +505,144 @@ const Packages = () => {
               />
             </Box>
             <FormControl
-              fullWidth
-              size="small"
+              sx={{ m: 1, width: 300 }}
               margin="dense"
-              error={!!formErrors.destinationId}
+              error={!!formErrors.destinationIds}
             >
-              <InputLabel>Destination *</InputLabel>
+              <InputLabel id="destinations-chip-label">
+                Destinations *
+              </InputLabel>
               <Select
-                value={currentPackage.destinationId || ""}
-                label="Destination *"
-                onChange={(e) =>
-                  setCurrentPackage({
-                    ...currentPackage,
-                    destinationId: e.target.value,
-                  })
+                labelId="destinations-chip-label"
+                id="destinations-chip"
+                multiple
+                value={currentPackage.destinationIds}
+                onChange={handleDestinationChange}
+                input={
+                  <OutlinedInput
+                    id="select-destinations-chip"
+                    label="Destinations *"
+                  />
                 }
+                renderValue={(selected) => (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const dest = destinations.find(
+                        (d) => d.destination_id === value
+                      );
+                      return (
+                        <Chip
+                          key={value}
+                          label={dest ? dest.destination_name : value}
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
+                MenuProps={MenuProps}
               >
                 {destinations.map((destination) => (
                   <MenuItem
                     key={destination.destination_id}
                     value={destination.destination_id}
+                    style={getStyles(
+                      destination.destination_id,
+                      currentPackage.destinationIds,
+                      theme
+                    )}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    {destination.destination_id}. {destination.destination_name}
+                    {currentPackage.destinationIds.includes(
+                      destination.destination_id
+                    ) && (
+                      <CheckIcon
+                        fontSize="small"
+                        color="primary"
+                        sx={{ mr: 1 }}
+                      />
+                    )}
+                    <Typography fontWeight="500">
+                      {destination.destination_name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      (ID: {destination.destination_id})
+                    </Typography>
                   </MenuItem>
                 ))}
               </Select>
-              {formErrors.destinationId && (
-                <FormHelperText>{formErrors.destinationId}</FormHelperText>
+              {formErrors.destinationIds && (
+                <FormHelperText>{formErrors.destinationIds}</FormHelperText>
               )}
             </FormControl>
             <FormControl
-              fullWidth
-              size="small"
+              sx={{ m: 1, width: 300 }}
               margin="dense"
-              error={!!formErrors.accommodationId}
+              error={!!formErrors.accommodationIds}
             >
-              <InputLabel>Accommodation *</InputLabel>
+              <InputLabel id="accommodations-chip-label">
+                Accommodations *
+              </InputLabel>
               <Select
-                value={currentPackage.accommodationId || ""}
-                label="Accommodation *"
-                onChange={(e) =>
-                  setCurrentPackage({
-                    ...currentPackage,
-                    accommodationId: e.target.value,
-                  })
+                labelId="accommodations-chip-label"
+                id="accommodations-chip"
+                multiple
+                value={currentPackage.accommodationIds}
+                onChange={handleAccommodationChange}
+                input={
+                  <OutlinedInput
+                    id="select-accommodations-chip"
+                    label="Accommodations *"
+                  />
                 }
+                renderValue={(selected) => (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const accom = accommodations.find(
+                        (a) => a.accommodation_id === value
+                      );
+                      return (
+                        <Chip
+                          key={value}
+                          label={accom ? accom.accommodation_name : value}
+                        />
+                      );
+                    })}
+                  </Box>
+                )}
+                MenuProps={MenuProps}
               >
                 {accommodations.map((accom) => (
                   <MenuItem
                     key={accom.accommodation_id}
                     value={accom.accommodation_id}
+                    style={getStyles(
+                      accom.accommodation_id,
+                      currentPackage.accommodationIds,
+                      theme
+                    )}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    id:{accom.accommodation_id}. {accom.accommodation_name} -{" "}
-                    {accom.accommodation_type}
+                    {currentPackage.accommodationIds.includes(
+                      accom.accommodation_id
+                    ) && (
+                      <CheckIcon
+                        fontSize="small"
+                        color="primary"
+                        sx={{ mr: 1 }}
+                      />
+                    )}
+                    <Typography fontWeight="500">
+                      {accom.accommodation_name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      (ID: {accom.accommodation_id} — Type:{" "}
+                      {accom.accommodation_type})
+                    </Typography>
                   </MenuItem>
                 ))}
               </Select>
-              {formErrors.accommodationId && (
-                <FormHelperText>{formErrors.accommodationId}</FormHelperText>
+              {formErrors.accommodationIds && (
+                <FormHelperText>{formErrors.accommodationIds}</FormHelperText>
               )}
             </FormControl>
           </Box>
@@ -464,8 +670,8 @@ const Packages = () => {
               !currentPackage.description ||
               !currentPackage.price ||
               !currentPackage.duration ||
-              !currentPackage.destinationId ||
-              !currentPackage.accommodationId
+              currentPackage.destinationIds.length === 0 ||
+              currentPackage.accommodationIds.length === 0
             }
           >
             {isEditingPackage ? "Save Changes" : "Create Package"}
@@ -486,8 +692,17 @@ const Packages = () => {
                   Package ID
                 </Button>
               </TableCell>
-              <TableCell align="center">Package Name</TableCell>
+              <TableCell align="center">
+                <Button
+                  onClick={sortPackagesByName}
+                  endIcon={nameSortDirection === "asc" ? " ⬆️" : " ⬇️"}
+                >
+                  Package Name
+                </Button>
+              </TableCell>
               <TableCell align="center">Duration</TableCell>
+              <TableCell align="center">Destinations</TableCell>
+              <TableCell align="center">Accommodations</TableCell>
               <TableCell align="center">Action</TableCell>
             </TableRow>
           </TableHead>
@@ -513,6 +728,15 @@ const Packages = () => {
                     <TableCell align="center">{pkg.package_id}</TableCell>
                     <TableCell align="center">{pkg.package_name}</TableCell>
                     <TableCell align="center">{pkg.duration}</TableCell>
+                    <TableCell align="center">
+                      {getDestinationNames(pkg.destination_ids, destinations)}
+                    </TableCell>
+                    <TableCell align="center">
+                      {getAccommodationNames(
+                        pkg.accommodation_ids,
+                        accommodations
+                      )}
+                    </TableCell>
                     <TableCell
                       align="center"
                       style={{ display: "flex", justifyContent: "center" }}
@@ -539,7 +763,7 @@ const Packages = () => {
                 ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={7} align="center">
                   No packages found
                 </TableCell>
               </TableRow>

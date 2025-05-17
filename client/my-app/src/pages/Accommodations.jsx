@@ -240,11 +240,9 @@ const Accommodations = () => {
                 <Button
                   onClick={() => handleSort("id")}
                   endIcon={
-                    sortField === "id"
-                      ? sortDirection === "asc"
-                        ? " ⬆️"
-                        : " ⬇️"
-                      : null
+                    sortField === "id" && sortDirection === "asc"
+                      ? " ⬆️"
+                      : " ⬇️"
                   }
                   sx={{ p: 0, textTransform: "none", fontWeight: "bold" }}
                 >
@@ -255,11 +253,9 @@ const Accommodations = () => {
                 <Button
                   onClick={() => handleSort("accommodationName")}
                   endIcon={
-                    sortField === "accommodationName"
-                      ? sortDirection === "asc"
-                        ? " ⬆️"
-                        : " ⬇️"
-                      : null
+                    sortField === "accommodationName" && sortDirection === "asc"
+                      ? " ⬆️"
+                      : " ⬇️"
                   }
                   sx={{ p: 0, textTransform: "none", fontWeight: "bold" }}
                 >

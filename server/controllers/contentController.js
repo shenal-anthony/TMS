@@ -167,14 +167,55 @@ const deleteDestination = async (req, res) => {
 
 // packages controller
 // get all
-const getAllPackages = async (req, res) => {
+const getPackageDetailsWithTours = async (req, res) => {
   try {
-    const contents = await pkg.getAllPackages();
-    res.json(contents);
+    // Fetch all packages
+    const packages = await pkg.getAllPackages();
+    if (packages.length === 0) {
+      return res.status(404).json({ error: "No packages found" });
+    }
+
+    // Process each package
+    const responses = await Promise.all(
+      packages.map(async (packageData) => {
+        // Fetch accommodation-related tours
+        const accommodationTours = await pkgAcc.getTourDetailsByAccId(
+          packageData.accommodationId || packageData.accommodation_id
+        );
+
+        // Fetch destination-related tours
+        const destinationTours = await pkgDest.getTourDetailsByDesId(
+          packageData.destinationId || packageData.destination_id
+        );
+
+        // Structure the response for this package
+        return {
+          package: {
+            packageId: packageData.packageId || packageData.package_id,
+            packageName: packageData.packageName || packageData.package_name,
+            description: packageData.description,
+            price: packageData.price,
+            duration: packageData.duration,
+            accommodationId:
+              packageData.accommodation_id,
+            destinationId:
+              packageData.destination_id,
+          },
+          accommodation: accommodationTours || [],
+          destination: destinationTours || [],
+        };
+      })
+    );
+
+    console.log(
+      "🚀 ~ packageController.js ~ getPackageDetailsWithTours ~ responses:",
+      responses
+    );
+
+    res.status(200).json(responses);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching destination", error: error.message });
+    console.error("Error in getPackageDetailsWithTours:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -657,11 +698,14 @@ const addTour = async (req, res) => {
 
     // Create the tour
     const createdTour = await tour.addTour(newTourData);
-    console.log("🚀 ~ contentController.js:662 ~ addTour ~ createdTour:", createdTour);
+    console.log(
+      "🚀 ~ contentController.js:662 ~ addTour ~ createdTour:",
+      createdTour
+    );
 
     // Handle packageDestination
     const packageDestinationData = {
-      tourId: createdTour.tour_id, 
+      tourId: createdTour.tour_id,
       destinationId: body.destination_id,
     };
 
@@ -791,13 +835,45 @@ const getTour = async (req, res) => {
   }
 };
 
+// get tour details
+const getTourDetails = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Fetch tour details
+    const tourData = await tour.getTourById(id);
+    if (!tourData) {
+      return res.status(404).json({ error: "Tour not found" });
+    }
+
+    // Fetch destinations and accommodations
+    const destinations = await pkgDest.getDestinationsByTourId(id);
+    const accommodations = await pkgAcc.getAccommodationsByTourId(id);
+
+    // Combine results
+    const response = {
+      tourData,
+      destinations,
+      accommodations,
+    };
+    console.log(
+      "🚀 ~ contentController.js:804 ~ getTourDetails ~ response:",
+      response
+    );
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error in getTourDetails:", error);
+    res.status(500).json({ error: "Failed to fetch tour details" });
+  }
+};
+
 module.exports = {
   getAllDestinations,
   getDestination,
   addDestination,
   deleteDestination,
   updateDestination,
-  getAllPackages,
+  getPackageDetailsWithTours,
   getPackage,
   addPackage,
   updatePackage,
@@ -816,4 +892,5 @@ module.exports = {
   updateTour,
   getPackageDetails,
   deleteTour,
+  getTourDetails,
 };

@@ -2,7 +2,7 @@ import { createResource, createSignal, For, Show } from "solid-js";
 import axios from "axios";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
-import NewsLetter from "../components/NewsLetter";
+// import NewsLetter from "../components/NewsLetter";
 import Filter from "../components/Filter";
 import { A } from "@solidjs/router";
 
@@ -65,13 +65,13 @@ const Packages = () => {
               <For each={packages()}>
                 {(pkg) => (
                   <A
-                    href={`/package/${pkg.package_id}`}
+                    href={`/package/${pkg.package.packageId}`}
                     class="block h-full" // Important for proper link behavior
                   >
                     {/* Packages Card */}
                     <div class="bg-white rounded-xs overflow-hidden shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
                       <Show
-                        when={pkg.picture_url}
+                        when={pkg.destination.destination_picture_url}
                         fallback={
                           <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
                             <span class="text-gray-500">Loading image...</span>
@@ -81,7 +81,7 @@ const Packages = () => {
                         {/* Image with fixed aspect ratio */}
                         <div class="h-48 overflow-hidden flex-shrink-0">
                           <img
-                            src={pkg.package_id}
+                            src={pkg.package.packageId}
                             onLoad={() => setImageLoaded(true)}
                             classList={{
                               "opacity-0": !imageLoaded(),
@@ -95,21 +95,21 @@ const Packages = () => {
                       {/* Card Content */}
                       <div class="p-6 flex-grow flex flex-col">
                         <h2 class="text-xl font-bold mb-3 line-clamp-1">
-                          {pkg.package_name || (
+                          {pkg.package.packageName || (
                             <span class="text-gray-400 italic">
                               Loading title...
                             </span>
                           )}
                         </h2>
                         <h3 class="text-gray-600 font-semibold mb-4 line-clamp-1 flex-grow">
-                          {pkg.price || "No price available"}
+                          {pkg.package.price || "No price available"}
                         </h3>
                         <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
-                          {pkg.description || "No description available"}
+                          {pkg.package.description || "No description available"}
                         </p>
                         <div class="flex justify-between items-center ">
                           <span class="text-sm text-gray-500 line-clamp-2">
-                            {pkg.duration || "No weather info"}
+                            {pkg.package.duration || "No weather info"}
                           </span>
                           <button class="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">
                             Learn More

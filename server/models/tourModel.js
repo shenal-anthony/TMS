@@ -9,10 +9,35 @@ const getAllTours = async () => {
 
 // get a tour by id
 const getTourById = async (id) => {
-  const query = "SELECT * FROM tours WHERE id = $1";
+  const query = "SELECT * FROM tours WHERE tour_id = $1";
   const result = await pool.query(query, [id]);
   return result.rows[0];
 };
+
+// get tour details by id
+const getTourDetailsById = async (id) => {
+  const query = `
+    SELECT 
+      t.tour_id,
+      t.activity,
+      t.picture_url,
+      d.destination_id,
+      d.destination_name,
+      d.description AS destination_description,
+      a.accommodation_id,
+      a.accommodation_name,
+      a.amenities
+    FROM tours t
+    JOIN package_destinations pd ON t.tour_id = pd.tour_id
+    JOIN destinations d ON pd.destination_id = d.destination_id
+    JOIN package_accommodations pa ON t.tour_id = pa.tour_id
+    JOIN accommodations a ON pa.accommodation_id = a.accommodation_id
+    WHERE t.tour_id = $1;
+  `;
+  const result = await pool.query(query, [id]);
+  console.log("🚀 ~ tourModel.js:36 ~ getTourDetailsById ~ result:", result);
+  return result.rows[0];
+}
 
 // add a new tour
 const addTour = async (newTourData) => {
@@ -181,4 +206,5 @@ module.exports = {
   addTour,
   updateTour,
   deleteTourById,
+  getTourDetailsById,
 };
