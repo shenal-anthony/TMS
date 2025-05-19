@@ -3,6 +3,10 @@ const guide = require("../models/assignedGuideModel");
 const payment = require("../models/paymentModel");
 const user = require("../models/userModel");
 const msg = require("../models/guideResponseModel");
+const pkgDes = require("../models/packageDestinationModel");
+const pkgAcc = require("../models/packageAccommodationModel");
+const tourDes = require("../models/tourDestinationModel");
+const tourAcc = require("../models/tourAccommodationModel");
 
 // get all
 const getAllBookings = async (req, res) => {
@@ -71,9 +75,9 @@ const addBooking = async (req, res) => {
         })(),
       status: body.status || "pending",
       touristId: body.touristId,
-      tourId: body.tourId || 0,
-      userId: body.userId || 0,
-      eventId: body.eventId || 0,
+      tourId: body.tourId,
+      userId: body.userId || 1,
+      eventId: body.eventId || 1,
       // createdAt: new Date(),
       // updatedAt: new Date(),
       // Add any other required fields with appropriate defaults
@@ -393,6 +397,66 @@ const getAllGuideRequests = async (req, res) => {
   }
 };
 
+const getTourIdsByPackageId = async (req, res) => {
+  try {
+    const { packageId } = req.body; // Changed from req.params to req.body for POST
+
+    // Validate packageId
+    if (!packageId) {
+      return res.status(400).json({ message: "packageId is required" });
+    }
+
+    // Get destination_ids from package_destination
+    const destinationIds = await pkgDes.getDestinationIdsByPackageId(packageId);
+
+    // Get accommodation_ids from package_accommodation
+    const accommodationIds = await pkgAcc.getAccommodationIdsByPackageId(
+      packageId
+    );
+
+    // Get tour_ids from tour_destination
+    const tourIdsFromDestinations = await tourDes.getTourIdsByDestinationIds(
+      destinationIds
+    );
+
+    // Get tour_ids from tour_accommodation
+    const tourIdsFromAccommodations =
+      await tourAcc.getTourIdsByAccommodationIds(accommodationIds);
+
+    // Combine and find conjunction (intersection) of tour_ids
+    const allTourIds = tourIdsFromDestinations.filter((tourId) =>
+      tourIdsFromAccommodations.includes(tourId)
+    );
+
+    // console.log(
+    //   "🚀 ~ bookingController.js:421 ~ getTourIdsByPackageId ~ tourIdsFromDestinations:",
+    //   tourIdsFromDestinations
+    // );
+    // console.log(
+    //   "🚀 ~ bookingController.js:406 ~ getTourIdsByPackageId ~ tourIdsFromAccommodations:",
+    //   tourIdsFromAccommodations
+    // );
+    // console.log(
+    //   "🚀 ~ bookingController.js:406 ~ getTourIdsByPackageId ~ allTourIds:",
+    //   allTourIds
+    // );
+
+    // Return the result
+    if (allTourIds.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No tours found for this package." });
+    }
+
+    return res.status(200).json({
+      package_id: packageId,
+      tour_ids: allTourIds,
+    });
+  } catch (error) {
+    console.error("Error fetching tour IDs:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 module.exports = {
   getAllBookings,
@@ -405,4 +469,5 @@ module.exports = {
   getFinalizedBookingById,
   sendRequestToGuide,
   getAllGuideRequests,
+  getTourIdsByPackageId,
 };

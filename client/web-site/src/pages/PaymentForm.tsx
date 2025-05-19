@@ -7,6 +7,19 @@ import { useNavigate } from "@solidjs/router";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
+// Predefined payment details for validation
+const PREDEFINED_PAYMENT_DETAILS = {
+  credit: {
+    cardNumber: "4242424242424242",
+    expiry: "12/25",
+    cvv: "123",
+  },
+  bank: {
+    bankName: "Sample Bank",
+    accountNumber: "9876543210",
+  },
+};
+
 function PaymentForm() {
   const navigate = useNavigate();
   const [phase, setPhase] = createSignal(1);
@@ -17,7 +30,7 @@ function PaymentForm() {
       email: "",
       nicNumber: "",
       contactNumber: "",
-      country: "Sri Lanka", // Default value
+      country: "Sri Lanka",
       addressLine1: "",
       addressLine2: "",
       city: "",
@@ -25,6 +38,7 @@ function PaymentForm() {
     },
     payment: {
       method: "credit",
+      paymentType: "full",
       cardNumber: "",
       expiry: "",
       cvv: "",
@@ -39,22 +53,25 @@ function PaymentForm() {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
   const [verifiedBookingData, setVerifiedBookingData] = createSignal<{
-    price?: number;
+    price?: string;
     pkgId?: number;
     headcount?: number;
     startDate?: string;
   }>({});
+  const [tourId, setTourId] = createSignal<number | null>(null); // Store the fetched tour_id
   const [encryptedBookingData, setEncryptedBookingData] = createSignal<{
     token?: string;
     touristId?: number;
   }>({});
   const [encryptedPaymentData, setEncryptedPaymentData] = createSignal<{
+    paidAmount?: string;
     token?: string;
     paymentId?: string;
     amount?: number;
     paymentDate?: string;
     status?: string;
     bookingId?: number;
+    paymentType?: string;
   }>({});
   const steps = [
     { number: 1, title: "Tourist Details" },
@@ -79,12 +96,38 @@ function PaymentForm() {
         throw new Error(verify.data.message || "Invalid token");
       }
 
-      // Store verified booking data in state
       setVerifiedBookingData({
+        price: verify.data.price,
         pkgId: verify.data.pkgId,
         headcount: verify.data.headcount,
         startDate: verify.data.startDate,
       });
+
+      // Fetch tour_id based on pkgId
+      if (verify.data.pkgId) {
+        try {
+          const tourResponse = await axios.post(
+            `${apiUrl}/api/bookings/tour_by_package`,
+            {
+              packageId: verify.data.pkgId,
+            }
+          );
+
+          if (
+            tourResponse.data.tour_ids &&
+            tourResponse.data.tour_ids.length > 0
+          ) {
+            setTourId(tourResponse.data.tour_ids[0]); // Use the first tour_id
+          } else {
+            throw new Error("No tours found for this package.");
+          }
+        } catch (tourErr) {
+          console.error("Failed to fetch tour ID:", tourErr);
+          setError("Unable to fetch tour details. Please try again later.");
+          navigate("/packages");
+          return;
+        }
+      }
 
       const savedData = loadFormData();
       if (savedData) {
@@ -104,18 +147,15 @@ function PaymentForm() {
     }
   });
 
-  // Save form data to sessionStorage
   const saveFormData = (data: any) => {
     sessionStorage.setItem("bookingFormData", JSON.stringify(data));
   };
 
-  // Load form data from sessionStorage
   const loadFormData = () => {
     const saved = sessionStorage.getItem("bookingFormData");
     return saved ? JSON.parse(saved) : null;
   };
 
-  // Handle input changes
   const handleInputChange = (
     section: "tourist" | "payment",
     field: string,
@@ -129,12 +169,11 @@ function PaymentForm() {
           [field]: value,
         },
       };
-      saveFormData(newData); // Auto-save on every change
+      saveFormData(newData);
       return newData;
     });
   };
 
-  // Submit each phase to API using Axios
   const submitPhase = async () => {
     setLoading(true);
     setError("");
@@ -146,7 +185,7 @@ function PaymentForm() {
       let confirmResponse: AxiosResponse<any, any>;
 
       switch (phase()) {
-        case 1: // Registration
+        case 1:
           endpoint = `${apiUrl}/api/tourists/register`;
           payload = formData().tourist;
 
@@ -156,17 +195,14 @@ function PaymentForm() {
             if (regResponse.data.success) {
               alert("Registration successful!");
 
-
-
-              // Use verified booking data from state
               const bookingPayload = {
                 touristId: regResponse.data.touristId,
                 pkgId: verifiedBookingData().pkgId,
                 headcount: verifiedBookingData().headcount,
                 bookingDate: verifiedBookingData().startDate,
-                tourId: 1, // Example tourId, replace with actual
-                userId: 3, // Example userId, replace with actual
-                eventId: 1, // Example eventId, replace with actual
+                tourId: tourId(),
+                userId: 1, // default
+                eventId: 1, // default
               };
 
               const bookingResponse = await axios.post(
@@ -200,12 +236,56 @@ function PaymentForm() {
           }
           return;
 
-        case 2: // Payment
+        case 2:
+          const paymentMethod = formData().payment.method;
+          const paymentType = formData().payment.paymentType;
+          if (!paymentType) {
+            setError("Please select a payment type (Full or Half).");
+            setLoading(false);
+            return;
+          }
+
+          if (paymentMethod === "credit") {
+            const { cardNumber, expiry, cvv } = formData().payment;
+            const predefined = PREDEFINED_PAYMENT_DETAILS.credit;
+            if (
+              cardNumber !== predefined.cardNumber ||
+              expiry !== predefined.expiry ||
+              cvv !== predefined.cvv
+            ) {
+              setError(
+                "Invalid credit card details. Please use the predefined card details."
+              );
+              setLoading(false);
+              return;
+            }
+          } else if (paymentMethod === "bank") {
+            const { bankName, accountNumber } = formData().payment;
+            const predefined = PREDEFINED_PAYMENT_DETAILS.bank;
+            if (
+              bankName !== predefined.bankName ||
+              accountNumber !== predefined.accountNumber
+            ) {
+              setError(
+                "Invalid bank details. Please use the predefined bank details."
+              );
+              setLoading(false);
+              return;
+            }
+          }
+
+          const price = Number(verifiedBookingData().price ?? 0);
+          const headcount = Number(verifiedBookingData().headcount ?? 0);
+          const totalPrice = price * headcount;
+          const amount = paymentType === "full" ? totalPrice : totalPrice * 0.5;
+
           endpoint = `${apiUrl}/api/tourists/payment`;
           payload = {
             token: encryptedBookingData().token,
-            method: formData().payment.method,
-            ...(formData().payment.method === "credit"
+            method: paymentMethod,
+            paymentType,
+            amount,
+            ...(paymentMethod === "credit"
               ? {
                   cardNumber: formData().payment.cardNumber,
                   expiry: formData().payment.expiry,
@@ -223,25 +303,33 @@ function PaymentForm() {
             setEncryptedPaymentData({
               paymentId: paymentResponse.data.paymentId,
               amount: paymentResponse.data.amount,
+              paidAmount: paymentResponse.data.paidAmount,
               paymentDate: paymentResponse.data.paymentDate,
               status: paymentResponse.data.status,
               bookingId: paymentResponse.data.bookingId,
+              paymentType,
             });
             setPhase((prev) => prev + 1);
           }
           return;
 
-        case 3: // Confirmation
+        case 3:
           endpoint = `${apiUrl}/api/tourists/confirm-booking`;
           payload = {
             paymentId: encryptedPaymentData().paymentId,
             amount: encryptedPaymentData().amount,
+            paidAmount: encryptedPaymentData().paidAmount,
             paymentDate: encryptedPaymentData().paymentDate,
             status: encryptedPaymentData().status,
             bookingId: encryptedPaymentData().bookingId,
             touristId: encryptedBookingData().touristId,
+            paymentType: encryptedPaymentData().paymentType,
           };
           confirmResponse = await axios.post(endpoint, payload);
+          // console.log(
+          //   "🚀 ~ PaymentForm.tsx:326 ~ submitPhase ~ payload:",
+          //   payload
+          // );
 
           if (confirmResponse.data.success) {
             alert("Booking confirmed! Check your email for details.");
@@ -258,15 +346,12 @@ function PaymentForm() {
         : "Submission failed";
 
       setError(errorMessage);
-
-      // Optional: Log error for debugging
       console.error("Submission error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     await submitPhase();
@@ -278,7 +363,6 @@ function PaymentForm() {
 
       <main class="flex-grow pt-16">
         <div class="max-w-2xl mx-auto container px-4 py-8">
-          {/* Progress Steps */}
           <div class="flex justify-between mb-8">
             {steps.map((step) => (
               <div
@@ -300,19 +384,16 @@ function PaymentForm() {
             ))}
           </div>
 
-          {/* Error Message */}
           {error() && (
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
               {error()}
             </div>
           )}
 
-          {/* Form */}
           <form
             onSubmit={handleSubmit}
-            class="bg-white p-6 rounded-lg shadow-md"
+            class="bg-white p-6 rounded-xs shadow-md"
           >
-            {/* Phase 1: Tourist Details */}
             <Show when={phase() === 1}>
               <h2 class="text-xl font-semibold mb-4">Tourist Information</h2>
               <div class="space-y-4">
@@ -330,7 +411,7 @@ function PaymentForm() {
                           e.target.value
                         )
                       }
-                      class="w-full px-3 py-2 border rounded-md"
+                      class="w-full px-3 py-2 border rounded-xs"
                     />
                   </div>
                   <div>
@@ -342,7 +423,7 @@ function PaymentForm() {
                       onInput={(e) =>
                         handleInputChange("tourist", "lastName", e.target.value)
                       }
-                      class="w-full px-3 py-2 border rounded-md"
+                      class="w-full px-3 py-2 border rounded-xs"
                     />
                   </div>
                 </div>
@@ -357,7 +438,7 @@ function PaymentForm() {
                       onInput={(e) =>
                         handleInputChange("tourist", "email", e.target.value)
                       }
-                      class="w-full px-3 py-2 border rounded-md"
+                      class="w-full px-3 py-2 border rounded-xs"
                     />
                   </div>
                   <div>
@@ -375,7 +456,7 @@ function PaymentForm() {
                           e.target.value
                         )
                       }
-                      class="w-full px-3 py-2 border rounded-md"
+                      class="w-full px-3 py-2 border rounded-xs"
                     />
                   </div>
                 </div>
@@ -389,7 +470,7 @@ function PaymentForm() {
                     onInput={(e) =>
                       handleInputChange("tourist", "nicNumber", e.target.value)
                     }
-                    class="w-full px-3 py-2 border rounded-md"
+                    class="w-full px-3 py-2 border rounded-xs"
                   />
                 </div>
 
@@ -416,7 +497,7 @@ function PaymentForm() {
                         e.target.value
                       )
                     }
-                    class="w-full px-3 py-2 border rounded-md"
+                    class="w-full px-3 py-2 border rounded-xs"
                   />
                 </div>
 
@@ -432,7 +513,7 @@ function PaymentForm() {
                         e.target.value
                       )
                     }
-                    class="w-full px-3 py-2 border rounded-md"
+                    class="w-full px-3 py-2 border rounded-xs"
                   />
                 </div>
 
@@ -446,7 +527,7 @@ function PaymentForm() {
                       onInput={(e) =>
                         handleInputChange("tourist", "city", e.target.value)
                       }
-                      class="w-full px-3 py-2 border rounded-md"
+                      class="w-full px-3 py-2 border rounded-xs"
                     />
                   </div>
                   <div>
@@ -462,24 +543,73 @@ function PaymentForm() {
                           e.target.value
                         )
                       }
-                      class="w-full px-3 py-2 border rounded-md"
+                      class="w-full px-3 py-2 border rounded-xs"
                     />
                   </div>
                 </div>
               </div>
             </Show>
 
-            {/* Phase 2: Payment Method */}
             <Show when={phase() === 2}>
               <h2 class="text-xl font-semibold mb-4">Payment Method</h2>
               <div class="space-y-4">
+                {(() => {
+                  const price = Number(verifiedBookingData().price ?? 0);
+                  const headcount = Number(
+                    verifiedBookingData().headcount ?? 0
+                  );
+                  const totalPrice = price * headcount;
+                  return (
+                    <div class="mb-4">
+                      <p class="text-gray-700">
+                        Total Price: LKR {totalPrice.toFixed(2)}
+                      </p>
+                      <p class="text-gray-700">
+                        Amount to Pay: LKR{" "}
+                        {formData().payment.paymentType === "full"
+                          ? totalPrice.toFixed(2)
+                          : (totalPrice * 0.5).toFixed(2)}
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                <div class="flex space-x-4 mb-4 transition-shadow duration-300">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleInputChange("payment", "paymentType", "full")
+                    }
+                    class={`px-4 py-2 rounded-xs ${
+                      formData().payment.paymentType === "full"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    Full Payment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleInputChange("payment", "paymentType", "half")
+                    }
+                    class={`px-4 py-2 rounded-xs ${
+                      formData().payment.paymentType === "half"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    Half Payment
+                  </button>
+                </div>
+
                 <div class="flex space-x-4 mb-4 transition-shadow duration-300">
                   <button
                     type="button"
                     onClick={() =>
                       handleInputChange("payment", "method", "credit")
                     }
-                    class={`px-4 py-2 rounded-md ${
+                    class={`px-4 py-2 rounded-xs ${
                       formData().payment.method === "credit"
                         ? "bg-blue-600 text-white"
                         : "bg-gray-200"
@@ -492,7 +622,7 @@ function PaymentForm() {
                     onClick={() =>
                       handleInputChange("payment", "method", "bank")
                     }
-                    class={`px-4 py-2 rounded-md ${
+                    class={`px-4 py-2 rounded-xs ${
                       formData().payment.method === "bank"
                         ? "bg-blue-600 text-white"
                         : "bg-gray-200"
@@ -521,7 +651,7 @@ function PaymentForm() {
                             e.target.value
                           )
                         }
-                        class="w-full px-3 py-2 border rounded-md"
+                        class="w-full px-3 py-2 border rounded-xs"
                       />
                     </div>
                     <div class="grid grid-cols-2 gap-4">
@@ -540,7 +670,7 @@ function PaymentForm() {
                               e.target.value
                             )
                           }
-                          class="w-full px-3 py-2 border rounded-md"
+                          class="w-full px-3 py-2 border rounded-xs"
                         />
                       </div>
                       <div>
@@ -553,7 +683,7 @@ function PaymentForm() {
                           onInput={(e) =>
                             handleInputChange("payment", "cvv", e.target.value)
                           }
-                          class="w-full px-3 py-2 border rounded-md"
+                          class="w-full px-3 py-2 border rounded-xs"
                         />
                       </div>
                     </div>
@@ -575,7 +705,7 @@ function PaymentForm() {
                             e.target.value
                           )
                         }
-                        class="w-full px-3 py-2 border rounded-md"
+                        class="w-full px-3 py-2 border rounded-xs"
                       />
                     </div>
                     <div>
@@ -593,7 +723,7 @@ function PaymentForm() {
                             e.target.value
                           )
                         }
-                        class="w-full px-3 py-2 border rounded-md"
+                        class="w-full px-3 py-2 border rounded-xs"
                       />
                     </div>
                   </div>
@@ -601,52 +731,117 @@ function PaymentForm() {
               </div>
             </Show>
 
-            {/* Phase 3: Confirmation */}
             <Show when={phase() === 3}>
-              <h2 class="text-xl font-semibold mb-4">Confirm Your Booking</h2>
-              <div class="bg-blue-50 p-4 rounded-md mb-6">
-                <h3 class="font-medium mb-2">Tourist Information</h3>
-                <p>
-                  Name: {formData().tourist.firstName}{" "}
-                  {formData().tourist.lastName}
-                </p>
-                <p>Email: {formData().tourist.email}</p>
-                <p>contactNumber: {formData().tourist.contactNumber}</p>
-                <p>status: {encryptedPaymentData().status}</p>
+              <h2 class="text-2xl font-semibold mb-6 text-gray-800">
+                Confirm Your Booking
+              </h2>
 
-                <h3 class="font-medium mt-4 mb-2">Payment Details</h3>
-                <Show when={formData().payment.method === "credit"}>
-                  <p>Method: Credit/Debit Card</p>
-                  <p>Card: ****{formData().payment.cardNumber.slice(-4)}</p>
-                  <p>Expires: {formData().payment.expiry}</p>
-                </Show>
-                <Show when={formData().payment.method === "bank"}>
-                  <p>Method: Bank Transfer</p>
-                  <p>Bank: {formData().payment.bankName}</p>
-                  <p>Account: {formData().payment.accountNumber}</p>
-                </Show>
+              <div class="bg-blue-50 p-6 rounded-md shadow-sm space-y-4">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                    Tourist Information
+                  </h3>
+                  <p>
+                    <strong>Name:</strong> {formData().tourist.firstName}{" "}
+                    {formData().tourist.lastName}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {formData().tourist.email}
+                  </p>
+                  <p>
+                    <strong>Contact Number:</strong>{" "}
+                    {formData().tourist.contactNumber}
+                  </p>
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    {encryptedPaymentData().status === "half_paid"
+                      ? "Half Paid"
+                      : encryptedPaymentData().status === "completed"
+                      ? "Completed"
+                      : encryptedPaymentData().status}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                    Payment Details
+                  </h3>
+                  <p>
+                    <strong>Payment Type:</strong>{" "}
+                    {encryptedPaymentData().paymentType === "full"
+                      ? "Full Payment"
+                      : "Half Payment"}
+                  </p>
+                  <p>
+                    <strong>Total Amount:</strong> LKR{" "}
+                    {encryptedPaymentData().amount}
+                  </p>
+
+                  <Show when={encryptedPaymentData().status === "half_paid"}>
+                    <p class="text-sm text-gray-600 italic">
+                      * Please note: The remaining balance will be settled at
+                      the end of the tour.
+                    </p>
+                  </Show>
+
+                  <p>
+                    <strong>Paid Amount:</strong> LKR{" "}
+                    {encryptedPaymentData().paidAmount}
+                  </p>
+
+                  <Show when={formData().payment.method === "credit"}>
+                    <p>
+                      <strong>Method:</strong> Credit/Debit Card
+                    </p>
+                    <p>
+                      <strong>Card:</strong> ****
+                      {formData().payment.cardNumber.slice(-4)}
+                    </p>
+                    <p>
+                      <strong>Expires:</strong> {formData().payment.expiry}
+                    </p>
+                  </Show>
+
+                  <Show when={formData().payment.method === "bank"}>
+                    <p>
+                      <strong>Method:</strong> Bank Transfer
+                    </p>
+                    <p>
+                      <strong>Bank:</strong> {formData().payment.bankName}
+                    </p>
+                    <p>
+                      <strong>Account:</strong>{" "}
+                      {formData().payment.accountNumber}
+                    </p>
+                  </Show>
+                </div>
               </div>
 
-              <div class="mb-4">
-                <label class="flex items-start">
-                  <input type="checkbox" required class="mt-1 mr-2" />
-                  <span class="text-sm">
-                    I confirm all information is correct and agree to the{" "}
+              <div class="mt-6">
+                <label class="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    required
+                    class="mt-1 accent-blue-600"
+                  />
+                  <span class="text-sm text-gray-700">
+                    I confirm that all information provided is accurate and I
+                    agree to the{" "}
                     <a href="/terms" class="text-blue-600 hover:underline">
                       Terms and Conditions
                     </a>
+                    .
                   </span>
                 </label>
               </div>
             </Show>
 
-            {/* Navigation Buttons */}
             <div class="flex justify-between mt-8">
               <Show when={phase() > 1}>
                 <button
                   type="button"
                   onClick={() => setPhase((prev) => prev - 1)}
-                  class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                  class="px-4 py-2 bg-gray-200 rounded-xs hover:bg-gray-300"
                   disabled={loading()}
                 >
                   Back
@@ -655,7 +850,7 @@ function PaymentForm() {
               <div class="ml-auto">
                 <button
                   type="submit"
-                  class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  class="px-6 py-2 bg-blue-600 text-white rounded-xs hover:bg-blue-700 disabled:opacity-50"
                   disabled={loading()}
                 >
                   {loading() ? (

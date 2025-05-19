@@ -162,7 +162,7 @@ const updatePackageDestination = async (packageId, destinationIds) => {
 };
 
 // Get package IDs by destination IDs
-async function getPackageIdsByDestinations(destinationIds) {
+const getPackageIdsByDestinations = async (destinationIds) => {
   if (!destinationIds.length) return [];
   const query = `
     SELECT DISTINCT package_id
@@ -170,8 +170,19 @@ async function getPackageIdsByDestinations(destinationIds) {
     WHERE destination_id = ANY($1)
   `;
   const result = await pool.query(query, [destinationIds]);
-  return result.rows.map(row => row.package_id);
-}
+  return result.rows.map((row) => row.package_id);
+};
+
+const getDestinationIdsByPackageId = async (packageId) => {
+  if (!packageId) return [];
+  const query = `
+    SELECT DISTINCT destination_id
+    FROM packages_destinations
+    WHERE package_id = $1
+  `;
+  const result = await pool.query(query, [packageId]);
+  return result.rows.map((row) => row.destination_id);
+};
 
 module.exports = {
   addPackageDestination,
@@ -179,4 +190,5 @@ module.exports = {
   updatePackageDestination,
   getDestinationDestailsByPackageId,
   getPackageIdsByDestinations,
+  getDestinationIdsByPackageId,
 };

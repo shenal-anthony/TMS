@@ -97,7 +97,7 @@ const getAccommodationDetailsByPackageId = async (packageId) => {
     WHERE pa.package_id = $1;
   `;
   const result = await pool.query(query, [packageId]);
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     accommodation_id: row.accommodation_id,
     accommodation_name: row.accommodation_name,
     location_url: row.location_url,
@@ -106,7 +106,7 @@ const getAccommodationDetailsByPackageId = async (packageId) => {
     amenities: row.amenities,
     updated_at: row.updated_at,
     service_url: row.service_url,
-    accommodation_type: row.accommodation_type
+    accommodation_type: row.accommodation_type,
   }));
 };
 
@@ -161,7 +161,10 @@ const updatePackageAccommodation = async (packageId, accommodationIds) => {
     `;
     const insertValues = [packageId, ...accommodationIds];
     const result = await client.query(insertQuery, insertValues);
-    console.log("🚀 ~ packageAccommodationModel.js:133 ~ updatePackageAccommodation ~ insertValues:", insertValues);
+    console.log(
+      "🚀 ~ packageAccommodationModel.js:133 ~ updatePackageAccommodation ~ insertValues:",
+      insertValues
+    );
 
     await client.query("COMMIT");
     return result.rows; // Return all inserted rows
@@ -175,7 +178,7 @@ const updatePackageAccommodation = async (packageId, accommodationIds) => {
 };
 
 // Get package IDs by accommodation IDs
-async function getPackageIdsByAccommodations(accommodationIds) {
+const getPackageIdsByAccommodations = async (accommodationIds) => {
   if (!accommodationIds.length) return [];
   const query = `
     SELECT DISTINCT package_id
@@ -183,13 +186,26 @@ async function getPackageIdsByAccommodations(accommodationIds) {
     WHERE accommodation_id = ANY($1)
   `;
   const result = await pool.query(query, [accommodationIds]);
-  return result.rows.map(row => row.package_id);
-}
+  return result.rows.map((row) => row.package_id);
+};
+
+const getAccommodationIdsByPackageId = async (packageId) => {
+  if (!packageId) return [];
+  const query = `
+    SELECT DISTINCT accommodation_id
+    FROM packages_accommodations
+    WHERE package_id = $1
+  `;
+  const result = await pool.query(query, [packageId]);
+  return result.rows.map((row) => row.accommodation_id);
+};
 
 module.exports = {
   addPackageAccommodation,
   getAccommodationsByPackageId,
   updatePackageAccommodation,
   getAccommodationDetailsByPackageId,
-  getPackageIdsByAccommodations
+  getPackageIdsByAccommodations,
+  getAccommodationIdsByPackageId,
 };
+

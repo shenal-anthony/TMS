@@ -165,7 +165,7 @@ function BookingConfiguration() {
                 <div class="grid md:grid-cols-2 gap-8">
                   {/* Package Details Section */}
                   <div>
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div class="bg-white p-6 rounded-xs shadow-md mb-6">
                       <h2 class="text-xl font-semibold mb-4">
                         Package Details
                       </h2>
@@ -174,16 +174,12 @@ function BookingConfiguration() {
                         {details().duration}
                       </p>
                       <p class="mb-2">
-                        <span class="font-medium">Accommodation:</span>{" "}
-                        {details().accommodation}
-                      </p>
-                      <p class="mb-2">
-                        <span class="font-medium">Price per person:</span> $
+                        <span class="font-medium">Price per person:</span> LKR 
                         {details().price}
                       </p>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="bg-white p-6 rounded-xs shadow-md">
                       <h2 class="text-xl font-semibold mb-4">
                         What happens next?
                       </h2>
@@ -200,7 +196,7 @@ function BookingConfiguration() {
                   </div>
 
                   {/* Booking Form Section */}
-                  <div class="bg-white p-6 rounded-lg shadow-md">
+                  <div class="bg-white p-6 rounded-xs shadow-md">
                     <h2 class="text-xl font-semibold mb-4">
                       Booking Information
                     </h2>
@@ -215,7 +211,7 @@ function BookingConfiguration() {
                             onClick={() =>
                               setState("headcount", (c) => Math.max(1, c - 1))
                             }
-                            class="bg-gray-200 px-3 py-1 rounded-l-md"
+                            class="bg-gray-200 px-3 py-1 rounded-xs-xs"
                           >
                             -
                           </button>
@@ -225,18 +221,18 @@ function BookingConfiguration() {
                           <button
                             type="button"
                             onClick={() => setState("headcount", (c) => c + 1)}
-                            class="bg-gray-200 px-3 py-1 rounded-r-md"
+                            class="bg-gray-200 px-3 py-1 rounded-xs-xs"
                           >
                             +
                           </button>
                         </div>
                       </div>
 
-                      <div class="mb-6 p-4 bg-blue-50 rounded-md">
+                      <div class="mb-6 p-4 bg-blue-50 rounded-xs">
                         <p class="font-medium">Total Price:</p>
-                        <p class="text-2xl font-bold">${totalPrice()}</p>
+                        <p class="text-2xl font-bold">LKR {totalPrice()}</p>
                         <p class="text-sm text-gray-600">
-                          (50% deposit required: $
+                          (50% deposit required: LKR 
                           {(totalPrice() * 0.5).toFixed(2)})
                         </p>
                       </div>
@@ -266,14 +262,14 @@ function BookingConfiguration() {
                       <div class="space-y-4">
                         <button
                           type="submit"
-                          class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium transition-colors"
+                          class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xs font-medium transition-colors"
                         >
                           Checkout Now
                         </button>
                         <button
                           type="button"
                           onClick={handleAddToCart}
-                          class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-4 rounded-md font-medium transition-colors"
+                          class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-4 rounded-xs font-medium transition-colors"
                         >
                           Add to Cart
                         </button>

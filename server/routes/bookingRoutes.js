@@ -4,7 +4,6 @@ const { encryptResponse } = require("../middlewares/encryptResponse");
 const {
   getAvailableGuidesByFilter,
   addGuideToBooking,
-  changeGuideStatus,
   getGuideRequests,
   deleteGuideRequest,
 } = require("../controllers/guideController");
@@ -18,6 +17,7 @@ const {
   getFinalizedBookingById,
   sendRequestToGuide,
   getAllGuideRequests,
+getTourIdsByPackageId
 } = require("../controllers/bookingController");
 const {
   getPkgBookingKeyDetails,
@@ -41,6 +41,8 @@ router.post("/verify-token", getVerifiedBookingToken);
 router.post("/configured-booking", getVerifiedCheckoutDetails);
 router.post("/filtered-pending", getAvailableGuidesByFilter);
 router.post("/sendrequest/:id", sendRequestToGuide);
+router.post("/tour_by_package", getTourIdsByPackageId);
+// router.get("/feasible-dates/:id", getFeasibleDates);
 
 router.patch("/:id", updateBooking);
 

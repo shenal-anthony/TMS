@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const payment = require("../models/paymentModel");
 const tourist = require("../models/touristModel");
 const nodemailer = require("nodemailer");
+const sanitizeHtml = require("sanitize-html");
 require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET_02;
@@ -156,7 +157,6 @@ const getVerifiedCheckoutDetails = async (req, res) => {
 };
 
 // --- Controller Methods ---
-
 // Get package details & generate booking key
 const getPkgBookingKeyDetails = async (req, res) => {
   const { packageId, date } = req.body;
@@ -276,32 +276,61 @@ const getPkgDetails = async (req, res) => {
 };
 
 const sendEmailToTourist = async (req, res) => {
-  const { bookingId, paymentId, amount, paymentDate, touristId } = req.body;
+  const {
+    bookingId,
+    paymentId,
+    amount,
+    paymentDate,
+    touristId,
+    paymentType,
+    status,
+    paidAmount,
+  } = req.body;
+  console.log(
+    "🚀 ~ websiteController.js:279 ~ sendEmailToTourist ~ req.body:",
+    req.body
+  );
 
   try {
-    // Validate required fields
-    if (
-      !bookingId ||
-      !paymentId ||
-      amount === undefined ||
-      !paymentDate ||
-      touristId === undefined
-    ) {
+    // Validate and sanitize required fields
+    const requiredFields = {
+      bookingId,
+      paymentId,
+      amount,
+      paymentDate,
+      touristId,
+      paymentType,
+    };
+    const missingFields = Object.keys(requiredFields).filter(
+      (key) => requiredFields[key] === undefined || requiredFields[key] === null
+    );
+
+    if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
-        missingFields: {
-          bookingId: !bookingId,
-          paymentId: !paymentId,
-          amount: amount === undefined,
-          paymentDate: !paymentDate,
-          touristId: touristId === undefined,
-        },
+        missingFields: missingFields.reduce(
+          (acc, field) => ({ ...acc, [field]: true }),
+          {}
+        ),
+      });
+    }
+
+    // Sanitize inputs
+    const sanitizedBookingId = sanitizeHtml(bookingId);
+    const sanitizedPaymentId = sanitizeHtml(paymentId);
+    const sanitizedTouristId = sanitizeHtml(touristId.toString());
+
+    // Validate payment type
+    if (!["full", "half"].includes(paymentType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment type. Must be 'full' or 'half'",
       });
     }
 
     // Get and validate payment details
-    const paymentResult = await payment.getPaymentById(paymentId);
+    const paymentResult = await payment.getPaymentById(sanitizedPaymentId);
     if (!paymentResult) {
       return res.status(404).json({
         success: false,
@@ -309,32 +338,45 @@ const sendEmailToTourist = async (req, res) => {
       });
     }
 
-    // Convert dates to consistent format for comparison
-    const submittedDate = new Date(paymentDate).toISOString().split("T")[0];
-    const storedDate = new Date(paymentResult.payment_date)
-      .toISOString()
-      .split("T")[0];
+    // Convert and validate dates
+    const submittedDate = new Date(paymentDate);
+    if (isNaN(submittedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment date format",
+      });
+    }
 
-    if (amount !== paymentResult.amount) {
+    const storedDate = new Date(paymentResult.payment_date);
+    if (
+      submittedDate.toISOString().split("T")[0] !==
+      storedDate.toISOString().split("T")[0]
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment date mismatch",
+        submittedDate: submittedDate.toISOString().split("T")[0],
+        storedDate: storedDate.toISOString().split("T")[0],
+      });
+    }
+
+    // Validate amount
+    const expectedAmount =
+      paymentType === "half"
+        ? Number(paymentResult.amount) * 2
+        : Number(paymentResult.amount);
+    if (Number(amount) !== expectedAmount) {
       return res.status(400).json({
         success: false,
         message: "Payment amount mismatch",
         submittedAmount: amount,
         storedAmount: paymentResult.amount,
-      });
-    }
-
-    if (submittedDate !== storedDate) {
-      return res.status(400).json({
-        success: false,
-        message: "Payment date mismatch",
-        submittedDate,
-        storedDate,
+        expectedAmount: expectedAmount,
       });
     }
 
     // Get and validate tourist details
-    const touristResult = await tourist.getTouristById(touristId);
+    const touristResult = await tourist.getTouristById(sanitizedTouristId);
     if (!touristResult || !touristResult.email_address) {
       return res.status(404).json({
         success: false,
@@ -348,25 +390,23 @@ const sendEmailToTourist = async (req, res) => {
       last_name: touristLastName,
     } = touristResult;
 
-    // Create email transporter with proper error handling
+    // Create email transporter
     let transporter;
     try {
-      console.log(emailUser, appPassword, emailFrom);
       transporter = nodemailer.createTransport({
         service: "gmail",
         host: "smtp.gmail.com",
         port: 587,
         secure: false,
         auth: {
-          user: emailUser,
-          pass: appPassword,
+          user: process.env.EMAIL_USER,
+          pass: process.env.APP_PASSWORD,
         },
         tls: {
           rejectUnauthorized: true,
         },
       });
 
-      // Verify connection configuration
       await transporter.verify();
     } catch (transportError) {
       console.error("Email transport creation failed:", transportError);
@@ -377,7 +417,7 @@ const sendEmailToTourist = async (req, res) => {
       });
     }
 
-    // Format dates for display
+    // Format dates and amounts
     const formattedPaymentDate = new Date(paymentDate).toLocaleDateString(
       "en-US",
       {
@@ -392,40 +432,145 @@ const sendEmailToTourist = async (req, res) => {
       currency: "LKR",
     }).format(amount);
 
+    const formattedPaidAmount = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "LKR",
+    }).format(paidAmount);
+
+    // Prepare email content based on payment type
+    let paymentDetailsHtml = "";
+    let paymentDetailsText = "";
+
+    if (paymentType === "half") {
+      const remainingAmount = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "LKR",
+      }).format(amount - paidAmount);
+
+      const secondPaymentDate = new Date(paymentDate);
+      secondPaymentDate.setDate(secondPaymentDate.getDate() + 7);
+      const formattedSecondPaymentDate = secondPaymentDate.toLocaleDateString(
+        "en-US",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }
+      );
+
+      paymentDetailsHtml = `
+        <p>You have chosen to pay in installments. You have paid ${formattedPaidAmount} of the total ${formattedAmount}.</p>
+        <p>The remaining ${remainingAmount} is due on ${formattedSecondPaymentDate}.</p>
+        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #856404;">Cancellation Policy</h3>
+          <p>If you cancel your booking, a 10% cancellation fee (${new Intl.NumberFormat(
+            "en-US",
+            {
+              style: "currency",
+              currency: "LKR",
+            }
+          ).format(amount * 0.1)}) will be charged on the total amount.</p>
+        </div>
+      `;
+      paymentDetailsText = `
+You have chosen to pay in installments. You have paid ${formattedPaidAmount} of the total ${formattedAmount}.
+The remaining ${remainingAmount} is due on ${formattedSecondPaymentDate}.
+
+Cancellation Policy:
+If you cancel your booking, a 10% cancellation fee (${new Intl.NumberFormat(
+        "en-US",
+        {
+          style: "currency",
+          currency: "LKR",
+        }
+      ).format(amount * 0.1)}) will be charged on the total amount.
+      `;
+    } else {
+      paymentDetailsHtml = `<p>You have paid the full amount of ${formattedAmount}.</p>`;
+      paymentDetailsText = `You have paid the full amount of ${formattedAmount}.`;
+    }
+
     // Prepare email
     const mailOptions = {
-      from: `Ceylonian Travel Team <${emailFrom}>`,
+      from: `Ceylonian Tours <${
+        process.env.EMAIL_FROM || "noreply@ceyloniantours.com"
+      }>`,
       to: touristEmail,
-      subject: "Your Booking Confirmation",
+      subject: `Your Booking Confirmation - Payment ${
+        paymentType === "full" ? "Completed" : "Partially Paid"
+      }`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2c3e50;">Booking Confirmation</h1>
-          <p>Dear ${touristFirstName} ${touristLastName},</p>
-          <p>Thank you for your booking! Here are your details:</p>
-          
-          <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Booking Summary</h3>
-            <ul style="list-style: none; padding: 0;">
-              <li><strong>Booking ID:</strong> ${bookingId}</li>
-              <li><strong>Payment ID:</strong> ${paymentId}</li>
-              <li><strong>Amount:</strong> ${formattedAmount}</li>
-              <li><strong>Payment Date:</strong> ${formattedPaymentDate}</li>
-            </ul>
-          </div>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+          <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h1 style="color: #1a3c34; text-align: center; margin-bottom: 20px;">Ceylonian Tours</h1>
+            <h2 style="color: #2c3e50;">Booking Confirmation</h2>
+            <p>Dear ${sanitizeHtml(touristFirstName)} ${sanitizeHtml(
+        touristLastName
+      )},</p>
+            <p>Thank you for choosing Ceylonian Tours! We're excited to confirm your booking.</p>
+            
+            <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h3 style="margin-top: 0;">Booking Summary</h3>
+              <ul style="list-style: none; padding: 0;">
+                <li><strong>Booking ID:</strong> ${sanitizedBookingId}</li>
+                <li><strong>Payment ID:</strong> ${sanitizedPaymentId}</li>
+                <li><strong>Amount:</strong> ${formattedAmount}</li>
+                <li><strong>Payment Date:</strong> ${formattedPaymentDate}</li>
+                <li><strong>Status:</strong> ${status}</li>
+              </ul>
+            </div>
 
-          <p>If you have any questions, please contact our support team.</p>
-          <p>Best regards,</p>
-          <p><strong>The Ceylonian Travel Team</strong></p>
+            ${paymentDetailsHtml}
+
+            <div style="margin: 20px 0;">
+              <h3 style="color: #2c3e50;">Contact Us</h3>
+              <p>If you have any questions or need assistance, please don't hesitate to reach out:</p>
+              <ul style="list-style: none; padding: 0;">
+                <li><strong>Email:</strong> support@ceyloniantours.com</li>
+                <li><strong>Phone:</strong> +94 11 234 5678</li>
+                <li><strong>Address:</strong> 123 Galle Road, Colombo 03, Sri Lanka</li>
+                <li><strong>Website:</strong> <a href="https://www.ceyloniantours.com">www.ceyloniantours.com</a></li>
+              </ul>
+            </div>
+
+            <p style="text-align: center; color: #6c757d; font-size: 14px; margin-top: 30px;">
+              &copy; ${new Date().getFullYear()} Ceylonian Tours. All rights reserved.
+            </p>
+          </div>
         </div>
       `,
-      text: `Dear ${touristFirstName} ${touristLastName},\n\nThank you for your booking!\n\nBooking ID: ${bookingId}\nPayment ID: ${paymentId}\nAmount: ${formattedAmount}\nPayment Date: ${formattedPaymentDate}\n\nIf you have any questions, please contact our support team.\n\nBest regards,\nThe Travel Team`,
-      attachments: [], // Add any attachments if needed
+      text: `
+Ceylonian Tours
+Booking Confirmation
+
+Dear ${sanitizeHtml(touristFirstName)} ${sanitizeHtml(touristLastName)},
+
+Thank you for choosing Ceylonian Tours! We're excited to confirm your booking.
+
+Booking Summary:
+Booking ID: ${sanitizedBookingId}
+Payment ID: ${sanitizedPaymentId}
+Amount: ${formattedAmount}
+Payment Date: ${formattedPaymentDate}
+Status: ${status}
+
+${paymentDetailsText}
+
+Contact Us:
+Email: support@ceyloniantours.com
+Phone: +94 11 234 5678
+Address: 123 Galle Road, Colombo 03, Sri Lanka
+Website: https://www.ceyloniantours.com
+
+© ${new Date().getFullYear()} Ceylonian Tours. All rights reserved.
+      `,
+      attachments: [],
     };
 
     // Send email with timeout
     const emailTimeout = setTimeout(() => {
       throw new Error("Email sending timed out");
-    }, 10000); // 10 seconds timeout
+    }, 10000);
 
     const emailResult = await transporter.sendMail(mailOptions);
     clearTimeout(emailTimeout);
@@ -433,8 +578,8 @@ const sendEmailToTourist = async (req, res) => {
     // Log successful email delivery
     console.log(`Email sent to ${touristEmail}`, {
       messageId: emailResult.messageId,
-      bookingId,
-      touristId,
+      bookingId: sanitizedBookingId,
+      touristId: sanitizedTouristId,
     });
 
     return res.json({

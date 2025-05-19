@@ -76,10 +76,22 @@ const getToursByDestinationIds = async (destinationIds) => {
   return result.rows;
 };
 
+const getTourIdsByDestinationIds = async (destinationIds) => {
+  if (!destinationIds.length) return [];
+  const query = `
+    SELECT DISTINCT tour_id
+    FROM tours_destinations
+    WHERE destination_id = ANY($1)
+  `;
+  const result = await pool.query(query, [destinationIds]);
+  return result.rows.map((row) => row.tour_id);
+};
+
 module.exports = {
   addPackageDestination,
   getDestinationsByTourId,
   getTourDetailsByDesId,
   getToursByDestinationIds,
   getTourDestinations,
+  getTourIdsByDestinationIds,
 };

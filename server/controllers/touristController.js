@@ -14,7 +14,8 @@ const getAllTourists = async (req, res) => {
   }
 };
 
-// get by email
+// get by email  
+// do not use this
 const getTourist = async (req, res) => {
   const { id } = req.params;
   try {
@@ -70,13 +71,6 @@ const registerTourist = async (req, res) => {
           message: "NIC number belongs to a different person",
         });
       }
-
-      // 3. Detailed comparison with debugging
-      // console.log(
-      //   "Comparing against",
-      //   existingTourists.length,
-      //   "existing records"
-      // );
 
       const identicalTourist = existingTourists.find((tourist) => {
         const dbRecord = {

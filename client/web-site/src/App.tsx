@@ -11,6 +11,7 @@ import PaymentForm from "./pages/PaymentForm";
 import Contact from "./pages/Contact";
 import Tours from "./pages/Tours";
 import TourDetails from "./pages/TourDetails";
+import Terms from "./pages/Terms";
 
 function App() {
   return (
@@ -28,6 +29,8 @@ function App() {
       <Route path="/events" component={Events} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
+      <Route path="/terms" component={Terms} />
+
     </Router>
   );
 }
