@@ -301,12 +301,6 @@ const getAllPackagesDetails = async (req, res) => {
         accommodations: accommodations.map((acc) => ({
           accommodationId: acc.accommodation_id,
           accommodationName: acc.accommodation_name,
-          locationUrl: acc.location_url,
-          pictureUrl: acc.picture_url,
-          contactNumber: acc.contact_number,
-          amenities: acc.amenities,
-          updatedAt: acc.updated_at,
-          serviceUrl: acc.service_url,
           accommodationType: acc.accommodation_type,
         })),
         destinations: destinations.map((dest) => ({
@@ -441,24 +435,10 @@ const getPackageDetails = async (req, res) => {
       }),
     };
 
-    console.log(
-      "🚀 ~ contentController.js:288 ~ getPackageDetails ~ formattedContent:",
-      formattedContent
-    );
-
-    // Log warning if any coordinates are missing
-    const hasInvalidCoords =
-      formattedContent.accommodations.some(
-        (acc) => acc.latitude === null || acc.longitude === null
-      ) ||
-      formattedContent.destinations.some(
-        (dest) => dest.latitude === null || dest.longitude === null
-      );
-    if (hasInvalidCoords) {
-      console.warn(
-        `Some location URLs for package ID ${id} have invalid or missing coordinates`
-      );
-    }
+    // console.log(
+    //   "🚀 ~ contentController.js:288 ~ getPackageDetails ~ formattedContent:",
+    //   formattedContent
+    // );
 
     res.json(formattedContent);
   } catch (error) {

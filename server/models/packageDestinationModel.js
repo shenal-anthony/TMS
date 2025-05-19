@@ -62,6 +62,7 @@ const getDestinationsByPackageId = async (packageId) => {
   const query = `
     SELECT 
     d.destination_id,
+    d.location_url,
     d.destination_name
     FROM PUBLIC."destinations" d
     JOIN PUBLIC."packages_destinations" pd ON d.destination_id = pd.destination_id

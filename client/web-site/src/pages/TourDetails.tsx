@@ -118,6 +118,7 @@ function TourDetails() {
     <div class="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
       <main class="flex-grow pt-16">
+        {/* hero section  */}
         <div class="relative w-screen h-90 overflow-hidden rounded-xs -mx-[calc(50vw-50%)]">
           <div class="absolute inset-0 bg-gradient-to-b from-black to-gray-800 opacity-70 z-10" />
           <div class="relative w-full h-full">
@@ -142,7 +143,7 @@ function TourDetails() {
                 {tourData()?.tourData?.activity}
               </h1>
               <p class="text-lg text-white opacity-90">
-                {tourData()?.destinations[0]?.destination_name || "Explore"}
+                {"Explore"}
               </p>
             </div>
           </div>
