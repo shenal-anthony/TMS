@@ -193,24 +193,17 @@ const getPackageDetailsWithTours = async (req, res) => {
         // Structure the response for this package
         return {
           package: {
-            packageId: packageData.packageId || packageData.package_id,
-            packageName: packageData.packageName || packageData.package_name,
+            packageId: packageData.package_id,
+            packageName: packageData.package_name,
             description: packageData.description,
             price: packageData.price,
             duration: packageData.duration,
-            accommodationId: packageData.accommodation_id,
-            destinationId: packageData.destination_id,
           },
           accommodation: accommodationTours || [],
           destination: destinationTours || [],
         };
       })
     );
-
-    // console.log(
-    //   "🚀 ~ packageController.js ~ getPackageDetailsWithTours ~ responses:",
-    //   responses
-    // );
 
     res.status(200).json(responses);
   } catch (error) {
@@ -225,40 +218,115 @@ const getAllPackagesDetails = async (req, res) => {
     // Fetch all packages
     const packages = await pkg.getAllPackages();
 
-    // Build response by fetching accommodations and destinations for each package
-    const response = await Promise.all(
+    if (!packages.length) {
+      return res.json([]);
+    }
+
+    // Fetch accommodations and destinations for all packages
+    const packageDetails = await Promise.all(
       packages.map(async (pkg) => {
-        // Fetch accommodations
         const accommodations = await pkgAcc.getAccommodationsByPackageId(
           pkg.package_id
         );
-
-        // Fetch destinations
         const destinations = await pkgDest.getDestinationsByPackageId(
           pkg.package_id
         );
-
-        // Construct package object
         return {
-          package: {
-            packageId: pkg.package_id,
-            packageName: pkg.package_name,
-            description: pkg.description,
-            price: parseFloat(pkg.price),
-            duration: pkg.duration,
-          },
-          accommodation: accommodations,
-          destination: destinations,
+          package: pkg,
+          accommodations,
+          destinations,
         };
+      })
+    );
+
+    // Collect all accommodation and destination IDs
+    const accommodationIds = new Set();
+    const destinationIds = new Set();
+    packageDetails.forEach(({ accommodations, destinations }) => {
+      accommodations.forEach((acc) =>
+        accommodationIds.add(acc.accommodation_id)
+      );
+      destinations.forEach((dest) => destinationIds.add(dest.destination_id));
+    });
+
+    // Fetch all tours in two queries
+    const toursByAcc = await TourAcc.getToursByAccommodationIds([
+      ...accommodationIds,
+    ]);
+    const toursByDest = await TourDest.getToursByDestinationIds([
+      ...destinationIds,
+    ]);
+
+    // Organize tours by package
+    const toursByPackage = {};
+    packageDetails.forEach(({ package: pkg, accommodations, destinations }) => {
+      const packageId = pkg.package_id;
+      toursByPackage[packageId] = new Map();
+
+      // Add tours from accommodations
+      accommodations.forEach((acc) => {
+        toursByAcc
+          .filter((tour) => tour.accommodation_id === acc.accommodation_id)
+          .forEach((tour) => {
+            toursByPackage[packageId].set(tour.tour_id, {
+              tourId: tour.tour_id,
+              pictureUrl: tour.picture_url,
+            });
+          });
+      });
+
+      // Add tours from destinations
+      destinations.forEach((dest) => {
+        toursByDest
+          .filter((tour) => tour.destination_id === dest.destination_id)
+          .forEach((tour) => {
+            toursByPackage[packageId].set(tour.tour_id, {
+              tourId: tour.tour_id,
+              pictureUrl: tour.picture_url,
+            });
+          });
+      });
+    });
+
+    // Build response
+    const response = packageDetails.map(
+      ({ package: pkg, accommodations, destinations }) => ({
+        package: {
+          packageId: pkg.package_id,
+          packageName: pkg.package_name,
+          description: pkg.description,
+          price: parseFloat(pkg.price),
+          duration: parseInt(pkg.duration),
+        },
+        accommodations: accommodations.map((acc) => ({
+          accommodationId: acc.accommodation_id,
+          accommodationName: acc.accommodation_name,
+          locationUrl: acc.location_url,
+          pictureUrl: acc.picture_url,
+          contactNumber: acc.contact_number,
+          amenities: acc.amenities,
+          updatedAt: acc.updated_at,
+          serviceUrl: acc.service_url,
+          accommodationType: acc.accommodation_type,
+        })),
+        destinations: destinations.map((dest) => ({
+          destinationId: dest.destination_id,
+          destinationName: dest.destination_name,
+          description: dest.description,
+          locationUrl: dest.location_url,
+          pictureUrl: dest.picture_url,
+        })),
+        tours: [...(toursByPackage[pkg.package_id] || new Map()).values()],
       })
     );
 
     res.json(response);
   } catch (error) {
-    console.error("Error fetching packages:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching packages", error: error.message });
+    console.error("Error fetching all package details:", error);
+    res.status(500).json({
+      message: "Error fetching all package details",
+      error: error.message,
+    });
   }
 };
 
@@ -278,33 +346,132 @@ const getPackage = async (req, res) => {
   }
 };
 
+// get related pacakges
+const getRelatedPackages = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Validate tour_id
+    const tourId = parseInt(id, 10);
+    if (isNaN(tourId)) {
+      return res.status(400).json({ error: "Invalid tour_id" });
+    }
+
+    // Step 1: Get destination and accommodation IDs for the tour
+    const [destinationIds, accommodationIds] = await Promise.all([
+      TourDest.getTourDestinations(tourId),
+      TourAcc.getTourAccommodations(tourId),
+    ]);
+
+    // Step 2: Get package IDs from destinations and accommodations
+    const [destPackageIds, accPackageIds] = await Promise.all([
+      pkgDest.getPackageIdsByDestinations(destinationIds),
+      pkgAcc.getPackageIdsByAccommodations(accommodationIds),
+    ]);
+
+    // Step 3: Get package IDs present in both destinations and accommodations
+    const packageIds = destPackageIds.filter((id) =>
+      accPackageIds.includes(id)
+    );
+
+    // Step 4: Get package details
+    const packages = await pkg.getPackagesByIds(packageIds);
+
+    // Return response
+    res.status(200).json({ packages });
+  } catch (error) {
+    console.error("Error fetching related packages:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 // get package details
 const getPackageDetails = async (req, res) => {
   const { id } = req.params;
+
   try {
-    const content = await pkg.getPackageDetailsById(id);
-    if (!content) {
-      return res.status(404).json({ message: "package not found" });
+    // Validate ID
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: "Invalid package ID" });
     }
 
-    // Extract lat/lon from location_url
-    const coords = extractLatLonFromUrl(content.location_url);
-    if (!coords) {
-      return res.status(400).json({ message: "Invalid location_url format" });
+    // Fetch package details
+    const packageData = await pkg.getPackageById(id);
+
+    // Fetch accommodations and destinations
+    const accommodations = await pkgAcc.getAccommodationDetailsByPackageId(id);
+    const destinations = await pkgDest.getDestinationDestailsByPackageId(id);
+
+    // Format response to match getAllPackagesDetails
+    const formattedContent = {
+      package: {
+        packageId: packageData.package_id,
+        packageName: packageData.package_name,
+        description: packageData.description,
+        price: parseFloat(packageData.price),
+        duration: parseInt(packageData.duration),
+      },
+      accommodations: accommodations.map((acc) => {
+        const coords = extractLatLonFromUrl(acc.location_url);
+        return {
+          accommodationId: acc.accommodation_id,
+          accommodationName: acc.accommodation_name,
+          locationUrl: acc.location_url,
+          pictureUrl: acc.picture_url,
+          contactNumber: acc.contact_number,
+          amenities: acc.amenities,
+          updatedAt: acc.updated_at,
+          serviceUrl: acc.service_url,
+          accommodationType: acc.accommodation_type,
+          latitude: coords ? coords.lat : null,
+          longitude: coords ? coords.lon : null,
+        };
+      }),
+      destinations: destinations.map((dest) => {
+        const coords = extractLatLonFromUrl(dest.location_url);
+        return {
+          destinationId: dest.destination_id,
+          destinationName: dest.destination_name,
+          description: dest.description,
+          locationUrl: dest.location_url,
+          pictureUrl: dest.picture_url,
+          latitude: coords ? coords.lat : null,
+          longitude: coords ? coords.lon : null,
+        };
+      }),
+    };
+
+    console.log(
+      "🚀 ~ contentController.js:288 ~ getPackageDetails ~ formattedContent:",
+      formattedContent
+    );
+
+    // Log warning if any coordinates are missing
+    const hasInvalidCoords =
+      formattedContent.accommodations.some(
+        (acc) => acc.latitude === null || acc.longitude === null
+      ) ||
+      formattedContent.destinations.some(
+        (dest) => dest.latitude === null || dest.longitude === null
+      );
+    if (hasInvalidCoords) {
+      console.warn(
+        `Some location URLs for package ID ${id} have invalid or missing coordinates`
+      );
     }
 
-    content.latitude = coords.lat;
-    content.longitude = coords.lon;
-
-    res.json(content);
-    // console.log(
-    //   "🚀 ~ contentController.js:219 ~ getPackageDetails ~ content:",
-    //   content
-    // );
+    res.json(formattedContent);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching package", error: error.message });
+    console.error(`Error fetching package details for ID ${id}:`, error);
+    if (error.message.includes("not found")) {
+      return res
+        .status(404)
+        .json({ message: `Package with ID ${id} not found` });
+    }
+    res.status(500).json({
+      message: "Error fetching package details",
+      error: error.message,
+    });
   }
 };
 
@@ -396,9 +563,6 @@ const addPackage = async (req, res) => {
       description: body.description.trim(),
       price: parseFloat(body.price),
       duration: parseInt(body.duration),
-      // Use the first accommodation and destination as defaults for the packages table
-      accommodationId: accommodationIds[0], // Optional: Remove if not needed
-      destinationId: destinationIds[0], // Optional: Remove if not needed
     };
 
     // Create the package
@@ -518,7 +682,6 @@ const updatePackage = async (req, res) => {
           .status(400)
           .json({ message: "At least one valid accommodation ID is required" });
       }
-      updatedPackageData.accommodationId = accommodationIds[0]; // Use first ID for packages table
     }
 
     // Validate and update destination_ids (array or comma-separated string)
@@ -539,7 +702,6 @@ const updatePackage = async (req, res) => {
           .status(400)
           .json({ message: "At least one valid destination ID is required" });
       }
-      updatedPackageData.destinationId = destinationIds[0]; // Use first ID for packages table
     }
 
     // Ensure at least one field is being updated
@@ -1044,10 +1206,10 @@ const getTourDetails = async (req, res) => {
       destinations,
       accommodations,
     };
-    console.log(
-      "🚀 ~ contentController.js:804 ~ getTourDetails ~ response:",
-      response
-    );
+    // console.log(
+    //   "🚀 ~ contentController.js:804 ~ getTourDetails ~ response:",
+    //   response
+    // );
 
     res.json(response);
   } catch (error) {
@@ -1083,4 +1245,5 @@ module.exports = {
   deleteTour,
   getTourDetails,
   getAllPackagesDetails,
+  getRelatedPackages,
 };

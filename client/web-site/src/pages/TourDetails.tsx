@@ -10,8 +10,10 @@ import { useParams, useNavigate, A } from "@solidjs/router";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import axios from "axios";
+import image from "../assets/IMG20230629104331.jpg";
 
 const apiUrl = import.meta.env.VITE_API_URL;
+const defaultImage = image;
 
 function TourDetails() {
   const params = useParams();
@@ -24,6 +26,7 @@ function TourDetails() {
   >({});
 
   let scrollContainerRef: HTMLDivElement | undefined;
+  let packagesScrollContainerRef: HTMLDivElement | undefined;
 
   const scrollHorizontally = (e: WheelEvent) => {
     const container = e.currentTarget as HTMLElement;
@@ -43,7 +46,7 @@ function TourDetails() {
       const res = await axios.get(
         `${apiUrl}/api/contents/related_packages/${params.id}`
       );
-      return Array.isArray(res.data) ? res.data : [];
+      return Array.isArray(res.data.packages) ? res.data.packages : [];
     } catch (error) {
       console.error("Error fetching related packages:", error);
       return [];
@@ -85,31 +88,30 @@ function TourDetails() {
   };
 
   onMount(() => {
-    if (scrollContainerRef) {
-      const container = scrollContainerRef;
+    const containers = [scrollContainerRef, packagesScrollContainerRef];
+    containers.forEach((container) => {
+      if (container) {
+        const handleWheel = (e: WheelEvent) => {
+          const atStart = container.scrollLeft === 0;
+          const atEnd =
+            container.scrollLeft + container.clientWidth >=
+            container.scrollWidth;
+          const scrollingRight = e.deltaY > 0;
+          const scrollingLeft = e.deltaY < 0;
 
-      const handleWheel = (e: WheelEvent) => {
-        const atStart = container.scrollLeft === 0;
-        const atEnd =
-          container.scrollLeft + container.clientWidth >= container.scrollWidth;
-        const scrollingRight = e.deltaY > 0;
-        const scrollingLeft = e.deltaY < 0;
+          const shouldScrollHorizontally =
+            (scrollingRight && !atEnd) || (scrollingLeft && !atStart);
 
-        const shouldScrollHorizontally =
-          (scrollingRight && !atEnd) || (scrollingLeft && !atStart);
+          if (shouldScrollHorizontally) {
+            e.preventDefault();
+            container.scrollLeft += e.deltaY;
+          }
+        };
 
-        if (shouldScrollHorizontally) {
-          e.preventDefault();
-          container.scrollLeft += e.deltaY;
-        }
-        // else: vertical scroll allowed
-      };
-
-      container.addEventListener("wheel", handleWheel, { passive: false });
-
-      // Optional cleanup
-      return () => container.removeEventListener("wheel", handleWheel);
-    }
+        container.addEventListener("wheel", handleWheel, { passive: false });
+        return () => container.removeEventListener("wheel", handleWheel);
+      }
+    });
   });
 
   return (
@@ -236,7 +238,6 @@ function TourDetails() {
                               </div>
                             )}
                           </For>
-
                           <Show when={data().destinations.length === 1}>
                             <div class="bg-gradient-to-tr from-blue-100 to-amber-100 rounded-xs shadow-inner min-w-[380px] max-w-[380px] flex flex-col justify-center items-center p-6 text-center">
                               <h3 class="text-lg font-bold text-gray-800 mb-2">
@@ -302,7 +303,6 @@ function TourDetails() {
                         <For each={data().accommodations}>
                           {(accommodation) => (
                             <div class="w-full bg-yellow-100 rounded-xs shadow-md p-4 hover:shadow-lg transition-shadow flex flex-col sm:flex-row gap-8 justify-center items-center">
-                              {/* Details Square */}
                               <div class="aspect-square w-full sm:w-[300px] flex flex-col justify-around bg-yellow-100 p-4 rounded">
                                 <h3 class="text-xl font-semibold text-left">
                                   {accommodation.accommodation_name}
@@ -339,8 +339,6 @@ function TourDetails() {
                                   </button>
                                 </div>
                               </div>
-
-                              {/* Image Square */}
                               <div class="w-full sm:w-[300px] flex flex-col items-center gap-2">
                                 <div class="aspect-square w-full relative">
                                   <Show
@@ -370,8 +368,6 @@ function TourDetails() {
                                         class="w-full h-full object-cover rounded-xs"
                                       />
                                     </div>
-
-                                    {/* Arrows - Show only if > 1 image */}
                                     <Show
                                       when={
                                         accommodation.picture_urls.length > 1
@@ -398,8 +394,6 @@ function TourDetails() {
                                     </Show>
                                   </Show>
                                 </div>
-
-                                {/* Dot Navigation - Now Below Image */}
                                 <div class="flex justify-center gap-2 mt-1">
                                   <For each={accommodation.picture_urls}>
                                     {(_, index) => (
@@ -437,30 +431,49 @@ function TourDetails() {
                         </p>
                       }
                     >
-                      <div class="space-y-6 max-w-3xl mx-auto">
+                      <div
+                        ref={packagesScrollContainerRef}
+                        onWheel={scrollHorizontally}
+                        class="overflow-x-auto flex gap-6 pb-4 scroll-smooth scrollbar-hide"
+                      >
                         <For each={relatedPackages()}>
                           {(pkg) => (
-                            <div class="bg-yellow-100 rounded-xs shadow-md p-4 hover:shadow-lg transition-shadow flex flex-col sm:flex-row gap-4">
-                              <div class="sm:w-1/2">
-                                <h3 class="text-xl font-semibold">
-                                  {pkg.package_name}
-                                </h3>
-                                <p class="text-gray-600">
-                                  {pkg.description || "N/A"}
-                                </p>
-                                <div class="mt-2">
-                                  <button
-                                    onClick={() =>
-                                      navigate(`/tours/${pkg.package_id}`)
-                                    }
-                                    class="text-blue-500 hover:underline"
-                                  >
-                                    View Package
-                                  </button>
+                            <A
+                              href={`/package/${pkg.package_id}`}
+                              class="min-w-[300px] max-w-[300px] flex flex-col"
+                            >
+                              <div class="bg-yellow-100 rounded-xs shadow-md hover:shadow-lg transition-shadow flex flex-col h-full">
+                                <img
+                                  src={
+                                    pkg.tours?.[0]?.picture_url || defaultImage
+                                  }
+                                  alt={pkg.package_name}
+                                  class="h-40 w-full object-cover rounded-xs"
+                                  loading="lazy"
+                                />
+                                <div class="p-4 flex flex-col flex-grow">
+                                  <h3 class="text-lg font-semibold text-amber-950 mb-2 line-clamp-1">
+                                    {pkg.package_name}
+                                  </h3>
+                                  <p class="text-gray-600 text-sm mb-3 line-clamp-3 flex-grow">
+                                    {pkg.description ||
+                                      "No description available"}
+                                  </p>
+                                  <div class="flex justify-between items-center mt-auto">
+                                    <span class="text-sm font-semibold text-blue-600">
+                                      LKR {Number(pkg.price).toFixed(2)} pp
+                                    </span>
+                                    <A
+                                      href={`/package/${pkg.package_id}`}
+                                      class="text-blue-500 hover:underline text-sm"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      View Package
+                                    </A>
+                                  </div>
                                 </div>
                               </div>
-                              <div class="sm:w-1/2"></div>
-                            </div>
+                            </A>
                           )}
                         </For>
                       </div>
@@ -471,7 +484,6 @@ function TourDetails() {
             </Show>
           </ErrorBoundary>
 
-          {/* Location Preview Dialog */}
           <Show when={showDialog()}>
             <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div class="bg-white rounded-xs p-4 w-11/12 md:w-3/4 lg:w-1/2 max-h-[80vh]">

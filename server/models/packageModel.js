@@ -15,65 +15,16 @@ const getPackageById = async (id) => {
   return result.rows[0];
 };
 
-const getPackageDetailsById = async (id) => {
-  try {
-    const query = `
-      SELECT 
-        p.package_id,
-        p.package_name,
-        p.description AS package_description,
-        p.price,
-        p.duration,
-        p.accommodation_id,
-        p.destination_id, 
-        a.accommodation_name,
-        a.location_url AS accommodation_location_url,
-        a.picture_url AS accommodation_picture_url,
-        a.contact_number,
-        a.amenities,
-        a.updated_at,
-        a.service_url,
-        a.accommodation_type,
-        d.*,
-        d.description AS destination_description
-      FROM packages p
-      JOIN accommodations a ON p.accommodation_id = a.accommodation_id
-      JOIN destinations d ON p.destination_id = d.destination_id
-      WHERE p.package_id = $1;
-    `;
-    const values = [id];
-    const result = await pool.query(query, values);
-
-    if (!result.rows[0]) {
-      throw new Error("Package not found");
-    }
-
-    return result.rows[0];
-  } catch (error) {
-    console.error("Database error:", error);
-    throw new Error("Error fetching package details");
-  }
-};
-
 const addPackage = async (packageData) => {
-  const {
-    packageName,
-    description,
-    price,
-    duration,
-    accommodationId,
-    destinationId,
-  } = packageData;
+  const { packageName, description, price, duration } = packageData;
 
   const query = `INSERT INTO packages (package_name,
-  description, price, duration, accommodation_id, destination_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`;
+  description, price, duration) VALUES ($1, $2, $3, $4) RETURNING *;`;
   const values = [
     packageName, // $1
     description, // $2
     price, // $3
     duration, // $4
-    accommodationId, // $5
-    destinationId, // $6
   ];
   const result = await pool.query(query, values);
   return result.rows[0];
@@ -100,12 +51,6 @@ const updatePackageById = async (id, packageData) => {
           break;
         case "duration":
           column = "duration";
-          break;
-        case "destinationId":
-          column = "destination_id";
-          break;
-        case "accommodationId":
-          column = "accommodation_id";
           break;
         default:
           continue; // Skip unrecognized fields
@@ -140,11 +85,23 @@ const deletePackageById = async (id) => {
   await pool.query(query, [id]);
 };
 
+// Get package details by package IDs
+async function getPackagesByIds(packageIds) {
+  if (!packageIds.length) return [];
+  const query = `
+    SELECT package_id, package_name, description, price, duration
+    FROM packages
+    WHERE package_id = ANY($1)
+  `;
+  const result = await pool.query(query, [packageIds]);
+  return result.rows;
+}
+
 module.exports = {
   getAllPackages,
   addPackage,
   updatePackageById,
   deletePackageById,
   getPackageById,
-  getPackageDetailsById,
+  getPackagesByIds,
 };

@@ -49,8 +49,37 @@ const getTourDetailsByAccId = async (id) => {
   return result.rows[0];
 };
 
+// Get accommodation IDs for a tour
+async function getTourAccommodations(tourId) {
+  const query = `
+    SELECT accommodation_id
+    FROM tours_accommodations
+    WHERE tour_id = $1
+  `;
+  const result = await pool.query(query, [tourId]);
+  return result.rows.map((row) => row.accommodation_id);
+}
+
+const getToursByAccommodationIds = async (accommodationIds) => {
+  if (!accommodationIds.length) return [];
+  const query = `
+    SELECT 
+      ta.accommodation_id,
+      t.tour_id,
+      t.activity,
+      t.picture_url
+    FROM PUBLIC."tours_accommodations" ta
+    JOIN PUBLIC."tours" t ON ta.tour_id = t.tour_id
+    WHERE ta.accommodation_id = ANY($1);
+  `;
+  const result = await pool.query(query, [accommodationIds]);
+  return result.rows;
+};
+
 module.exports = {
   addPackageAccommodation,
   getAccommodationsByTourId,
   getTourDetailsByAccId,
+  getToursByAccommodationIds,
+  getTourAccommodations,
 };
