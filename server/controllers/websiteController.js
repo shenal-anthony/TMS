@@ -286,10 +286,10 @@ const sendEmailToTourist = async (req, res) => {
     status,
     paidAmount,
   } = req.body;
-  console.log(
-    "🚀 ~ websiteController.js:279 ~ sendEmailToTourist ~ req.body:",
-    req.body
-  );
+  // console.log(
+  // "🚀 ~ websiteController.js:279 ~ sendEmailToTourist ~ req.body:",
+  // req.body
+  // );
 
   try {
     // Validate and sanitize required fields
@@ -508,7 +508,8 @@ If you cancel your booking, a 10% cancellation fee (${new Intl.NumberFormat(
         touristLastName
       )},</p>
             <p>Thank you for choosing Ceylonian Tours! We're excited to confirm your booking.</p>
-            
+            <p style="font-weight: bold; color: #1a3c34;">We’ll contact you soon to discuss your booking details and ensure everything is perfectly arranged!</p>
+
             <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <h3 style="margin-top: 0;">Booking Summary</h3>
               <ul style="list-style: none; padding: 0;">
@@ -545,7 +546,8 @@ Booking Confirmation
 
 Dear ${sanitizeHtml(touristFirstName)} ${sanitizeHtml(touristLastName)},
 
-Thank you for choosing Ceylonian Tours! We're excited to confirm your booking.
+Thank you for choosing Ceylonian Tours! We're thrilled to have you on board for an unforgettable journey.
+We'll contact you soon to discuss your booking details and ensure everything is perfectly arranged!
 
 Booking Summary:
 Booking ID: ${sanitizedBookingId}
@@ -557,9 +559,9 @@ Status: ${status}
 ${paymentDetailsText}
 
 Contact Us:
-Email: support@ceyloniantours.com
-Phone: +94 11 234 5678
-Address: 123 Galle Road, Colombo 03, Sri Lanka
+Email: ceylonian@gmail.com
+Phone: +94 77 123-4567
+Address: 456 Wanderlust Avenue , Negombo, Sri Lanka
 Website: https://www.ceyloniantours.com
 
 © ${new Date().getFullYear()} Ceylonian Tours. All rights reserved.
