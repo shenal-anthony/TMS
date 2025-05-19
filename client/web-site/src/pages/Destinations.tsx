@@ -29,7 +29,6 @@ const CardSkeleton = () => (
 );
 
 const Destinations = () => {
-
   const [destinations] = createResource(async () => {
     try {
       const response = await axios.get(`${apiUrl}/api/contents/destinations`);
@@ -47,8 +46,9 @@ const Destinations = () => {
         <div class="container mx-auto px-4 py-8">
           {/* Header Section */}
           <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold mb-4">Look at our Destinations</h1>
-            {/* <Filter /> */}
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-4 text-center tracking-tight">
+              Look at our Destinations
+            </h1>
           </div>
 
           {/* Destinations Grid */}
@@ -94,7 +94,7 @@ const Destinations = () => {
                       </Show>
 
                       {/* Card Content */}
-                      <div class="p-6 flex-grow flex flex-col">
+                      <div class="p-4 flex-grow flex flex-col">
                         <h2 class="text-xl font-bold mb-3 line-clamp-1">
                           {destination.destination_name || (
                             <span class="text-gray-400 italic">
@@ -102,15 +102,12 @@ const Destinations = () => {
                             </span>
                           )}
                         </h2>
-                        <p class="text-gray-600 mb-4 line-clamp-3 flex-grow">
+                        <p class="text-gray-600 mb-4 line-clamp-3 flex-grow text-justify">
                           {destination.description ||
                             "No description available"}
                         </p>
-                        <div class="flex justify-between items-center ">
-                          <span class="text-sm text-gray-500 line-clamp-2">
-                            {destination.weather_condition || "No weather info"}
-                          </span>
-                          <button class="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">
+                        <div class="flex justify-between text-left ">
+                          <button class="text-blue-600 text-xs hover:text-blue-800 font-medium whitespace-nowrap">
                             Learn More
                           </button>
                         </div>

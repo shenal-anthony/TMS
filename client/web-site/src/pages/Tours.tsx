@@ -32,10 +32,10 @@ function Tours() {
       <Navbar />
       <main class="flex-grow pt-16">
         <div class="container mx-auto px-4 py-8">
-          <h1 class="text-4xl font-extrabold text-gray-800 mb-4 text-center tracking-tight">
+          <h1 class="text-4xl font-extrabold text-gray-800 mb-8 text-center tracking-tight">
             Explore Our Tours
           </h1>
-          <Filter />
+          
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             <Show
               when={tours()}

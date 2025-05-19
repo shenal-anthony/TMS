@@ -49,7 +49,7 @@ function Home() {
 
         {/* Destinations Section */}
         <section class="container mx-auto py-16 px-4">
-          <h2 class="text-4xl font-bold text-center mb-12 text-gray-750">
+          <h2 class="text-4xl font-extrabold text-gray-800 mb-8 text-center tracking-tight">
             Featured Destinations
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -92,7 +92,7 @@ function Home() {
 
         {/* Tours Section */}
         <section class="container mx-auto py-16 px-4">
-          <h2 class="text-4xl font-bold text-center mb-12 text-gray-750">
+          <h2 class="text-4xl font-extrabold text-gray-800 mb-8 text-center tracking-tight">
             Featured Tours
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">

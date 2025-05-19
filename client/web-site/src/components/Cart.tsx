@@ -85,7 +85,7 @@ const Cart = () => {
                               {item.headcount === 1 ? "person" : "people"}
                             </span>
                             <span class="text-gray-600 font-medium">
-                              ${item.price * item.headcount}
+                              LKR {item.price * item.headcount}
                             </span>
                           </div>
                         </div>
@@ -106,7 +106,7 @@ const Cart = () => {
             <div class="border-t p-4 bg-white">
               <div class="flex justify-between font-bold text-lg mb-4">
                 <span>Total:</span>
-                <span>${totalPrice()}</span>
+                <span>LKR {totalPrice()}</span>
               </div>
               <A
                 href="/checkout"
