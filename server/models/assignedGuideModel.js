@@ -21,13 +21,18 @@ const getUnassignedGuidesByPeriod = async (startDate, endDate) => {
   const query = `
       SELECT u.user_id, u.first_name, u.last_name
       FROM users u
-      WHERE u.status = 'Active'
-        AND u.role = 'Guide'
-        AND u.user_id NOT IN (
-          SELECT ag.user_id
-          FROM assigned_guides ag
-          WHERE NOT (ag.end_date < $1 OR ag.start_date > $2)
-        )
+      WHERE 
+      u.user_id NOT IN (
+        SELECT u.user_id
+        FROM users u
+        WHERE NOT (u.leave_end_date < $1 OR u.leave_due_date > $2)
+      )
+      AND u.role = 'Guide'
+      AND u.user_id NOT IN (
+        SELECT ag.user_id
+        FROM assigned_guides ag
+        WHERE NOT (ag.end_date < $1 OR ag.start_date > $2)
+      )
     `;
   const values = [startDate, endDate];
   const result = await pool.query(query, values);

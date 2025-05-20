@@ -7,6 +7,8 @@ const pkgDes = require("../models/packageDestinationModel");
 const pkgAcc = require("../models/packageAccommodationModel");
 const tourDes = require("../models/tourDestinationModel");
 const tourAcc = require("../models/tourAccommodationModel");
+const pkg = require("../models/packageModel");
+const assignedVehicle = require("../models/assignedVehicleModel");
 
 // get all
 const getAllBookings = async (req, res) => {
@@ -155,39 +157,93 @@ const updateBooking = async (req, res) => {
 // get booking with available guides
 const getPendingBookingsWithGuides = async (req, res) => {
   try {
+    // Extract startDate and endDate from query parameters
+    const { startDate, endDate } = req.query;
+
     // Get all pending bookings
-    const pendingBookings = await booking.getPendingBookings();
+    let pendingBookings = await booking.getPendingBookings();
+
+    // Filter bookings by date range if provided
+    if (startDate && endDate) {
+      pendingBookings = pendingBookings.filter((booking) => {
+        const bookingDate = new Date(booking.booking_date);
+        return (
+          bookingDate >= new Date(startDate) && bookingDate <= new Date(endDate)
+        );
+      });
+    }
 
     const allResults = await Promise.all(
       pendingBookings.map(async (booking) => {
-        const { booking_id, booking_date } = booking;
-        const leave_date = new Date(booking_date);
-        leave_date.setDate(leave_date.getDate() + 3); // Adds 3 days to the booking date
+        const { booking_id, booking_date, tour_id } = booking;
 
-        // by default, fetch available guides for booking period
-        const availableGuides = await guide.getUnassignedGuidesByPeriod(
-          booking_date,
-          leave_date
+        // Get destination and accommodation IDs
+        const [destinationIds, accommodationIds] = await Promise.all([
+          tourDes.getTourDestinations(tour_id),
+          tourAcc.getTourAccommodations(tour_id),
+        ]);
+
+        // Get package IDs
+        const [destPackageIds, accPackageIds] = await Promise.all([
+          pkgDes.getPackageIdsByDestinations(destinationIds),
+          pkgAcc.getPackageIdsByAccommodations(accommodationIds),
+        ]);
+
+        // Get common package IDs
+        const packageIds = destPackageIds.filter((id) =>
+          accPackageIds.includes(id)
         );
 
-        return availableGuides.map((guide) => ({
+        // Get package details
+        const packages = await pkg.getPackagesByIds(packageIds);
+        const selectedPackage = packages.length > 0 ? packages[0] : null;
+
+        // Calculate leave_date
+        const bookingDate = new Date(booking_date);
+        let leave_date = new Date(bookingDate);
+        if (selectedPackage && selectedPackage.duration) {
+          leave_date.setDate(bookingDate.getDate() + selectedPackage.duration);
+        } else {
+          leave_date.setDate(bookingDate.getDate() + 3);
+        }
+
+        // Fetch available guides and vehicles
+        const [availableGuides, availableVehicles] = await Promise.all([
+          guide.getUnassignedGuidesByPeriod(booking_date, leave_date),
+          assignedVehicle.getUnassignedVehiclesByPeriod(
+            booking_date,
+            leave_date
+          ),
+        ]);
+
+        // Map guides with available vehicles
+        const combinations = availableGuides.map((guide) => ({
           booking_id,
-          booking_date: booking_date,
+          booking_date,
+          tour_id,
           guide_id: guide.user_id,
           first_name: guide.first_name,
           last_name: guide.last_name,
+          vehicles:
+            availableVehicles.length > 0
+              ? availableVehicles.map((vehicle) => ({
+                  vehicle_id: vehicle.vehicle_id,
+                  brand: vehicle.brand,
+                  model: vehicle.model,
+                  vehicle_type: vehicle.vehicle_type,
+                  
+                }))
+              : [{ vehicle_id: null, brand: "No Vehicle" }],
         }));
+
+        return combinations;
       })
     );
 
-    // Flatten the nested arrays
+    // Flatten the results
     const result = allResults.flat();
-    // console.log(
-    // "🚀 ~ bookingController.js:110 ~ getPendingBookingsWithGuides ~ result:",
-    // result.length
-    // );
 
-    res.json(result);
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching pending bookings with guides:", error);
     res.status(500).json({ message: "Server error", error: error.message });

@@ -8,23 +8,38 @@ const getAssignedVehicles = async () => {
   return result.rows;
 };
 
-// get unassigned guides by start date and end date
-// const getUnassignedGuidesByPeriod = async (startDate, endDate) => {
-//   const query = `
-//       SELECT u.user_id, u.first_name, u.last_name
-//       FROM users u
-//       WHERE u.status = 'Active'
-//         AND u.role = 'Guide'
-//         AND u.user_id NOT IN (
-//           SELECT ag.user_id
-//           FROM assigned_guides ag
-//           WHERE NOT (ag.end_date < $1 OR ag.start_date > $2)
-//         )
-//     `;
-//   const values = [startDate, endDate];
-//   const result = await pool.query(query, values);
-//   return result.rows;
-// };
+const getUnassignedVehiclesByPeriod = async (startDate, endDate) => {
+  try {
+    const query = `
+      SELECT 
+        v.vehicle_id,
+        v.brand,
+        v.model,
+        v.air_condition,
+        v.user_id,
+        v.vehicle_type,
+        v.seat_capacity,
+        v.luggage_capacity
+      FROM vehicles v
+      WHERE v.vehicle_id NOT IN (
+          SELECT v.vehicle_id
+          FROM vehicles v
+          WHERE NOT (v.service_end_date < $1 OR v.service_due_date > $2)
+        ) 
+        AND v.vehicle_id NOT IN (
+          SELECT av.vehicle_id
+          FROM assigned_vehicles av
+          WHERE NOT (av.end_date < $1 OR av.start_date > $2)
+        )
+    `;
+    const values = [startDate, endDate];
+    const result = await pool.query(query, values);
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching unassigned vehicles:", error);
+    throw new Error("Failed to fetch unassigned vehicles");
+  }
+};
 
 // add guide to booking
 const addAssignedVehicle = async (assignedVehicleData) => {
@@ -47,4 +62,5 @@ module.exports = {
   getAssignedVehicles,
   removeAssignedVehicle,
   addAssignedVehicle,
+  getUnassignedVehiclesByPeriod,
 };

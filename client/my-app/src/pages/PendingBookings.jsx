@@ -13,9 +13,9 @@ import {
   Typography,
   Stack,
   Checkbox,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -32,6 +32,7 @@ const PendingBookings = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [sortField, setSortField] = useState("closest");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectedVehicles, setSelectedVehicles] = useState({}); // Track selected vehicle per row
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -55,6 +56,7 @@ const PendingBookings = () => {
       setLoading(true);
       const res = await axios.get(`${apiUrl}/api/bookings/pending`);
       setGroupedBookings(groupByBooking(res.data));
+      setSelectedVehicles({}); // Reset vehicle selections
       setLoading(false);
       setError(null);
     } catch (err) {
@@ -66,11 +68,14 @@ const PendingBookings = () => {
   const fetchFilteredBookings = async (startDate, endDate) => {
     try {
       setLoading(true);
-      const res = await axios.post(`${apiUrl}/api/bookings/filtered-pending`, {
-        startDate,
-        endDate,
+      const res = await axios.get(`${apiUrl}/api/bookings/pending`, {
+        params: {
+          startDate: dayjs(startDate).format("YYYY-MM-DD"),
+          endDate: dayjs(endDate).format("YYYY-MM-DD"),
+        },
       });
       setGroupedBookings(groupByBooking(res.data));
+      setSelectedVehicles({}); // Reset vehicle selections
       setLoading(false);
       setError(null);
     } catch (err) {
@@ -79,21 +84,33 @@ const PendingBookings = () => {
     }
   };
 
-  const handleAssignGuide = (bookingId, guideId) => {
+  const handleAssignGuideAndVehicle = (bookingId, guideId, vehicleId) => {
     if (
-      window.confirm(`Are you sure you want to assign this guide: ${guideId}?`)
+      window.confirm(
+        `Are you sure you want to assign guide ${guideId}${
+          vehicleId ? ` and vehicle ${vehicleId}` : " without a vehicle"
+        }?`
+      )
     ) {
       axios
-        .put(`${apiUrl}/api/bookings/${bookingId}/assign`, { guideId })
+        .put(`${apiUrl}/api/bookings/${bookingId}/assign`, {
+          guideId,
+          vehicleId,
+        })
         .then(() => {
           const updated = { ...groupedBookings };
           delete updated[bookingId];
           setGroupedBookings(updated);
           setSelectedIds((prev) => prev.filter((id) => id !== bookingId));
+          setSelectedVehicles((prev) => {
+            const updated = { ...prev };
+            delete updated[`${bookingId}-${guideId}`];
+            return updated;
+          });
           setError(null);
         })
         .catch((error) => {
-          setError("Error assigning guide: " + error.message);
+          setError("Error assigning guide/vehicle: " + error.message);
         });
     }
   };
@@ -108,10 +125,8 @@ const PendingBookings = () => {
 
   const handleSelectAll = (event) => {
     if (event.target.checked) {
-      // Select all items across all pages
       setSelectedIds(sortedBookingIds);
     } else {
-      // Deselect all
       setSelectedIds([]);
     }
   };
@@ -126,7 +141,6 @@ const PendingBookings = () => {
 
   const sortedBookingIds = Object.keys(groupedBookings).sort((a, b) => {
     const today = new Date();
-
     if (sortField === "booking_id") {
       return sortOrder === "asc" ? a - b : b - a;
     } else if (sortField === "booking_date") {
@@ -140,7 +154,6 @@ const PendingBookings = () => {
       const diffB = Math.abs(today - dateB);
       return sortOrder === "asc" ? diffA - diffB : diffB - diffA;
     }
-
     return 0;
   });
 
@@ -158,14 +171,19 @@ const PendingBookings = () => {
     setPage(0);
   };
 
+  const handleVehicleChange = (bookingId, guideId, vehicleId) => {
+    setSelectedVehicles((prev) => ({
+      ...prev,
+      [`${bookingId}-${guideId}`]: vehicleId === "null" ? null : vehicleId,
+    }));
+  };
+
   const bookingIds = Object.keys(groupedBookings);
 
-  // Check if all items on current page are selected
   const allSelectedOnPage =
     paginatedIds.length > 0 &&
     paginatedIds.every((id) => selectedIds.includes(id));
 
-  // Check if some but not all items on current page are selected
   const someSelectedOnPage =
     paginatedIds.some((id) => selectedIds.includes(id)) && !allSelectedOnPage;
 
@@ -176,7 +194,8 @@ const PendingBookings = () => {
           Pending Bookings
         </Typography>
         <Typography>
-          You've got pending work—assign guides to keep tours on track.
+          You've got pending work—assign guides and vehicles to keep tours on
+          track.
         </Typography>
       </div>
 
@@ -185,16 +204,13 @@ const PendingBookings = () => {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
             <DatePicker
               label="Start Date"
-   
               value={startDate}
               onChange={(newValue) => setStartDate(newValue)}
               format="YYYY-MM-DD"
               slotProps={{ textField: { size: "small" } }}
             />
-
             <DatePicker
               label="End Date"
-    
               value={endDate}
               onChange={(newValue) => setEndDate(newValue)}
               format="YYYY-MM-DD"
@@ -202,7 +218,6 @@ const PendingBookings = () => {
             />
           </div>
 
-          {/* filter buttons  */}
           <div
             style={{
               display: "flex",
@@ -225,7 +240,6 @@ const PendingBookings = () => {
                     setError("Start date cannot be after end date.");
                     return;
                   }
-
                   fetchFilteredBookings(
                     dayjs(startDate).format("YYYY-MM-DD"),
                     dayjs(endDate).format("YYYY-MM-DD")
@@ -235,7 +249,6 @@ const PendingBookings = () => {
                 Filter Bookings
               </Button>
             </div>
-
             <div style={{ minWidth: "154px" }}>
               <Button
                 variant="outlined"
@@ -293,6 +306,7 @@ const PendingBookings = () => {
                   </TableCell>
                   <TableCell align="center">Guide ID</TableCell>
                   <TableCell align="justify">Available Guide Name</TableCell>
+                  <TableCell align="center">Vehicle</TableCell>
                   <TableCell align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -310,7 +324,7 @@ const PendingBookings = () => {
                               page * rowsPerPage) %
                               2 ===
                             0
-                              ? "#f7f8f8" // light gray for even rows
+                              ? "#f7f8f8"
                               : "inherit",
                           "&:hover td": {
                             backgroundColor: "#e3f2fd",
@@ -339,11 +353,82 @@ const PendingBookings = () => {
                           {booking.first_name} {booking.last_name}
                         </TableCell>
                         <TableCell align="center">
+                          <Select
+                            value={
+                              selectedVehicles[
+                                `${bookingId}-${booking.guide_id}`
+                              ] ?? "null"
+                            }
+                            onChange={(e) =>
+                              handleVehicleChange(
+                                bookingId,
+                                booking.guide_id,
+                                e.target.value
+                              )
+                            }
+                            MenuProps={{
+                              PaperProps: {
+                                style: {
+                                  maxHeight: 200, // Limit height to 200px
+                                  overflowY: "auto", // Enable vertical scroll
+                                },
+                              },
+                            }}
+                            size="small"
+                            displayEmpty
+                            sx={{ minWidth: 200, fontSize: "1rem" }}
+                            renderValue={(selected) => {
+                              if (selected === "null") {
+                                return (
+                                  <p
+                                    style={{ color: "#888", fontSize: "small" }}
+                                  >
+                                    No Vehicle
+                                  </p>
+                                );
+                              }
+
+                              const selectedVehicle = booking.vehicles.find(
+                                (v) => v.vehicle_id === selected
+                              );
+
+                              return selectedVehicle ? (
+                                <span>
+                                  {`${selectedVehicle.vehicle_id} - ${selectedVehicle.brand} ${selectedVehicle.model}`}
+                                </span>
+                              ) : (
+                                selected
+                              );
+                            }}
+                          >
+                            <MenuItem value="null">
+                              <p>No Vehicle</p>
+                            </MenuItem>
+                            {booking.vehicles.map((vehicle) => (
+                              <MenuItem
+                                key={vehicle.vehicle_id || "null"}
+                                value={vehicle.vehicle_id || "null"}
+                                sx={{ fontSize: "1rem" }}
+                              >
+                                {vehicle.vehicle_id
+                                  ? `${vehicle.vehicle_id} - ${vehicle.brand} ${vehicle.model} (${vehicle.vehicle_type})`
+                                  : "None"}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </TableCell>
+                        <TableCell align="center">
                           <Button
                             variant="contained"
                             size="small"
                             onClick={() =>
-                              handleAssignGuide(bookingId, booking.guide_id)
+                              handleAssignGuideAndVehicle(
+                                bookingId,
+                                booking.guide_id,
+                                selectedVehicles[
+                                  `${bookingId}-${booking.guide_id}`
+                                ]
+                              )
                             }
                           >
                             Assign
