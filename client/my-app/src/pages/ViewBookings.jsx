@@ -19,13 +19,15 @@ import {
   DialogContentText,
 } from "@mui/material";
 import dayjs from "dayjs";
+import { use } from "react";
 
-const ViewBookings = () => {
+const ViewBookings = ({ userId }) => {
   const [confirmedBookingContents, setConfirmedBookingContents] = useState([]);
   const [finalizedBookingContents, setFinalizedBookingContents] = useState([]);
   const [bookingLoading, setBookingLoading] = useState(true);
   const [finalizedBookingLoading, setFinalizedBookingLoading] = useState(true);
   const [bookingError, setBookingError] = useState(null);
+  const adminId = userId;
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
@@ -81,7 +83,7 @@ const ViewBookings = () => {
     )
       return;
     axios
-      .patch(`${apiUrl}/api/bookings/${bookingId}`, { status: "finalized" })
+      .patch(`${apiUrl}/api/bookings/${bookingId}`, { status: "finalized", userId: adminId })
       .then(() => {
         fetchBookings(); // refresh list
 
@@ -288,7 +290,7 @@ const ViewBookings = () => {
 
                         <TableCell style={{ display: "flex" }} align="center">
                           <Button
-                          size="small"
+                            size="small"
                             variant="contained"
                             color="primary"
                             onClick={() => handleEditBooking(booking)}
@@ -493,7 +495,11 @@ const ViewBookings = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenBookingDialog(false)} color="primary" size="small">
+          <Button
+            onClick={() => setOpenBookingDialog(false)}
+            color="primary"
+            size="small"
+          >
             Cancel
           </Button>
           <Button

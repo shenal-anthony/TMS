@@ -53,7 +53,7 @@ const GuideSidebar = ({ isCollapsed }) => {
         </li>
 
         {/* Feedbacks */}
-        <li>
+        {/* <li>
           <NavLink
             to="/Feedbacks"
             className={({ isActive }) =>
@@ -64,7 +64,7 @@ const GuideSidebar = ({ isCollapsed }) => {
           >
             <RateReviewIcon /> {!isCollapsed && "Feedbacks"}
           </NavLink>
-        </li>
+        </li> */}
 
         {/* Vehicles */}
         <li>

@@ -10,7 +10,7 @@ import PendingBookings from "./pages/PendingBookings";
 import ViewBookings from "./pages/ViewBookings";
 import Admins from "./pages/Admins";
 import Destinations from "./pages/Destinations";
-import Events from "./pages/Events";
+// import Events from "./pages/Events";
 import GuideAvailability from "./pages/GuideAvailability";
 import YourVehicles from "./pages/YourVehicles";
 import ManageVehicles from "./pages/ManageVehicles";
@@ -20,7 +20,7 @@ import GuideLayout from "./layouts/GuideLayout";
 import GuideDashboard from "./pages/GuideDashboard";
 import Tours from "./pages/Tours";
 import GuideReports from "./pages/GuideReports";
-import Feedbacks from "./pages/Feedbacks";
+// import Feedbacks from "./pages/Feedbacks";
 import Packages from "./pages/Packages";
 import Tour from "./pages/Tour";
 
@@ -65,7 +65,12 @@ const App = () => {
               element={<Dashboard userId={authUser?.userId} />}
             />
             <Route path="/bookings/pending" element={<PendingBookings />} />
-            <Route path="/bookings/confirmed" element={<ViewBookings />} />
+            <Route
+              path="/bookings/confirmed"
+              element={
+                <ViewBookings userId={authUser?.userId} role={authUser?.role} />
+              }
+            />
             <Route
               path="/admins"
               element={
@@ -74,7 +79,10 @@ const App = () => {
             />
             <Route path="/contents/destinations" element={<Destinations />} />
             <Route path="/contents/packages" element={<Packages />} />
-            <Route path="/contents/accommodations" element={<Accommodations />} />
+            <Route
+              path="/contents/accommodations"
+              element={<Accommodations />}
+            />
             {/* <Route path="/contents/events" element={<Events />} /> */}
             <Route path="/contents/tour" element={<Tour />} />
             <Route path="/guide-availability" element={<GuideAvailability />} />
@@ -115,10 +123,10 @@ const App = () => {
               path="/Tours"
               element={<Tours userId={authUser?.userId} />}
             />
-            <Route
+            {/* <Route
               path="/Feedbacks"
               element={<Feedbacks userId={authUser?.userId} />}
-            />
+            /> */}
             <Route
               path="/your-vehicles"
               element={<YourVehicles userId={authUser?.userId} />}

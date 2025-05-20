@@ -9,6 +9,7 @@ const tourDes = require("../models/tourDestinationModel");
 const tourAcc = require("../models/tourAccommodationModel");
 const pkg = require("../models/packageModel");
 const assignedVehicle = require("../models/assignedVehicleModel");
+const pool = require("../db");
 
 // get all
 const getAllBookings = async (req, res) => {
@@ -119,38 +120,98 @@ const addBooking = async (req, res) => {
 
 // update
 const updateBooking = async (req, res) => {
-  const { id } = req.params;
-  const { body } = req;
+  const { id } = req.params; // id is bookingId
+  const { status, userId } = req.body;
 
+  // Validate required fields
+  if (!status || !userId) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields: status or userId",
+    });
+  }
+
+  const client = await pool.connect();
   try {
-    // Default values for required fields
-    const bookingData = {
-      headcount: body.headcount,
-      checkInDate: body.bookingDate,
-      checkOutDate: body.checkOutDate,
-      status: body.status,
-      touristId: body.touristId,
-      tourId: body.tourId,
-      userId: body.userId,
-      eventId: body.eventId,
-    };
+    await client.query("BEGIN");
 
-    const updatedBooking = await booking.updateBookingById(id, bookingData);
+    // Update booking with current date as checkOutDate
+    const bookingData = {
+      checkOutDate: new Date(),
+      status,
+      userId,
+    };
+    const updatedBooking = await booking.updateBookingById(
+      id,
+      bookingData,
+      client
+    );
     if (!updatedBooking) {
-      return res.status(404).json({ message: "Booking not found" });
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
     }
 
-    res.status(200).json({
+    // Check payment records
+    const payments = await payment.getPaymentsByBookingId(id, client);
+
+    if (payments.length === 2) {
+      // Verify one payment is 'half_paid' and one is 'pending'
+      const hasHalfPaid = payments.some((p) => p.status === "half_paid");
+      const hasPending = payments.some((p) => p.status === "pending");
+      if (!hasHalfPaid || !hasPending) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "Expected one 'half_paid' and one 'pending' payment",
+        });
+      }
+
+      // Update the 'pending' payment to 'completed'
+      const paymentData = { status: "completed" };
+      const updatedPaymentCount = await payment.updatePaymentById(
+        id,
+        paymentData,
+        client
+      );
+
+      if (updatedPaymentCount !== 1) {
+        await client.query("ROLLBACK");
+        return res.status(500).json({
+          success: false,
+          message: "Error updating pending payment",
+        });
+      }
+    } else if (payments.length === 1) {
+      console.log("Single payment found, skipping payment update");
+    } else if (payments.length > 2) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "Unexpected number of payments",
+      });
+    }
+
+    await client.query("COMMIT");
+    return res.status(200).json({
       success: true,
-      message: "Booking updated successfully",
+      message:
+        payments.length === 2
+          ? "Booking and payment updated successfully"
+          : "Booking updated successfully",
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Error updating booking:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Error updating booking",
       error: error.message,
     });
+  } finally {
+    client.release();
   }
 };
 

@@ -135,6 +135,14 @@ const getUserById = async (id) => {
   return result.rows[0];
 };
 
+// get user by nic
+const getUserByNic = async (nic) => {
+  const query = `SELECT * FROM users WHERE nic_number = $1`;
+  const values = [nic];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
 // get guide by id
 const getGuideById = async (id) => {
   const query = `SELECT * FROM users WHERE user_id = $1 AND role = 'Guide'`;
@@ -224,4 +232,5 @@ module.exports = {
   getGuideCount,
   getUserRoleById,
   updateUserById,
+  getUserByNic,
 };

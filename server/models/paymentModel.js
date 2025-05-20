@@ -19,8 +19,11 @@ const getPaymentsByBookingId = async (id) => {
   const query = `SELECT * FROM payments WHERE booking_id = $1`;
   const values = [id];
   const result = await pool.query(query, values);
-  // console.log("🚀 ~ paymentModel.js:22 ~ getPaymentByBookingId ~ result:", result);
-  return result.rows[0];
+  // console.log(
+  //   "🚀 ~ paymentModel.js:22 ~ getPaymentByBookingId ~ result:",
+  //   result
+  // );
+  return result.rows;
 };
 
 const addPayment = async (paymentData) => {
@@ -31,13 +34,18 @@ const addPayment = async (paymentData) => {
   return result.rows[0];
 };
 
-const updatePaymentById = async (id, paymentData) => {
-  const { packageName, description, price, duration } = paymentData;
-
-  const query = `UPDATE packages SET package_name = $1, description = $2, price = $3, duration = $4 WHERE package_id = $5 RETURNING *;`;
-  const values = [packageName, description, price, duration, id];
+const updatePaymentById = async (ids, paymentData) => {
+  const { status } = paymentData;
+  const query = `
+    UPDATE payments 
+    SET status = $1
+    WHERE payment_id = ANY($2)
+    RETURNING *;
+  `;
+  const values = [status, ids];
+  console.log("🚀 ~ paymentModel.js:46 ~ updatePaymentById ~ values:", values);
   const result = await pool.query(query, values);
-  return result.rows[0];
+  return result.rowCount;
 };
 
 const deletePaymentById = async (id) => {

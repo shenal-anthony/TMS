@@ -75,11 +75,22 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ error: "Passwords do not match" });
     }
 
+    email = email.trim().toLowerCase();
+    nic = nic.trim().toUpperCase(); // NICs are typically uppercase
     firstName = firstName.trim().toLowerCase();
     lastName = lastName.trim().toLowerCase();
-    email = email.trim().toLowerCase();
     address1 = address1.trim().toLowerCase();
     address2 = address2 ? address2.trim().toLowerCase() : "";
+
+    const existingEmailUser = await userModel.findUserByEmail(email);
+    if (existingEmailUser) {
+      return res.status(400).json({ error: "Email is already registered" });
+    }
+
+    const existingNicUser = await userModel.getUserByNic(nic);
+    if (existingNicUser) {
+      return res.status(400).json({ error: "NIC is already registered" });
+    }
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -201,7 +212,8 @@ const editProfile = async (req, res) => {
     // Password change validation (optional)
     if (newPassword || confirmNewPassword) {
       if (!currentPassword) {
-        errors.currentPassword = "Current password is required to change password";
+        errors.currentPassword =
+          "Current password is required to change password";
       }
       if (newPassword !== confirmNewPassword) {
         errors.confirmNewPassword = "New passwords do not match";
@@ -228,7 +240,10 @@ const editProfile = async (req, res) => {
     // Handle password change if requested
     let hashedPassword = existingUser.password;
     if (newPassword && currentPassword) {
-      const isMatch = await bcrypt.compare(currentPassword, existingUser.password);
+      const isMatch = await bcrypt.compare(
+        currentPassword,
+        existingUser.password
+      );
       if (!isMatch) {
         return res.status(400).json({ error: "Current password is incorrect" });
       }
@@ -246,9 +261,12 @@ const editProfile = async (req, res) => {
       ? path.join("/uploads/profile_pics", profileImage.filename)
       : existingUser.profilePicturePath;
 
-    const licenseUrls = licenseFiles.length > 0
-      ? licenseFiles.map(file => path.join("/uploads/tourist_licenses", file.filename))
-      : existingUser.touristLicensePath?.split(",") || [];
+    const licenseUrls =
+      licenseFiles.length > 0
+        ? licenseFiles.map((file) =>
+            path.join("/uploads/tourist_licenses", file.filename)
+          )
+        : existingUser.touristLicensePath?.split(",") || [];
 
     // Update user
     const updatedUser = await userModel.updateUserById(userId, {
@@ -289,7 +307,9 @@ const getUser = async (req, res) => {
       ? `${baseUrl}${user.profile_picture.replace(/\\/g, "/")}`
       : null;
     const touristLicenses = user.tourist_license
-      ? user.tourist_license.split(",").map((path) => `${baseUrl}${path.trim().replace(/\\/g, "/")}`)
+      ? user.tourist_license
+          .split(",")
+          .map((path) => `${baseUrl}${path.trim().replace(/\\/g, "/")}`)
       : [];
 
     res.status(200).json({
