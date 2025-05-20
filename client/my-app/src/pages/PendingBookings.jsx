@@ -56,11 +56,10 @@ const PendingBookings = () => {
       setLoading(true);
       const res = await axios.get(`${apiUrl}/api/bookings/pending`);
       setGroupedBookings(groupByBooking(res.data));
-      setSelectedVehicles({}); // Reset vehicle selections
-      setLoading(false);
-      setError(null);
+      setSelectedVehicles({});
     } catch (err) {
-      setError("Error fetching pending bookings: " + err.message);
+      alert("Error fetching pending bookings: " + err.message);
+    } finally {
       setLoading(false);
     }
   };
@@ -79,7 +78,7 @@ const PendingBookings = () => {
       setLoading(false);
       setError(null);
     } catch (err) {
-      setError("Error fetching filtered bookings: " + err.message);
+      alert("Error fetching filtered bookings: " + err.message);
       setLoading(false);
     }
   };
@@ -110,7 +109,7 @@ const PendingBookings = () => {
           setError(null);
         })
         .catch((error) => {
-          setError("Error assigning guide/vehicle: " + error.message);
+          alert("Error assigning guide/vehicle: " + error.message);
         });
     }
   };

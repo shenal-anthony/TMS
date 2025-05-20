@@ -163,6 +163,11 @@ const getPendingBookingsWithGuides = async (req, res) => {
     // Get all pending bookings
     let pendingBookings = await booking.getPendingBookings();
 
+    // console.log(
+    // "🚀 ~ bookingController.js:165 ~ getPendingBookingsWithGuides ~ pendingBookings:",
+    // pendingBookings.length
+    // );
+
     // Filter bookings by date range if provided
     if (startDate && endDate) {
       pendingBookings = pendingBookings.filter((booking) => {
@@ -216,25 +221,42 @@ const getPendingBookingsWithGuides = async (req, res) => {
           ),
         ]);
 
-        // Map guides with available vehicles
-        const combinations = availableGuides.map((guide) => ({
-          booking_id,
-          booking_date,
-          tour_id,
-          guide_id: guide.user_id,
-          first_name: guide.first_name,
-          last_name: guide.last_name,
-          vehicles:
-            availableVehicles.length > 0
-              ? availableVehicles.map((vehicle) => ({
-                  vehicle_id: vehicle.vehicle_id,
-                  brand: vehicle.brand,
-                  model: vehicle.model,
-                  vehicle_type: vehicle.vehicle_type,
-                  
-                }))
-              : [{ vehicle_id: null, brand: "No Vehicle" }],
-        }));
+        // Prepare vehicles array
+        const vehicles =
+          availableVehicles.length > 0
+            ? availableVehicles.map((vehicle) => ({
+                vehicle_id: vehicle.vehicle_id,
+                brand: vehicle.brand,
+                model: vehicle.model,
+                vehicle_type: vehicle.vehicle_type,
+              }))
+            : [{ vehicle_id: null, brand: "No Vehicle" }];
+
+        // Create combinations
+        let combinations;
+        if (availableGuides.length > 0) {
+          combinations = availableGuides.map((guide) => ({
+            booking_id,
+            booking_date,
+            tour_id,
+            guide_id: guide.user_id,
+            first_name: guide.first_name,
+            last_name: guide.last_name,
+            vehicles,
+          }));
+        } else {
+          combinations = [
+            {
+              booking_id,
+              booking_date,
+              tour_id,
+              guide_id: null,
+              first_name: "No Guide",
+              last_name: "",
+              vehicles,
+            },
+          ];
+        }
 
         return combinations;
       })
@@ -242,6 +264,10 @@ const getPendingBookingsWithGuides = async (req, res) => {
 
     // Flatten the results
     const result = allResults.flat();
+    // console.log(
+    // "🚀 ~ bookingController.js:249 ~ getPendingBookingsWithGuides ~ allResults:",
+    // allResults.length
+    // );
 
     res.status(200).json(result);
   } catch (error) {
@@ -254,10 +280,10 @@ const getPendingBookingsWithGuides = async (req, res) => {
 const getConfirmedBookingsWithGuides = async (req, res) => {
   try {
     const confirmedBookings = await booking.getConfirmedBookings();
-    // console.log(
-    // "🚀 ~ bookingController.js:116 ~ getConfirmedBookingsWithGuides ~ confirmedBookings:",
-    // confirmedBookings.length
-    // );
+    // // console.log(
+    // // "🚀 ~ bookingController.js:116 ~ getConfirmedBookingsWithGuides ~ confirmedBookings:",
+    // // confirmedBookings.length
+    // // );
 
     const result = [];
 
@@ -277,10 +303,10 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
       const assignedGuides = await guide.getAssignedGuidesByBookingId(
         booking_id
       );
-      // console.log(
-      // "🚀 ~ bookingController.js:137 ~ getConfirmedBookingsWithGuides ~ assignedGuides:",
-      // assignedGuides.length
-      // );
+      // // console.log(
+      // // "🚀 ~ bookingController.js:137 ~ getConfirmedBookingsWithGuides ~ assignedGuides:",
+      // // assignedGuides.length
+      // // );
 
       // Get payments
       const rawPayments = await payment.getPaymentsByBookingId(booking_id);
@@ -297,11 +323,11 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
         totalAmount += parseFloat(p.amount) || 0;
       }
 
-      // console.log("🚀 ~ Payments:", payments);
-      // console.log(
-      // "🚀 ~ bookingController.js:151 ~ getConfirmedBookingsWithGuides ~ totalAmount:",
-      // totalAmount
-      // );
+      // // console.log("🚀 ~ Payments:", payments);
+      // // console.log(
+      // // "🚀 ~ bookingController.js:151 ~ getConfirmedBookingsWithGuides ~ totalAmount:",
+      // // totalAmount
+      // // );
 
       for (const guide of assignedGuides) {
         result.push({
@@ -333,10 +359,10 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
 const getFinalizedBookingsWithGuides = async (req, res) => {
   try {
     const finalizedBookings = await booking.getFinalizedBookings();
-    // console.log(
-    // "🚀 ~ bookingController.js:237 ~ getFinalizedBookingsWithGuides ~ confirmedBookings:",
-    // finalizedBookings.length
-    // );
+    // // console.log(
+    // // "🚀 ~ bookingController.js:237 ~ getFinalizedBookingsWithGuides ~ confirmedBookings:",
+    // // finalizedBookings.length
+    // // );
 
     const result = [];
 
@@ -357,10 +383,10 @@ const getFinalizedBookingsWithGuides = async (req, res) => {
       const assignedGuides = await guide.getAssignedGuidesByBookingId(
         booking_id
       );
-      // console.log(
-      // "🚀 ~ bookingController.js:261 ~ getFinalizedBookingsWithGuides ~ assignedGuides:",
-      // assignedGuides.length
-      // );
+      // // console.log(
+      // // "🚀 ~ bookingController.js:261 ~ getFinalizedBookingsWithGuides ~ assignedGuides:",
+      // // assignedGuides.length
+      // // );
 
       // Get payments
       const rawPayments = await payment.getPaymentsByBookingId(booking_id);
@@ -484,18 +510,18 @@ const getTourIdsByPackageId = async (req, res) => {
       tourIdsFromAccommodations.includes(tourId)
     );
 
-    // console.log(
-    //   "🚀 ~ bookingController.js:421 ~ getTourIdsByPackageId ~ tourIdsFromDestinations:",
-    //   tourIdsFromDestinations
-    // );
-    // console.log(
-    //   "🚀 ~ bookingController.js:406 ~ getTourIdsByPackageId ~ tourIdsFromAccommodations:",
-    //   tourIdsFromAccommodations
-    // );
-    // console.log(
-    //   "🚀 ~ bookingController.js:406 ~ getTourIdsByPackageId ~ allTourIds:",
-    //   allTourIds
-    // );
+    // // console.log(
+    // //   "🚀 ~ bookingController.js:421 ~ getTourIdsByPackageId ~ tourIdsFromDestinations:",
+    // //   tourIdsFromDestinations
+    // // );
+    // // console.log(
+    // //   "🚀 ~ bookingController.js:406 ~ getTourIdsByPackageId ~ tourIdsFromAccommodations:",
+    // //   tourIdsFromAccommodations
+    // // );
+    // // console.log(
+    // //   "🚀 ~ bookingController.js:406 ~ getTourIdsByPackageId ~ allTourIds:",
+    // //   allTourIds
+    // // );
 
     // Return the result
     if (allTourIds.length === 0) {

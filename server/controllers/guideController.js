@@ -2,7 +2,12 @@ const user = require("../models/userModel");
 const guide = require("../models/assignedGuideModel");
 const booking = require("../models/bookingModel");
 const msg = require("../models/guideResponseModel");
-// api/guides/
+const tourDes = require("../models/tourDestinationModel");
+const tourAcc = require("../models/tourAccommodationModel");
+const pkgDes = require("../models/packageDestinationModel");
+const pkgAcc = require("../models/packageAccommodationModel");
+const pkg = require("../models/packageModel");
+const assignedVeh = require("../models/assignedVehicleModel");
 
 // Get all guides
 const getAllGuides = async (req, res) => {
@@ -93,7 +98,7 @@ const getAvailableGuidesByFilter = async (req, res) => {
 
 // add guide to a booking
 const addGuideToBooking = async (req, res) => {
-  const { guideId } = req.body;
+  const { guideId, vehicleId } = req.body;
   const bookingId = req.params.bookingId;
 
   if (!guideId || !bookingId) {
@@ -109,9 +114,49 @@ const addGuideToBooking = async (req, res) => {
       return res.status(404).json({ error: "Booking not found." });
     }
 
-    const startDate = new Date(bookingData.booking_date);
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 3); // 3-day duration
+    const { booking_date, tour_id } = bookingData;
+
+    // Get destination and accommodation IDs
+    const [destinationIds, accommodationIds] = await Promise.all([
+      tourDes.getTourDestinations(tour_id),
+      tourAcc.getTourAccommodations(tour_id),
+    ]);
+
+    // Get package IDs
+    const [destPackageIds, accPackageIds] = await Promise.all([
+      pkgDes.getPackageIdsByDestinations(destinationIds),
+      pkgAcc.getPackageIdsByAccommodations(accommodationIds),
+    ]);
+
+    // Get common package IDs
+    const packageIds = destPackageIds.filter((id) =>
+      accPackageIds.includes(id)
+    );
+
+    // Get package details
+    const packages = await pkg.getPackagesByIds(packageIds);
+    console.log(
+      "🚀 ~ guideController.js:138 ~ addGuideToBooking ~ packages:",
+      packages
+    );
+    const selectedPackage = packages.length > 0 ? packages[0] : null;
+
+    console.log(
+      "🚀 ~ guideController.js:114 ~ addGuideToBooking ~ selectedPackage:",
+      selectedPackage
+    );
+
+    // Calculate start_date and end_date
+    const startDate = new Date(booking_date);
+    let endDate = new Date(startDate);
+
+    if (selectedPackage && selectedPackage.duration) {
+      endDate.setDate(startDate.getDate() + selectedPackage.duration);
+    } else {
+      throw new Error(
+        "Package duration is missing. Cannot calculate end date."
+      );
+    }
 
     // Assign guide to booking
     const assignedGuide = await guide.addAssignedGuide({
@@ -120,6 +165,17 @@ const addGuideToBooking = async (req, res) => {
       startDate: startDate.toISOString().split("T")[0],
       endDate: endDate.toISOString().split("T")[0],
     });
+
+    // Assign vehicle to booking if vehicleId is provided
+    let assignedVehicle = null;
+    if (vehicleId) {
+      assignedVehicle = await assignedVeh.addAssignedVehicle({
+        vehicleId,
+        bookingId,
+        startDate: startDate.toISOString().split("T")[0],
+        endDate: endDate.toISOString().split("T")[0],
+      });
+    }
 
     // Update booking status and assigned guide
     const updatedBooking = await booking.updateBookingById(bookingId, {
@@ -134,8 +190,11 @@ const addGuideToBooking = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: "Guide assigned successfully.",
-      data: assignedGuide,
+      message: "Guide and vehicle assigned successfully.",
+      data: {
+        assignedGuide,
+        assignedVehicle,
+      },
     });
   } catch (error) {
     console.error("Error in addGuideToBooking:", error);
