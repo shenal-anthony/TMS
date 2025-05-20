@@ -225,8 +225,7 @@ const ViewBookings = () => {
   return (
     <div>
       <div>
-        {" "}
-        <Typography variant="h4" color="initial">
+        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
           View Bookings
         </Typography>
       </div>
@@ -289,6 +288,7 @@ const ViewBookings = () => {
 
                         <TableCell style={{ display: "flex" }} align="center">
                           <Button
+                          size="small"
                             variant="contained"
                             color="primary"
                             onClick={() => handleEditBooking(booking)}
@@ -296,6 +296,7 @@ const ViewBookings = () => {
                             Update
                           </Button>
                           <Button
+                            size="small"
                             variant="contained"
                             color="success"
                             onClick={() =>
@@ -389,6 +390,7 @@ const ViewBookings = () => {
 
                         <TableCell style={{ display: "flex" }} align="center">
                           <Button
+                            size="small"
                             variant="contained"
                             color="primary"
                             onClick={() => handleViewBooking(booking)}
@@ -491,10 +493,11 @@ const ViewBookings = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenBookingDialog(false)} color="secondary">
+          <Button onClick={() => setOpenBookingDialog(false)} color="primary" size="small">
             Cancel
           </Button>
           <Button
+            size="small"
             onClick={handleBookingUpdate}
             color="primary"
             variant="contained"
@@ -565,6 +568,7 @@ const ViewBookings = () => {
           </DialogContent>
           <DialogActions>
             <Button
+              size="small"
               onClick={() => setOpenFinalizedBookingDialog(false)}
               color="primary"
             >

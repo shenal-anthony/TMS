@@ -13,6 +13,7 @@ import {
   Switch,
   FormControlLabel,
   Checkbox,
+  Typography,
 } from "@mui/material";
 
 const GuideAvailability = () => {
@@ -166,7 +167,7 @@ const GuideAvailability = () => {
   return (
     <div>
       <div className="m-4">
-        <h1>Guide List</h1>
+        <Typography variant="h5" sx={{ fontWeight: "bold" }}>Guide List</Typography>
       </div>
       {/* buttons for bulk actions */}
       <div

@@ -79,7 +79,7 @@ const getVehiclesByUserId = async (userId) => {
 const findAllVehicles = async () => {
   try {
     const query = `
-      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate, status
+      SELECT vehicle_id, brand, model, color, vehicle_type, fuel_type, air_condition, registration_number, number_plate, status, service_due_date, service_end_date, seat_capacity, luggage_capacity
       FROM vehicles;
     `;
     const result = await pool.query(query);
@@ -91,12 +91,25 @@ const findAllVehicles = async () => {
   }
 };
 
-const changeStatusById = async (vehicleId, status) => {
+const changeStatusById = async (
+  vehicleId,
+  status,
+  suspendStartDate,
+  suspendEndDate
+) => {
   try {
     const query = `
-      UPDATE vehicles SET status = $1 WHERE vehicle_id = $2 RETURNING *;
+      UPDATE vehicles 
+      SET status = $1, service_due_date = $2, service_end_date = $3 
+      WHERE vehicle_id = $4 
+      RETURNING *;
     `;
-    const values = [status, vehicleId];
+    const values = [
+      status,
+      suspendStartDate,
+      suspendEndDate,
+      vehicleId,
+    ];
     const result = await pool.query(query, values);
     return result.rows[0];
   } catch (error) {

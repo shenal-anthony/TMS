@@ -87,7 +87,12 @@ const Admins = ({ userId, role }) => {
   return (
     <div>
       <div className="m-2">
-        <h1>Admins List</h1>
+        <Typography variant="h5" sx={{ fontWeight: "bold", pd: 4 }}>
+          Admins List
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}>
+          Here you can view and manage all admins in the system.
+        </Typography>
       </div>
       <TableContainer component={Paper}>
         <Table size="small">

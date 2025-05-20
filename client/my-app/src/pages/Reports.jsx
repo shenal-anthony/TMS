@@ -154,7 +154,7 @@ const Reports = ({ userId }) => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h5" sx={{ fontWeight: "bold", pb: 4 }}>
         Tourist Management Reports
       </Typography>
 

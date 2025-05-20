@@ -94,12 +94,8 @@ const registerVehicle = async (req, res) => {
       seatCapacity: seatCapacityNum,
       luggageCapacity: luggageCapacityNum,
       userId: userData.user_id,
-      vehiclePictureUrl: vehiclePictureUrl
-        ? `${vehiclePictureUrl}`
-        : null,
-      vehicleLicenseUrls: vehicleLicenseUrls
-        .map((url) => `${url}`)
-        .join(","),
+      vehiclePictureUrl: vehiclePictureUrl ? `${vehiclePictureUrl}` : null,
+      vehicleLicenseUrls: vehicleLicenseUrls.map((url) => `${url}`).join(","),
       status: "Functional",
     };
 
@@ -178,7 +174,7 @@ const getAllVehicles = async (req, res) => {
 // Change vehicle status
 const changeVehicleStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, suspend_start_date, suspend_end_date } = req.body;
 
   const validStatuses = ["Functional", "Suspended"];
   if (!validStatuses.includes(status)) {
@@ -187,13 +183,45 @@ const changeVehicleStatus = async (req, res) => {
     });
   }
 
-  try {
-    const updated = await vehicle.changeStatusById(id, status);
-    if (!updated) {
-      return res.status(404).json({ message: "vehicle not found" });
+  // Validate dates when status is Suspended
+  if (status === "Suspended") {
+    if (!suspend_start_date || !suspend_end_date) {
+      return res.status(400).json({
+        message: "Suspension start and end dates are required when status is Suspended",
+      });
     }
 
-    res.json({ message: "Vehicle status updated successfully" });
+    const startDate = new Date(suspend_start_date);
+    const endDate = new Date(suspend_end_date);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({
+        message: "Invalid date format for suspend_start_date or suspend_end_date",
+      });
+    }
+
+    if (endDate < startDate) {
+      return res.status(400).json({
+        message: "Suspension end date cannot be before start date",
+      });
+    }
+  }
+
+  try {
+    const updated = await vehicle.changeStatusById(
+      id,
+      status,
+      suspend_start_date,
+      suspend_end_date
+    );
+    if (!updated) {
+      return res.status(404).json({ message: "Vehicle not found" });
+    }
+
+    res.json({
+      message: "Vehicle status updated successfully",
+      vehicle: updated,
+    });
   } catch (error) {
     console.error("Error updating vehicle status:", error);
     res.status(500).json({

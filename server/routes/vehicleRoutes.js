@@ -6,7 +6,7 @@ const {
   getAllVehicles,
   changeVehicleStatus,
 } = require("../controllers/vehicleController");
-const validateVehicleRegistration = require("../middlewares/validateVehicleRegis");
+// const validateVehicleRegistration = require("../middlewares/validateVehicleRegis");
 const MulterMiddleware = require("../middlewares/uploadMiddleware");
 
 const vehicleRegistrationMiddleware = MulterMiddleware([
