@@ -1,11 +1,18 @@
-// server/routes/adminRoutes.js
-const express = require("express");
+// const express = require("express");
+// const { getDashboardData } = require("../controllers/dashboardController");
+// const { verifyJWT } = require("../middlewares/verifyJWT");
+
+
+// const router = express.Router();
+
+// // Protected Dashboard route
+// router.get("/dashboard", verifyJWT, getDashboardData);
+
+// exports.router = router;
+
+
+import express from "express";
+
 const router = express.Router();
-const { getAllAdmins, deleteAdmin } = require("../controllers/adminController");
 
-// Route to get all admins
-router.get("/", getAllAdmins);
-router.delete("/:id", deleteAdmin);
-
-
-module.exports = router;
+export default router;

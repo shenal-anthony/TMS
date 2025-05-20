@@ -1,49 +1,34 @@
 import { useState } from "react";
+import { registerUser } from "../state/authService";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   TextField,
   Button,
-  FormControlLabel,
-  Checkbox,
-  Typography,
-  MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Container,
-  Box,
+  Typography,
+  Card,
+  MenuItem,
 } from "@mui/material";
 
 const RegisterVehicleForm = () => {
-  const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
   const [formData, setFormData] = useState({
-    email: "",
+    ownerName: "",
     brand: "",
     model: "",
     vehicleColor: "",
-    vehicleType: "van",
-    fuelType: "petrol",
-    airCondition: true,
+    vehicleType: "Van",
+    fuelType: "Petrol",
+    airCondition: "Yes",
     registrationNumber: "",
     vehicleNumberPlate: "",
     vehiclePicture: null,
     touristLicense: null,
-    agreeTerms: false,
   });
-  const [modalOpen, setModalOpen] = useState(false); // For modal dialog visibility
-  const [modalMessage, setModalMessage] = useState(""); // Message to display in the modal
-  const [isSuccess, setIsSuccess] = useState(false); // To track if registration is successful
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        type === "file" ? files[0] : type === "checkbox" ? checked : value,
-    }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleFileChange = (e) => {
@@ -52,85 +37,39 @@ const RegisterVehicleForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Check if the user has agreed to the terms
-    if (!formData.agreeTerms) {
-      setModalMessage(
-        "You must agree to the Terms and Conditions before Register."
-      );
-      setModalOpen(true); // Open modal dialog
-      return;
-    }
-
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] !== null) {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
-
     try {
-      const response = await axios.post(
-        `${apiUrl}/api/vehicles/register`,
-        formDataToSend,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      // Show success message
-      setModalMessage(response.data.message || "Vehicle registered successfully!");
-      setIsSuccess(true); // Mark as success
-      setModalOpen(true); // Open modal dialog
+      const response = await registerUser(formData);
+      setMessage(response.message);
+      navigate("/dashboard"); // Redirect to dashboard after successful registration
     } catch (error) {
-      console.error("Error registering vehicle:", error);
-      if (error.response?.data?.message === "Vehicle already exists") {
-        setModalMessage("Vehicle with this License already exists.");
-      } else {
-        setModalMessage(
-          error.response?.data?.message ||
-            "An error occurred during registration."
-        );
-      }
-      setIsSuccess(false); // Mark as error
-      setModalOpen(true); // Open modal dialog
-    }
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false); // Close modal dialog
-
-    // Redirect to dashboard after successful registration
-    if (isSuccess) {
-      navigate("/dashboard");
+      setMessage(error.response?.data?.message || "Registration failed");
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 4,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <Typography variant="h5" sx={{ mb: 2 }}>
-          Register your vehicle
+    <div className="flex min-h-screen">
+      <div className="w-1/2 bg-gray-900 text-white flex flex-col items-center justify-center p-8">
+        <Typography variant="h4" className="mb-4 font-bold">
+          Welcome to Ceylonian!
         </Typography>
-        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Typography variant="body1" className="text-center">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vulpatae ut
+          laoreet velit ma.
+        </Typography>
+      </div>
+      <Container className="w-1/2 flex items-center justify-center">
+        <Card className="p-8 shadow-xl w-full max-w-md">
+          <Typography variant="h5" className="text-center mb-4">
+            Register your vehicle
+          </Typography>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <TextField
-              label="Owner's Email"
-              name="email"
+              label="Owner name"
+              name="ownerName"
               fullWidth
               onChange={handleChange}
               required
             />
-
             <TextField
               label="Brand"
               name="brand"
@@ -138,7 +77,6 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               required
             />
-
             <TextField
               label="Model"
               name="model"
@@ -146,7 +84,6 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               required
             />
-
             <TextField
               label="Vehicle color"
               name="vehicleColor"
@@ -154,7 +91,6 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               required
             />
-
             <TextField
               select
               label="Vehicle type"
@@ -163,12 +99,10 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               value={formData.vehicleType}
             >
-              <MenuItem value="van">Van</MenuItem>
-              <MenuItem value="car">Car</MenuItem>
-              <MenuItem value="jeep">Jeep</MenuItem>
-              <MenuItem value="suv">SUV</MenuItem>
+              <MenuItem value="Van">Van</MenuItem>
+              <MenuItem value="Car">Car</MenuItem>
+              <MenuItem value="Bike">Bike</MenuItem>
             </TextField>
-
             <TextField
               select
               label="Fuel type"
@@ -177,22 +111,21 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               value={formData.fuelType}
             >
-              <MenuItem value="petrol">Petrol</MenuItem>
-              <MenuItem value="diesel">Diesel</MenuItem>
-              <MenuItem value="electric">Electric</MenuItem>
+              <MenuItem value="Petrol">Petrol</MenuItem>
+              <MenuItem value="Diesel">Diesel</MenuItem>
+              <MenuItem value="Electric">Electric</MenuItem>
             </TextField>
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="airCondition"
-                  checked={formData.airCondition}
-                  onChange={handleChange}
-                />
-              }
-              label="Air Condition Available"
-            />
-
+            <TextField
+              select
+              label="Air condition"
+              name="airCondition"
+              fullWidth
+              onChange={handleChange}
+              value={formData.airCondition}
+            >
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </TextField>
             <TextField
               label="Registration number"
               name="registrationNumber"
@@ -200,7 +133,6 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               required
             />
-
             <TextField
               label="Vehicle number plate"
               name="vehicleNumberPlate"
@@ -208,42 +140,27 @@ const RegisterVehicleForm = () => {
               onChange={handleChange}
               required
             />
-
-            <Button variant="contained" component="label">
+            <Button variant="contained" component="label" fullWidth>
               Upload Vehicle Picture
               <input
                 type="file"
                 name="vehiclePicture"
-                onChange={handleFileChange}
                 hidden
+                onChange={handleFileChange}
               />
             </Button>
-
-            <Button variant="contained" component="label">
+            <Button variant="contained" component="label" fullWidth>
               Upload Tourist License
               <input
                 type="file"
                 name="touristLicense"
-                onChange={handleFileChange}
                 hidden
+                onChange={handleFileChange}
               />
             </Button>
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="agreeTerms"
-                  checked={formData.agreeTerms}
-                  onChange={handleChange}
-                />
-              }
-              label="I agree to the Terms and Conditions, and Privacy Policy"
-            />
-
             <Button type="submit" variant="contained" color="error" fullWidth>
               Register
             </Button>
-
             <Button
               variant="contained"
               color="primary"
@@ -252,23 +169,10 @@ const RegisterVehicleForm = () => {
             >
               Back
             </Button>
-          </Box>
-        </form>
-
-        {/* Modal Dialog for all messages */}
-        <Dialog open={modalOpen} onClose={handleCloseModal}>
-          <DialogTitle>{isSuccess ? "Success" : "Error"}</DialogTitle>
-          <DialogContent>
-            <Typography>{modalMessage}</Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseModal} color="primary">
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
-    </Container>
+          </form>
+        </Card>
+      </Container>
+    </div>
   );
 };
 

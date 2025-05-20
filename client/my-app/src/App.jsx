@@ -1,47 +1,49 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Routes,
+  Route,
+} from "react-router-dom";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { createTheme } from "@mui/material/styles";
+import { useMemo } from "react";
+import { useSelector } from "react-redux";
+import { themeSettings } from "./theme";
+// import { state } from "./state/index";
+
 import BaseLayout from "./layouts/BaseLayout";
-import LoginForm from "./pages/LoginForm";
-import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
-import VehicleRegForm from "./pages/VehicleRegisterForm";
-import Reports from "./pages/Reports";
-import PendingBookings from "./pages/PendingBookings";
-import ViewBookings from "./pages/ViewBookings";
-import Admins from "./pages/Admins";
-import Contents from "./pages/Contents";
-import GuideAvailability from "./pages/GuideAvailability";
-import YourVehicles from "./pages/YourVehicles";
-import ManageVehicles from "./pages/ManageVehicles";
-import EditProfile from "./pages/EditProfile";
 
-// import ProtectedRoute from "./components/ProtectedRoute";
-
-const App = () => {
+function App() {
+  // const mode = useSelector((state) => state.global.mode);
+  // const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<RegisterForm />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
-        <Route path="/vehicleRegisterForm" element={<VehicleRegForm />} />
+    <div className="app">
+      <Router>
+        {/* <ThemeProvider theme={theme}> */}
+          {/* <CssBaseline /> */}
+          <Routes>
+            {/* Public Routes */}
+            {/* <Route path="/login" element={<LoginForm />} /> */}
+            {/* 
+        
+        <Route path="/register" element={<RegisterForm />} /> */}
 
-
-        {/* Protected Routes (Wrapped in BaseLayout) */}
-        <Route element={<BaseLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/bookings/pending" element={<PendingBookings />} />
-          <Route path="/bookings/confirmed" element={<ViewBookings />} />
-          <Route path="/admins" element={<Admins />} />
-          <Route path="/contents" element={<Contents />} />
-          <Route path="/guide-availability" element={<GuideAvailability />} />
-          <Route path="/vehicles/your-vehicles" element={<YourVehicles />} />
-          <Route path="/vehicles/manage-vehicles" element={<ManageVehicles />} />
-          <Route path="/reports" element={<Reports />} />
-        </Route>
-      </Routes>
-    </Router>
+            {/* Protected Routes (Wrapped in BaseLayout) */}
+            <Route element={<BaseLayout />}>
+              <Routes path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              {/* <Route path="bookings/pending" element={<PendingBookings />} /> */}
+              {/* <Route path="bookings/confirmed" element={<ConfirmedBookings />} /> */}
+              {/* <Route path="/vehicleregister" element={<VehicleRegForm />} /> */}
+              {/* <Route path="/users" element={<Users />} />
+          <Route path="/reports" element={<Reports />} /> */}
+            </Route>
+          </Routes>
+        {/* </ThemeProvider> */}
+      </Router>
+    </div>
   );
-};
+}
 
 export default App;
