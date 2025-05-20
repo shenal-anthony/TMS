@@ -76,65 +76,53 @@ const Packages = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (openPackageDialog) {
-      validatePackageForm();
-    }
-    fetchDestinations();
-    fetchAccommodations();
-    fetchPackages();
-  }, [currentPackage, openPackageDialog]);
+    const fetchData = async () => {
+      setPackageLoading(true);
+      try {
+        const [destResponse, accResponse, pkgResponse] = await Promise.all([
+          axios.get(`${apiUrl}/api/contents/destinations`),
+          axios.get(`${apiUrl}/api/contents/accommodations`),
+          axios.get(`${apiUrl}/api/contents/packages`),
+        ]);
 
-  const fetchAccommodations = () => {
-    axios
-      .get(`${apiUrl}/api/contents/accommodations`)
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          setAccommodations(response.data);
+        // Normalize and set destinations
+        if (Array.isArray(destResponse.data)) {
+          console.log("Destinations Response:", destResponse.data); // Debug log
+          const normalizedDestinations = destResponse.data.map((dest) => ({
+            destinationId: dest.destination_id,
+            destinationName: dest.destination_name,
+            description: dest.description,
+            locationUrl: dest.location_url,
+            pictureUrl: dest.picture_url,
+            weatherCondition: dest.weather_condition,
+          }));
+          setDestinations(normalizedDestinations);
         } else {
-          setPackageError("Response data is not an array");
+          setPackageError("Destinations response data is not an array");
         }
-        setPackageLoading(false);
-      })
-      .catch((error) => {
-        setPackageError("Error fetching accommodations: " + error.message);
-        setPackageLoading(false);
-      });
-  };
 
-  const fetchDestinations = () => {
-    axios
-      .get(`${apiUrl}/api/contents/destinations`)
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          setDestinations(response.data);
+        // Normalize and set accommodations
+        if (Array.isArray(accResponse.data)) {
+          console.log("Accommodations Response:", accResponse.data); // Debug log
+          const normalizedAccommodations = accResponse.data.map((acc) => ({
+            accommodationId: acc.accommodation_id,
+            accommodationName: acc.accommodation_name,
+            accommodationType: acc.accommodation_type,
+          }));
+          setAccommodations(normalizedAccommodations);
         } else {
-          setPackageError("Response data is not an array");
+          setPackageError("Accommodations response data is not an array");
         }
-        setPackageLoading(false);
-      })
-      .catch((error) => {
-        setPackageError("Error fetching destinations: " + error.message);
-        setPackageLoading(false);
-      });
-  };
 
-  const fetchPackages = () => {
-    axios
-      .get(`${apiUrl}/api/contents/packages`)
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          const normalizedPackages = response.data.map((item) => {
-            // Normalize accommodation_ids
-            const accommodationIds = Array.isArray(item.accommodation)
-              ? item.accommodation.map((acc) => acc.accommodation_id)
-              : item.accommodation && item.accommodation.accommodation_id
-              ? [item.accommodation.accommodation_id]
+        // Set packages
+        if (Array.isArray(pkgResponse.data)) {
+          console.log("Packages Response:", pkgResponse.data); // Debug log
+          const normalizedPackages = pkgResponse.data.map((item) => {
+            const accommodationIds = Array.isArray(item.accommodations)
+              ? item.accommodations.map((acc) => acc.accommodationId)
               : [];
-            // Normalize destination_ids
-            const destinationIds = Array.isArray(item.destination)
-              ? item.destination.map((dest) => dest.destination_id)
-              : item.destination && item.destination.destination_id
-              ? [item.destination.destination_id]
+            const destinationIds = Array.isArray(item.destinations)
+              ? item.destinations.map((dest) => dest.destinationId)
               : [];
             return {
               package_id: item.package.packageId,
@@ -144,29 +132,30 @@ const Packages = () => {
               duration: item.package.duration,
               accommodation_ids: accommodationIds,
               destination_ids: destinationIds,
-              accommodation: Array.isArray(item.accommodation)
-                ? item.accommodation
-                : item.accommodation
-                ? [item.accommodation]
+              accommodations: Array.isArray(item.accommodations)
+                ? item.accommodations
                 : [],
-              destination: Array.isArray(item.destination)
-                ? item.destination
-                : item.destination
-                ? [item.destination]
+              destinations: Array.isArray(item.destinations)
+                ? item.destinations
                 : [],
             };
           });
           setPackageContents(normalizedPackages);
         } else {
-          setPackageError("Response data is not an array");
+          setPackageError("Packages response data is not an array");
         }
+      } catch (error) {
+        setPackageError("Error fetching data: " + error.message);
+      } finally {
         setPackageLoading(false);
-      })
-      .catch((error) => {
-        setPackageError("Error fetching packages: " + error.message);
-        setPackageLoading(false);
-      });
-  };
+      }
+    };
+
+    fetchData();
+    if (openPackageDialog) {
+      validatePackageForm();
+    }
+  }, [openPackageDialog]);
 
   const handleRemovePackage = (id) => {
     axios
@@ -213,33 +202,21 @@ const Packages = () => {
                     description: response.data.package.description,
                     price: parseFloat(response.data.package.price),
                     duration: response.data.package.duration,
-                    accommodation_ids: Array.isArray(
-                      response.data.accommodation
-                    )
-                      ? response.data.accommodation.map(
-                          (acc) => acc.accommodation_id
+                    accommodation_ids: Array.isArray(response.data.accommodations)
+                      ? response.data.accommodations.map(
+                          (acc) => acc.accommodationId
                         )
-                      : response.data.accommodation &&
-                        response.data.accommodation.accommodation_id
-                      ? [response.data.accommodation.accommodation_id]
                       : [],
-                    destination_ids: Array.isArray(response.data.destination)
-                      ? response.data.destination.map(
-                          (dest) => dest.destination_id
+                    destination_ids: Array.isArray(response.data.destinations)
+                      ? response.data.destinations.map(
+                          (dest) => dest.destinationId
                         )
-                      : response.data.destination &&
-                        response.data.destination.destination_id
-                      ? [response.data.destination.destination_id]
                       : [],
-                    accommodation: Array.isArray(response.data.accommodation)
-                      ? response.data.accommodation
-                      : response.data.accommodation
-                      ? [response.data.accommodation]
+                    accommodations: Array.isArray(response.data.accommodations)
+                      ? response.data.accommodations
                       : [],
-                    destination: Array.isArray(response.data.destination)
-                      ? response.data.destination
-                      : response.data.destination
-                      ? [response.data.destination]
+                    destinations: Array.isArray(response.data.destinations)
+                      ? response.data.destinations
                       : [],
                   }
                 : pkg
@@ -262,32 +239,22 @@ const Packages = () => {
           setPackageContents([
             ...packageContents,
             {
-              package_id: response.data.package_id,
-              package_name: response.data.package_name,
-              description: response.data.description,
-              price: response.data.price,
-              duration: response.data.duration,
-              accommodation_ids: Array.isArray(response.data.accommodation)
-                ? response.data.accommodation.map((acc) => acc.accommodation_id)
-                : response.data.accommodation &&
-                  response.data.accommodation.accommodation_id
-                ? [response.data.accommodation.accommodation_id]
+              package_id: response.data.package.packageId,
+              package_name: response.data.package.packageName,
+              description: response.data.package.description,
+              price: parseFloat(response.data.package.price),
+              duration: response.data.package.duration,
+              accommodation_ids: Array.isArray(response.data.accommodations)
+                ? response.data.accommodations.map((acc) => acc.accommodationId)
                 : [],
-              destination_ids: Array.isArray(response.data.destination)
-                ? response.data.destination.map((dest) => dest.destination_id)
-                : response.data.destination &&
-                  response.data.destination.destination_id
-                ? [response.data.destination.destination_id]
+              destination_ids: Array.isArray(response.data.destinations)
+                ? response.data.destinations.map((dest) => dest.destinationId)
                 : [],
-              accommodation: Array.isArray(response.data.accommodation)
-                ? response.data.accommodation
-                : response.data.accommodation
-                ? [response.data.accommodation]
+              accommodations: Array.isArray(response.data.accommodations)
+                ? response.data.accommodations
                 : [],
-              destination: Array.isArray(response.data.destination)
-                ? response.data.destination
-                : response.data.destination
-                ? [response.data.destination]
+              destinations: Array.isArray(response.data.destinations)
+                ? response.data.destinations
                 : [],
             },
           ]);
@@ -414,8 +381,8 @@ const Packages = () => {
     if (!destinationIds || destinationIds.length === 0) return "N/A";
     return destinationIds
       .map((id) => {
-        const dest = destinations.find((d) => d.destination_id === id);
-        return dest ? dest.destination_name : "Unknown";
+        const dest = destinations.find((d) => d.destinationId === id);
+        return dest ? dest.destinationName : "Unknown";
       })
       .join(", ");
   };
@@ -424,8 +391,8 @@ const Packages = () => {
     if (!accommodationIds || accommodationIds.length === 0) return "N/A";
     return accommodationIds
       .map((id) => {
-        const acc = accommodations.find((a) => a.accommodation_id === id);
-        return acc ? acc.accommodation_name : "Unknown";
+        const acc = accommodations.find((a) => a.accommodationId === id);
+        return acc ? acc.accommodationName : "Unknown";
       })
       .join(", ");
   };
@@ -590,12 +557,12 @@ const Packages = () => {
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {selected.map((value) => {
                       const dest = destinations.find(
-                        (d) => d.destination_id === value
+                        (d) => d.destinationId === value
                       );
                       return (
                         <Chip
                           key={value}
-                          label={dest ? dest.destination_name : value}
+                          label={dest ? dest.destinationName : value}
                         />
                       );
                     })}
@@ -605,17 +572,17 @@ const Packages = () => {
               >
                 {destinations.map((destination) => (
                   <MenuItem
-                    key={destination.destination_id}
-                    value={destination.destination_id}
+                    key={destination.destinationId}
+                    value={destination.destinationId}
                     style={getStyles(
-                      destination.destination_id,
+                      destination.destinationId,
                       currentPackage.destinationIds,
                       theme
                     )}
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
                     {currentPackage.destinationIds.includes(
-                      destination.destination_id
+                      destination.destinationId
                     ) && (
                       <CheckIcon
                         fontSize="small"
@@ -624,10 +591,10 @@ const Packages = () => {
                       />
                     )}
                     <Typography fontWeight="500">
-                      {destination.destination_name}
+                      {destination.destinationName}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      (ID: {destination.destination_id})
+                      (ID: {destination.destinationId})
                     </Typography>
                   </MenuItem>
                 ))}
@@ -660,12 +627,12 @@ const Packages = () => {
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {selected.map((value) => {
                       const accom = accommodations.find(
-                        (a) => a.accommodation_id === value
+                        (a) => a.accommodationId === value
                       );
                       return (
                         <Chip
                           key={value}
-                          label={accom ? accom.accommodation_name : value}
+                          label={accom ? accom.accommodationName : value}
                         />
                       );
                     })}
@@ -675,17 +642,17 @@ const Packages = () => {
               >
                 {accommodations.map((accom) => (
                   <MenuItem
-                    key={accom.accommodation_id}
-                    value={accom.accommodation_id}
+                    key={accom.accommodationId}
+                    value={accom.accommodationId}
                     style={getStyles(
-                      accom.accommodation_id,
+                      accom.accommodationId,
                       currentPackage.accommodationIds,
                       theme
                     )}
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
                     {currentPackage.accommodationIds.includes(
-                      accom.accommodation_id
+                      accom.accommodationId
                     ) && (
                       <CheckIcon
                         fontSize="small"
@@ -694,11 +661,10 @@ const Packages = () => {
                       />
                     )}
                     <Typography fontWeight="500">
-                      {accom.accommodation_name}
+                      {accom.accommodationName}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      (ID: {accom.accommodation_id} — Type:{" "}
-                      {accom.accommodation_type})
+                      (ID: {accom.accommodationId} — Type: {accom.accommodationType})
                     </Typography>
                   </MenuItem>
                 ))}
