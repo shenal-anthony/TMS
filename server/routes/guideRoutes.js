@@ -1,5 +1,8 @@
-import express from "express";
-
+const express = require("express");
 const router = express.Router();
+const { getAllGuide, deleteGuide } = require("../controllers/guideController");
 
-export default router;
+router.get("/", getAllGuide);
+router.delete("/:id", deleteGuide);
+
+module.exports = router;

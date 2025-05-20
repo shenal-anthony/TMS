@@ -1,53 +1,30 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import bodyParser from "body-parser";
-import helmet from "helmet";
-import morgan from "morgan";
-import generalRoutes from "./routes/generalRoutes.js";
-import superRoutes from "./routes/superRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
-import guideRoutes from "./routes/guideRoutes.js";
-import { Sequelize } from "sequelize";
-
-// const express = require("express");
-// const cors = require("cors");
-// const bodyParser = require("body-parser");
-// const authRoutes = require("./routes/authRoutes");
-
-dotenv.config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 const app = express();
+require("dotenv").config();
 
-app.use(express.json());
-app.use(helmet());
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
-app.use(morgan("common"));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+const bodyParser = require("body-parser");
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const vehicleRoutes = require("./routes/vehicleRoutes");
+const guideRoutes = require("./routes/guideRoutes");
+const fileUpload = require("express-fileupload");
+const port = process.env.PORT || 8001;
+
+// Middlewares
 app.use(cors());
+app.use(bodyParser.json());
+app.use(fileUpload());
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploaded images
 
 
 // Routes
-app.use("/general", generalRoutes);
-app.use("/super", superRoutes);
-app.use("/admin", adminRoutes);
-app.use("/guide", guideRoutes);
-
-const PORT = process.env.PORT || 8009;
-
-// PostgreSQL connection with Sequelize
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-    host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT || 5432,
-    dialect: "postgres",
-    logging: false,
-  });
-  
-  // Test database connection
-  sequelize.authenticate()
-    .then(() => console.log(`PostgreSQL Connected: ${process.env.DB_NAME}`))
-    .catch(err => console.error("PostgreSQL Connection Error:", err));
+app.use("/api/auth", authRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/guides', guideRoutes);
 
 
 // Console output
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => console.log(`Server running on port ${port}`));

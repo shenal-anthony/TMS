@@ -3,7 +3,7 @@ require("dotenv").config();
 
 const verifyJWT = (req, res, next) => {
   // Get the token from Authorization header
-  const token = req.header("Authorization");
+  const token = req.header("Authorization")?.split(" ")[1];
 
   // If no token is provided
   if (!token) {
@@ -18,8 +18,8 @@ const verifyJWT = (req, res, next) => {
     req.user = decoded; // Attach the user info to the request object
     next(); // Continue to the protected route
   } catch (error) {
-    return res.status(400).json({ message: "Invalid token" });
+    return res.status(403).json({ message: "Invalid token" });
   }
 };
 
-module.exports = { verifyJWT };
+module.exports = verifyJWT;
