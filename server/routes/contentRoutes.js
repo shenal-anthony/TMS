@@ -51,9 +51,9 @@ router.patch("/destinations/:id", destinationMiddleware, updateDestination);
 router.delete("/destinations/:id", deleteDestination);
 
 // events routes
-router.get("/events", getAllEvents);
-router.post("/events", MulterMiddleware(), addEvent);
-router.delete("/events/:id", deleteEvent);
+// router.get("/events", getAllEvents);
+// router.post("/events", MulterMiddleware(), addEvent);
+// router.delete("/events/:id", deleteEvent);
 
 // Tours routes
 router.get("/tours", getAllTours);

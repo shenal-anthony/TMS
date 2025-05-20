@@ -219,7 +219,7 @@ const Sidebar = ({ isCollapsed }) => {
                   <ChevronRight fontSize="small" /> {!isCollapsed && "Tour"}
                 </NavLink>
               </li>
-              <li>
+              {/* <li>
                 <NavLink
                   to="/contents/events"
                   className={({ isActive }) =>
@@ -230,7 +230,7 @@ const Sidebar = ({ isCollapsed }) => {
                 >
                   <ChevronRight fontSize="small" /> {!isCollapsed && "Events"}
                 </NavLink>
-              </li>
+              </li> */}
             </ul>
           )}
         </li>
