@@ -187,12 +187,21 @@ const getActiveGuides = async () => {
   return result.rows;
 };
 
-const changeStatusById = async (id, status) => {
-  const query = `UPDATE users SET status = $1 WHERE user_id = $2 AND role = 'Guide'`;
-  const values = [status, id];
+const changeStatusById = async (
+  id,
+  status,
+  leave_start_date,
+  leave_end_date
+) => {
+  const query = `
+    UPDATE users 
+    SET status = $1, leave_due_date = $2, leave_end_date = $3 
+    WHERE user_id = $4 AND role = 'Guide'
+    RETURNING user_id, status, leave_due_date, leave_end_date
+  `;
+  const values = [status, leave_start_date, leave_end_date, id];
   const result = await pool.query(query, values);
-  // console.log("🚀 ~ userModel.js:83 ~ changeStatusById ~ result:", result);
-  return result.rowCount > 0; // returns true if a row was updated
+  return result.rowCount > 0 ? result.rows[0] : null;
 };
 
 const deleteUserById = async (id) => {

@@ -220,22 +220,63 @@ const deleteGuide = async (req, res) => {
 // Change guide status
 const changeGuideStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, leave_start_date, leave_end_date } = req.body;
 
   const validStatuses = ["Active", "In Leave"];
   if (!validStatuses.includes(status)) {
-    return res
-      .status(400)
-      .json({ message: "Invalid status. Must be 'Active' or 'In Leave'." });
+    return res.status(400).json({
+      message: "Invalid status. Valid statuses are: Active, In Leave",
+    });
+  }
+
+  // Validate and prepare data
+  if (status === "In Leave") {
+    if (!leave_start_date || !leave_end_date) {
+      return res.status(400).json({
+        message:
+          "Leave start and end dates are required when status is In Leave",
+      });
+    }
+
+    const startDate = new Date(leave_start_date);
+    const endDate = new Date(leave_end_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day for comparison
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({
+        message: "Invalid date format for leave_start_date or leave_end_date",
+      });
+    }
+
+    if (startDate < today || endDate < today) {
+      return res.status(400).json({
+        message: "Leave start and end dates cannot be in the past",
+      });
+    }
+
+    if (endDate < startDate) {
+      return res.status(400).json({
+        message: "Leave end date cannot be before start date",
+      });
+    }
   }
 
   try {
-    const updated = await user.changeStatusById(id, status);
+    const updated = await user.changeStatusById(
+      id,
+      status,
+      status === "In Leave" ? leave_start_date : null,
+      status === "In Leave" ? leave_end_date : null
+    );
     if (!updated) {
       return res.status(404).json({ message: "Guide not found" });
     }
 
-    res.json({ message: "Guide status updated successfully" });
+    res.json({
+      message: "Guide status updated successfully",
+      guide: updated,
+    });
   } catch (error) {
     console.error("Error updating guide status:", error);
     res.status(500).json({
