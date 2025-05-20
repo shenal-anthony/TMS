@@ -404,7 +404,6 @@ const getConfirmedBookingsWithGuides = async (req, res) => {
           start_date: guide.start_date,
           end_date: guide.end_date,
           total_amount: totalAmount,
-          // payments, // Optional: include full payment details if needed
         });
       }
     }
@@ -601,6 +600,163 @@ const getTourIdsByPackageId = async (req, res) => {
   }
 };
 
+// cancel booking
+const cancelBooking = async (req, res) => {
+  const { id } = req.params;
+  const { status, userId } = req.body;
+
+  if (!status || status !== "cancelled" || !userId) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Invalid or missing fields: status must be 'cancelled' and userId is required",
+    });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const bookingData = {
+      checkOutDate: new Date(),
+      status,
+      userId,
+    };
+    const updatedBooking = await booking.updateBookingById(
+      id,
+      bookingData,
+      client
+    );
+    if (!updatedBooking) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    const payments = await payment.getPaymentsByBookingId(id, client);
+
+    if (payments.length === 2) {
+      const hasHalfPaid = payments.some((p) => p.status === "half_paid");
+      const hasPending = payments.some((p) => p.status === "pending");
+      if (!hasHalfPaid || !hasPending) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "Expected one 'half_paid' and one 'pending' payment",
+        });
+      }
+
+      const halfPaidUpdateCount = await payment.updateHalfPaidPayment(
+        id,
+        client
+      );
+      const pendingUpdateCount = await payment.updatePendingPayment(id, client);
+
+      if (halfPaidUpdateCount !== 1 || pendingUpdateCount !== 1) {
+        await client.query("ROLLBACK");
+        return res.status(500).json({
+          success: false,
+          message: "Error updating payments",
+        });
+      }
+    } else if (payments.length === 1) {
+      const hasCompleted = payments[0].status === "completed";
+      if (!hasCompleted) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          success: false,
+          message: "Expected single payment to have 'completed' status",
+        });
+      }
+
+      const updatedPaymentCount = await payment.updateSinglePaymentByBookingId(
+        id,
+        client
+      );
+
+      if (updatedPaymentCount !== 1) {
+        await client.query("ROLLBACK");
+        return res.status(500).json({
+          success: false,
+          message: "Error updating payment",
+        });
+      }
+    } else if (payments.length > 2) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "Unexpected number of payments",
+      });
+    }
+
+    await client.query("COMMIT");
+    return res.status(200).json({
+      success: true,
+      message:
+        payments.length > 0
+          ? "Booking cancelled and payments updated successfully"
+          : "Booking cancelled successfully",
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error cancelling booking:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error cancelling booking",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
+// update booking guide
+const updateBookingGuide = async (req, res) => {
+  const { id } = req.params; // bookingId
+  const { guideId } = req.body;
+
+  // Validate required fields
+  if (!guideId) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required field: guideId",
+    });
+  }
+
+  // check whether the guide is available
+  const isGuideAvailable = await user.getGuideById(guideId);
+  if (!isGuideAvailable) {
+    return res.status(400).json({
+      success: false,
+      message: "Guide is not available",
+    });
+  }
+
+  try {
+    const updatedBooking = await booking.updateBookingById(id, guideId);
+    if (!updatedBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking guide updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating booking guide:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating booking guide",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllBookings,
   addBooking,
@@ -613,4 +769,6 @@ module.exports = {
   sendRequestToGuide,
   getAllGuideRequests,
   getTourIdsByPackageId,
+  cancelBooking,
+  updateBookingGuide,
 };

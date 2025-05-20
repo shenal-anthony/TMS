@@ -17,7 +17,9 @@ const {
   getFinalizedBookingById,
   sendRequestToGuide,
   getAllGuideRequests,
-getTourIdsByPackageId
+  cancelBooking,
+  getTourIdsByPackageId,
+  updateBookingGuide,
 } = require("../controllers/bookingController");
 const {
   getPkgBookingKeyDetails,
@@ -45,9 +47,10 @@ router.post("/tour_by_package", getTourIdsByPackageId);
 // router.get("/feasible-dates/:id", getFeasibleDates);
 
 router.patch("/:id", updateBooking);
+router.patch("/cancel/:id", cancelBooking);
+router.patch("/update/:id", updateBookingGuide);
 
 router.delete("/:id", deleteBooking);
 router.delete("/requests/:bookingId/:guideId", deleteGuideRequest);
-
 
 module.exports = router;

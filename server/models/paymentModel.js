@@ -26,6 +26,30 @@ const getPaymentsByBookingId = async (id) => {
   return result.rows;
 };
 
+async function updateHalfPaidPayment(bookingId, client = pool) {
+  const query = `
+    UPDATE payments 
+    SET amount = amount * 0.95
+    WHERE booking_id = $1 AND status = 'half_paid'
+    RETURNING *;
+  `;
+  const values = [bookingId];
+  const result = await client.query(query, values);
+  return result.rowCount;
+}
+
+async function updatePendingPayment(bookingId, client = pool) {
+  const query = `
+    UPDATE payments 
+    SET status = 'pendingC', amount = 0
+    WHERE booking_id = $1 AND status = 'pending'
+    RETURNING *;
+  `;
+  const values = [bookingId];
+  const result = await client.query(query, values);
+  return result.rowCount;
+}
+
 const addPayment = async (paymentData) => {
   const { amount, paymentDate, status, bookingId } = paymentData;
   const query = `INSERT INTO payments (amount, payment_date, status, booking_id) VALUES ($1, $2, $3, $4) RETURNING *;`;
@@ -48,10 +72,24 @@ const updatePaymentById = async (ids, paymentData) => {
   return result.rowCount;
 };
 
+async function updateSinglePaymentByBookingId(bookingId, client = pool) {
+  const query = `
+    UPDATE payments 
+    SET status = 'completedC', amount = amount * 0.9
+    WHERE booking_id = $1 AND status = 'completed'
+    RETURNING *;
+  `;
+  const values = [bookingId];
+  const result = await client.query(query, values);
+  return result.rowCount;
+}
+
 const deletePaymentById = async (id) => {
   const query = "DELETE FROM payments WHERE payment_id = $1";
   await pool.query(query, [id]);
 };
+
+
 
 module.exports = {
   getAllPayments,
@@ -60,4 +98,7 @@ module.exports = {
   updatePaymentById,
   deletePaymentById,
   getPaymentsByBookingId,
+  updateHalfPaidPayment,
+  updatePendingPayment,
+  updateSinglePaymentByBookingId,
 };
