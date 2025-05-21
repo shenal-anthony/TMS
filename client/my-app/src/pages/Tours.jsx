@@ -17,46 +17,71 @@ import {
   IconButton,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ReplayIcon from "@mui/icons-material/Replay";
 import dayjs from "dayjs";
 import axiosInstance from "../api/axiosInstance";
 
 const Tours = ({ userId }) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState({ finalized: "", assigned: "" });
   const [bookings, setBookings] = useState([]);
   const [assignedBookings, setAssignedBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [sortField, setSortField] = useState("booking_id");
-  const [sortAssginedField, setSortAssignedField] = useState("closest");
+  const [sortAssignedField, setSortAssignedField] = useState("closest");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [sortAssginedOrder, setSortAssignedOrder] = useState("asc");
+  const [sortAssignedOrder, setSortAssignedOrder] = useState("asc");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [assignedPage, setAssignedPage] = useState(0);
   const [rowsPerAssignedPage, setRowsPerAssignedPage] = useState(8);
 
   const guideId = userId;
+  console.log("Guide ID:", guideId); // Log to verify guideId
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    setError({ finalized: "", assigned: "" }); // Reset errors
+
+    try {
+      const [finalizedRes, assignedRes] = await Promise.all([
+        axiosInstance.get(`/api/guides/finalized/${guideId}`).catch((err) => {
+          throw new Error(
+            `Finalized bookings fetch failed: ${err.message} (Status: ${err.response?.status})`
+          );
+        }),
+        axiosInstance.get(`/api/guides/assigned/${guideId}`).catch((err) => {
+          throw new Error(
+            `Assigned bookings fetch failed: ${err.message} (Status: ${err.response?.status})`
+          );
+        }),
+      ]);
+
+      setBookings(finalizedRes.data || []);
+      setAssignedBookings(assignedRes.data || []);
+      setError({ finalized: "", assigned: "" }); // Clear errors on success
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      if (error.message.includes("Finalized")) {
+        setError((prev) => ({ ...prev, finalized: error.message }));
+        setBookings([]); // Ensure bookings array is empty on failure
+      }
+      if (error.message.includes("Assigned")) {
+        setError((prev) => ({ ...prev, assigned: error.message }));
+        setAssignedBookings([]); // Ensure assigned bookings array is empty on failure
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      setLoading(true);
-      try {
-        const [finalizedRes, assignedRes] = await Promise.all([
-          axiosInstance.get(`/api/guides/finalized/${guideId}`),
-          axiosInstance.get(`/api/guides/assigned/${guideId}`),
-        ]);
-        setBookings(finalizedRes.data);
-        setAssignedBookings(assignedRes.data);
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-        setError("Failed to load bookings");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBookings();
-  }, []);
+  }, [guideId]);
+
+  const handleRetry = () => {
+    fetchBookings();
+  };
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -68,7 +93,7 @@ const Tours = ({ userId }) => {
   };
 
   const handleAssignedSort = (field) => {
-    if (sortAssginedField === field) {
+    if (sortAssignedField === field) {
       setSortAssignedOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortAssignedField(field);
@@ -85,21 +110,21 @@ const Tours = ({ userId }) => {
   });
 
   const sortedAssigned = [...assignedBookings].sort((a, b) => {
-    if (sortAssginedField === "closest") {
+    if (sortAssignedField === "closest") {
       const today = dayjs();
       const diffA = Math.abs(today.diff(dayjs(a.booking_date), "day"));
       const diffB = Math.abs(today.diff(dayjs(b.booking_date), "day"));
-      return sortAssginedOrder === "asc" ? diffA - diffB : diffB - diffA;
+      return sortAssignedOrder === "asc" ? diffA - diffB : diffB - diffA;
     } else {
-      const valA = sortAssginedField.includes("date")
-        ? dayjs(a[sortAssginedField])
-        : a[sortAssginedField];
-      const valB = sortAssginedField.includes("date")
-        ? dayjs(b[sortAssginedField])
-        : b[sortAssginedField];
+      const valA = sortAssignedField.includes("date")
+        ? dayjs(a[sortAssignedField])
+        : a[sortAssignedField];
+      const valB = sortAssignedField.includes("date")
+        ? dayjs(b[sortAssignedField])
+        : b[sortAssignedField];
 
-      if (valA < valB) return sortAssginedOrder === "asc" ? -1 : 1;
-      if (valA > valB) return sortAssginedOrder === "asc" ? 1 : -1;
+      if (valA < valB) return sortAssignedOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortAssignedOrder === "asc" ? 1 : -1;
       return 0;
     }
   });
@@ -134,6 +159,10 @@ const Tours = ({ userId }) => {
       setSelectedBooking(response.data);
     } catch (err) {
       console.error("Error fetching booking details:", err);
+      setError((prev) => ({
+        ...prev,
+        details: `Failed to load booking details: ${err.message} (Status: ${err.response?.status})`,
+      }));
     }
   };
 
@@ -149,10 +178,32 @@ const Tours = ({ userId }) => {
       </div>
 
       {loading && <div>Loading...</div>}
-      {error && <div style={{ color: "red" }}>{error}</div>}
+
+      {/* Display errors with retry option */}
+      {(error.finalized || error.assigned || error.details) && (
+        <div style={{ color: "red", marginBottom: "1rem" }}>
+          {error.finalized && (
+            <div>
+              {error.finalized}
+              <IconButton onClick={handleRetry} size="small" sx={{ ml: 1 }}>
+                <ReplayIcon />
+              </IconButton>
+            </div>
+          )}
+          {error.assigned && (
+            <div>
+              {error.assigned}
+              <IconButton onClick={handleRetry} size="small" sx={{ ml: 1 }}>
+                <ReplayIcon />
+              </IconButton>
+            </div>
+          )}
+          {error.details && <div>{error.details}</div>}
+        </div>
+      )}
 
       {/* Assigned Bookings Table */}
-      {!loading && assignedBookings.length > 0 && (
+      {!loading && (
         <>
           <Typography variant="h6" sx={{ m: 1 }}>
             Assigned Bookings
@@ -162,13 +213,12 @@ const Tours = ({ userId }) => {
               <TableHead>
                 <TableRow>
                   <TableCell align="center">#</TableCell>
-                  {/* booking_id */}
                   <TableCell align="center">
                     <Button
                       onClick={() => handleAssignedSort("booking_id")}
                       endIcon={
-                        sortAssginedField === "booking_id"
-                          ? sortAssginedOrder === "asc"
+                        sortAssignedField === "booking_id"
+                          ? sortAssignedOrder === "asc"
                             ? " ⬆️"
                             : " ⬇️"
                           : null
@@ -178,13 +228,12 @@ const Tours = ({ userId }) => {
                     </Button>
                   </TableCell>
                   <TableCell align="center">Headcount</TableCell>
-                  {/* booking_date */}
                   <TableCell align="center">
                     <Button
                       onClick={() => handleAssignedSort("booking_date")}
                       endIcon={
-                        sortAssginedField === "booking_date"
-                          ? sortAssginedOrder === "asc"
+                        sortAssignedField === "booking_date"
+                          ? sortAssignedOrder === "asc"
                             ? " ⬆️"
                             : " ⬇️"
                           : null
@@ -198,34 +247,55 @@ const Tours = ({ userId }) => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedAssigned.map((booking, index) => (
-                  <TableRow key={booking.booking_id}>
-                    <TableCell align="center">
-                      {index + 1 + assignedPage * rowsPerAssignedPage}
-                    </TableCell>
-                    <TableCell align="center">{booking.booking_id}</TableCell>
-                    <TableCell align="center">{booking.headcount}</TableCell>
-                    <TableCell align="center">
-                      {dayjs(booking.booking_date).format("YYYY-MM-DD")}
-                    </TableCell>
-                    <TableCell align="center">
-                      {dayjs(booking.end_date).diff(
-                        dayjs(booking.start_date),
-                        "day"
-                      )}{" "}
-                      days
-                    </TableCell>
-                    <TableCell align="center">
-                      <Button
-                        variant="contained"
+                {error.assigned ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      {error.assigned}
+                      <IconButton
+                        onClick={handleRetry}
                         size="small"
-                        onClick={() => handleViewRequest(booking.booking_id)}
+                        sx={{ ml: 1 }}
                       >
-                        View Details
-                      </Button>
+                        <ReplayIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : paginatedAssigned.length > 0 ? (
+                  paginatedAssigned.map((booking, index) => (
+                    <TableRow key={booking.booking_id}>
+                      <TableCell align="center">
+                        {index + 1 + assignedPage * rowsPerAssignedPage}
+                      </TableCell>
+                      <TableCell align="center">{booking.booking_id}</TableCell>
+                      <TableCell align="center">{booking.headcount}</TableCell>
+                      <TableCell align="center">
+                        {dayjs(booking.booking_date).format("YYYY-MM-DD")}
+                      </TableCell>
+                      <TableCell align="center">
+                        {dayjs(booking.end_date).diff(
+                          dayjs(booking.start_date),
+                          "day"
+                        )}{" "}
+                        days
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleViewRequest(booking.booking_id)}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      No assigned bookings available.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -242,7 +312,7 @@ const Tours = ({ userId }) => {
       )}
 
       {/* Finalized Bookings Table */}
-      {!loading && bookings.length > 0 && (
+      {!loading && (
         <>
           <Typography variant="h6" sx={{ m: 2 }}>
             Finalized Bookings
@@ -252,7 +322,6 @@ const Tours = ({ userId }) => {
               <TableHead>
                 <TableRow>
                   <TableCell align="center">#</TableCell>
-                  {/* booking_id */}
                   <TableCell align="center">
                     <Button
                       onClick={() => handleSort("booking_id")}
@@ -268,7 +337,6 @@ const Tours = ({ userId }) => {
                     </Button>
                   </TableCell>
                   <TableCell align="center">Headcount</TableCell>
-                  {/* booking_date */}
                   <TableCell align="center">
                     <Button
                       onClick={() => handleSort("booking_date")}
@@ -287,36 +355,56 @@ const Tours = ({ userId }) => {
                   <TableCell align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
-
               <TableBody>
-                {paginated.map((booking, index) => (
-                  <TableRow key={booking.booking_id}>
-                    <TableCell align="center">
-                      {index + 1 + page * rowsPerPage}
-                    </TableCell>
-                    <TableCell align="center">{booking.booking_id}</TableCell>
-                    <TableCell align="center">{booking.headcount}</TableCell>
-                    <TableCell align="center">
-                      {dayjs(booking.booking_date).format("YYYY-MM-DD")}
-                    </TableCell>
-                    <TableCell align="left">
-                      {dayjs(booking.end_date).diff(
-                        dayjs(booking.start_date),
-                        "day"
-                      )}{" "}
-                      days
-                    </TableCell>
-                    <TableCell align="center">
-                      <Button
-                        variant="contained"
+                {error.finalized ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      {error.finalized}
+                      <IconButton
+                        onClick={handleRetry}
                         size="small"
-                        onClick={() => handleViewRequest(booking.booking_id)}
+                        sx={{ ml: 1 }}
                       >
-                        View Details
-                      </Button>
+                        <ReplayIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : paginated.length > 0 ? (
+                  paginated.map((booking, index) => (
+                    <TableRow key={booking.booking_id}>
+                      <TableCell align="center">
+                        {index + 1 + page * rowsPerPage}
+                      </TableCell>
+                      <TableCell align="center">{booking.booking_id}</TableCell>
+                      <TableCell align="center">{booking.headcount}</TableCell>
+                      <TableCell align="center">
+                        {dayjs(booking.booking_date).format("YYYY-MM-DD")}
+                      </TableCell>
+                      <TableCell align="left">
+                        {dayjs(booking.end_date).diff(
+                          dayjs(booking.start_date),
+                          "day"
+                        )}{" "}
+                        days
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleViewRequest(booking.booking_id)}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      No finalized bookings available.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -349,7 +437,6 @@ const Tours = ({ userId }) => {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-
         <DialogContent dividers>
           <Typography>Booking ID: {selectedBooking?.booking_id}</Typography>
           <Typography>Headcount: {selectedBooking?.headcount}</Typography>
@@ -377,7 +464,6 @@ const Tours = ({ userId }) => {
           <Typography>Tour ID: {selectedBooking?.tour_id}</Typography>
           <Typography>Event ID: {selectedBooking?.event_id}</Typography>
         </DialogContent>
-
         <DialogActions>
           <Button onClick={() => setSelectedBooking(null)}>Close</Button>
         </DialogActions>
