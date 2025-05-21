@@ -24,9 +24,11 @@ const weatherApiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
 // Manual mapping of destination IDs to video URLs
 const videoMap: Record<number, string> = {
-  56: neg,
-  43: galle,
-  50: nuwara,
+  6: neg,
+  4: galle,
+  5: nuwara,
+  1: jungle,
+  2: kandy,
 
 
 };
