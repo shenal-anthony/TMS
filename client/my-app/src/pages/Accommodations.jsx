@@ -18,6 +18,7 @@ import {
   Typography,
   Box,
   MenuItem,
+  Link,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
@@ -264,6 +265,7 @@ const Accommodations = () => {
               </TableCell>
               <TableCell align="center">Type</TableCell>
               <TableCell align="center">Contact</TableCell>
+              <TableCell align="center">URL</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -289,19 +291,34 @@ const Accommodations = () => {
                     <TableCell
                       align="center"
                       sx={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxWidth: "150px",
+                        maxWidth: "150px", // Limit the width
+                        whiteSpace: "normal", // Allow wrapping
+                        wordWrap: "break-word", // Break long words if needed
                       }}
                     >
                       {accommodation.accommodation_name}
                     </TableCell>
+
                     <TableCell align="center">
                       {accommodation.accommodation_type}
                     </TableCell>
                     <TableCell align="center">
                       {accommodation.contact_number}
+                    </TableCell>
+                    <TableCell align="center">
+                      {accommodation.service_url ? (
+                        <Link
+                          href={accommodation.service_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="hover"
+                          color="primary"
+                        >
+                          {accommodation.service_url}
+                        </Link>
+                      ) : (
+                        <span style={{ color: "gray" }}>No URL provided</span>
+                      )}
                     </TableCell>
                     <TableCell
                       align="center"

@@ -14,6 +14,53 @@ const addPackageAccommodation = async ({ tourId, accommodationId }) => {
   }
 };
 
+// Delete all accommodations for a tour
+const deleteTourAccommodations = async (tourId) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM tours_accommodations WHERE tour_id = $1 RETURNING *",
+      [tourId]
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error deleting tour accommodations:", error);
+    throw error;
+  }
+};
+
+// Add a single accommodation to a tour
+const addTourAccommodation = async ({ tourId, accommodationId }) => {
+  try {
+    const result = await pool.query(
+      "INSERT INTO tours_accommodations (tour_id, accommodation_id) VALUES ($1, $2) RETURNING *",
+      [tourId, accommodationId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error adding tour accommodation:", error);
+    throw error;
+  }
+};
+
+// Update tour accommodations (delete existing and add new)
+const updateTourAccommodations = async (tourId, accommodationIds) => {
+  try {
+    // Delete existing accommodations
+    await deleteTourAccommodations(tourId);
+
+    // Add new accommodations
+    const results = await Promise.all(
+      accommodationIds.map((accommodationId) =>
+        addTourAccommodation({ tourId, accommodationId })
+      )
+    );
+    return results;
+  } catch (error) {
+    console.error("Error updating tour accommodations:", error);
+    throw error;
+  }
+};
+
 const getAccommodationsByTourId = async (tourId) => {
   const query = `
     SELECT 
@@ -94,4 +141,7 @@ module.exports = {
   getToursByAccommodationIds,
   getTourAccommodations,
   getTourIdsByAccommodationIds,
+  updateTourAccommodations,
+  addTourAccommodation,
+  deleteTourAccommodations,
 };

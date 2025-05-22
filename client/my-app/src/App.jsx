@@ -18,11 +18,11 @@ import EditProfile from "./pages/EditProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GuideLayout from "./layouts/GuideLayout";
 import GuideDashboard from "./pages/GuideDashboard";
-import Tours from "./pages/Tours";
+import GuideTours from "./pages/GuideTours";
 import GuideReports from "./pages/GuideReports";
 // import Feedbacks from "./pages/Feedbacks";
 import Packages from "./pages/Packages";
-import Tour from "./pages/Tour";
+import Tours from "./pages/Tours";
 
 import { Slide, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -84,7 +84,7 @@ const App = () => {
               element={<Accommodations />}
             />
             {/* <Route path="/contents/events" element={<Events />} /> */}
-            <Route path="/contents/tour" element={<Tour />} />
+            <Route path="/contents/tours" element={<Tours />} />
             <Route path="/guide-availability" element={<GuideAvailability />} />
             <Route
               path="/vehicles/your-vehicles"
@@ -120,8 +120,8 @@ const App = () => {
               element={<GuideDashboard userId={authUser?.userId} />}
             />
             <Route
-              path="/Tours"
-              element={<Tours userId={authUser?.userId} />}
+              path="/guide-tours"
+              element={<GuideTours userId={authUser?.userId} />}
             />
             {/* <Route
               path="/Feedbacks"

@@ -209,7 +209,7 @@ const Sidebar = ({ isCollapsed }) => {
               </li>
               <li>
                 <NavLink
-                  to="/contents/tour"
+                  to="/contents/tours"
                   className={({ isActive }) =>
                     `flex items-center gap-2 p-2 hover:bg-gray-700 ${
                       isActive ? "bg-gray-700" : ""

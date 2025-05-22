@@ -1,12 +1,12 @@
-const tourist = require("../models/destinationModel");
+const Tourist = require("../models/destinationModel");
 const pkg = require("../models/packageModel");
 const accommodation = require("../models/accommodationModel");
 const event = require("../models/eventModel");
 const tour = require("../models/tourModel");
-const TourDest = require("../models/tourDestinationModel");
+const TourDes = require("../models/tourDestinationModel");
 const TourAcc = require("../models/tourAccommodationModel");
-const pkgDest = require("../models/packageDestinationModel");
-const pkgAcc = require("../models/packageAccommodationModel");
+const PkgDes = require("../models/packageDestinationModel");
+const PkgAcc = require("../models/packageAccommodationModel");
 
 const baseUrl = process.env.BASE_URL;
 
@@ -26,7 +26,7 @@ const extractLatLonFromUrl = (url) => {
 // get all
 const getAllDestinations = async (req, res) => {
   try {
-    const contents = await tourist.getAllDestinations();
+    const contents = await Tourist.getAllDestinations();
     res.json(contents);
   } catch (error) {
     res
@@ -39,7 +39,7 @@ const getAllDestinations = async (req, res) => {
 const getDestination = async (req, res) => {
   const { id } = req.params;
   try {
-    const content = await tourist.getDestinationById(id);
+    const content = await Tourist.getDestinationById(id);
     if (!content) {
       return res.status(404).json({ message: "Destination not found" });
     }
@@ -94,7 +94,7 @@ const addDestination = async (req, res) => {
       });
     }
 
-    const createdDestination = await tourist.addDestination(newData);
+    const createdDestination = await Tourist.addDestination(newData);
 
     res.status(201).json({
       success: true,
@@ -138,7 +138,7 @@ const updateDestination = async (req, res) => {
       });
     }
 
-    const updatedContent = await tourist.updateDestinationById(id, updatedData);
+    const updatedContent = await Tourist.updateDestinationById(id, updatedData);
 
     res.json({
       success: true,
@@ -158,7 +158,7 @@ const updateDestination = async (req, res) => {
 const deleteDestination = async (req, res) => {
   const { id } = req.params;
   try {
-    await tourist.deleteDestinationById(id);
+    await Tourist.deleteDestinationById(id);
     res.json({ message: "Guide deleted successfully" });
   } catch (error) {
     res
@@ -186,7 +186,7 @@ const getPackageDetailsWithTours = async (req, res) => {
         );
 
         // Fetch destination-related tours
-        const destinationTours = await TourDest.getTourDetailsByDesId(
+        const destinationTours = await TourDes.getTourDetailsByDesId(
           packageData.destination_id
         );
 
@@ -225,10 +225,10 @@ const getAllPackagesDetails = async (req, res) => {
     // Fetch accommodations and destinations for all packages
     const packageDetails = await Promise.all(
       packages.map(async (pkg) => {
-        const accommodations = await pkgAcc.getAccommodationsByPackageId(
+        const accommodations = await PkgAcc.getAccommodationsByPackageId(
           pkg.package_id
         );
-        const destinations = await pkgDest.getDestinationsByPackageId(
+        const destinations = await PkgDes.getDestinationsByPackageId(
           pkg.package_id
         );
         return {
@@ -253,7 +253,7 @@ const getAllPackagesDetails = async (req, res) => {
     const toursByAcc = await TourAcc.getToursByAccommodationIds([
       ...accommodationIds,
     ]);
-    const toursByDest = await TourDest.getToursByDestinationIds([
+    const toursByDest = await TourDes.getToursByDestinationIds([
       ...destinationIds,
     ]);
 
@@ -353,14 +353,14 @@ const getRelatedPackages = async (req, res) => {
 
     // Step 1: Get destination and accommodation IDs for the tour
     const [destinationIds, accommodationIds] = await Promise.all([
-      TourDest.getTourDestinations(tourId),
+      TourDes.getTourDestinations(tourId),
       TourAcc.getTourAccommodations(tourId),
     ]);
 
     // Step 2: Get package IDs from destinations and accommodations
     const [destPackageIds, accPackageIds] = await Promise.all([
-      pkgDest.getPackageIdsByDestinations(destinationIds),
-      pkgAcc.getPackageIdsByAccommodations(accommodationIds),
+      PkgDes.getPackageIdsByDestinations(destinationIds),
+      PkgAcc.getPackageIdsByAccommodations(accommodationIds),
     ]);
 
     // Step 3: Get package IDs present in both destinations and accommodations
@@ -393,8 +393,8 @@ const getPackageDetails = async (req, res) => {
     const packageData = await pkg.getPackageById(id);
 
     // Fetch accommodations and destinations
-    const accommodations = await pkgAcc.getAccommodationDetailsByPackageId(id);
-    const destinations = await pkgDest.getDestinationDestailsByPackageId(id);
+    const accommodations = await PkgAcc.getAccommodationDetailsByPackageId(id);
+    const destinations = await PkgDes.getDestinationDestailsByPackageId(id);
 
     // Format response to match getAllPackagesDetails
     const formattedContent = {
@@ -550,17 +550,14 @@ const addPackage = async (req, res) => {
 
     // Add associations to junction tables
     if (accommodationIds.length > 0) {
-      await pkgAcc.addPackageAccommodation(
+      await PkgAcc.addPackageAccommodation(
         newContent.package_id,
         accommodationIds
       );
     }
 
     if (destinationIds.length > 0) {
-      await pkgDest.addPackageDestination(
-        newContent.package_id,
-        destinationIds
-      );
+      await PkgDes.addPackageDestination(newContent.package_id, destinationIds);
     }
 
     // add a delay
@@ -710,22 +707,22 @@ const updatePackage = async (req, res) => {
 
     // Update associations in junction tables
     if (accommodationIds.length > 0) {
-      await pkgAcc.updatePackageAccommodation(id, accommodationIds);
+      await PkgAcc.updatePackageAccommodation(id, accommodationIds);
     }
 
     if (destinationIds.length > 0) {
-      await pkgDest.updatePackageDestination(id, destinationIds);
+      await PkgDes.updatePackageDestination(id, destinationIds);
     }
 
     // Fetch updated associations
     const updatedAccommodationIds =
       accommodationIds.length > 0
         ? accommodationIds
-        : (await pkgAcc.getAccommodationsByPackageId(id)) || [];
+        : (await PkgAcc.getAccommodationsByPackageId(id)) || [];
     const updatedDestinationIds =
       destinationIds.length > 0
         ? destinationIds
-        : (await pkgDest.getDestinationsByPackageId(id)) || [];
+        : (await PkgDes.getDestinationsByPackageId(id)) || [];
 
     // Construct response
     const fullPackage = {
@@ -1047,7 +1044,7 @@ const addTour = async (req, res) => {
       });
     }
 
-    await TourDest.addPackageDestination(packageDestinationData);
+    await TourDes.addPackageDestination(packageDestinationData);
 
     // Handle packageAccommodation
     const packageAccommodationData = {
@@ -1086,6 +1083,7 @@ const addTour = async (req, res) => {
 const updateTour = async (req, res) => {
   const { id } = req.params;
   const { body, files } = req;
+  console.log("🚀 ~ contentController.js:1089 ~ updateTour ~ body:", body);
 
   try {
     const updatedData = {
@@ -1098,27 +1096,62 @@ const updateTour = async (req, res) => {
       const fileUrl = `/uploads/tours/${uploadedImage.filename}`;
       const fullUrl = `${baseUrl}${fileUrl}`;
       updatedData.pictureUrl = fullUrl;
-    } else if (body.pictureUrl) {
-      updatedData.pictureUrl = body.pictureUrl; // fallback to existing image
+    } else if (body.picture_url) {
+      updatedData.pictureUrl = body.picture_url; // Use snake_case to match body
     }
 
-    if (Object.keys(updatedData).length === 0) {
+    if (
+      Object.keys(updatedData).length === 0 &&
+      !body.destination_ids &&
+      !body.accommodation_ids
+    ) {
       return res.status(400).json({
         success: false,
         message: "No data provided to update",
       });
     }
 
+    // Update the tour (activity and pictureUrl)
     const updatedContent = await tour.updateTour(id, updatedData);
+
+    // Update tour destinations (delete existing and add new)
+    let updateTourDest = true;
+    if (body.destination_ids && Array.isArray(body.destination_ids)) {
+      try {
+        await TourDes.updateTourDestinations(id, body.destination_ids);
+      } catch (error) {
+        updateTourDest = false;
+      }
+    }
+
+    // Update tour accommodations (delete existing and add new)
+    let updateTourAcc = true;
+    if (body.accommodation_ids && Array.isArray(body.accommodation_ids)) {
+      try {
+        await TourAcc.updateTourAccommodations(id, body.accommodation_ids);
+      } catch (error) {
+        updateTourAcc = false;
+      }
+    }
+
+    if (!updateTourDest || !updateTourAcc) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to update tour destinations or accommodations",
+      });
+    }
 
     res.json({
       success: true,
       message: "Tour updated successfully",
       data: updatedContent,
     });
+
+    
   } catch (error) {
     console.error("Error updating Tour:", error);
     res.status(500).json({
+      success: false,
       message: "Error updating Tour",
       error: error.message,
     });
@@ -1141,8 +1174,28 @@ const deleteTour = async (req, res) => {
 // get all tours
 const getAllTours = async (req, res) => {
   try {
-    const contents = await tour.getAllTours();
-    res.json(contents);
+    // Fetch all tours
+    const tourData = await tour.getAllTours();
+
+    // Fetch destinations and accommodations for each tour concurrently
+    const enrichedTours = await Promise.all(
+      tourData.map(async (tour) => {
+        const destinations = await TourDes.getDestinationsByTourId(
+          tour.tour_id
+        );
+        const accommodations = await TourAcc.getAccommodationsByTourId(
+          tour.tour_id
+        );
+        return {
+          ...tour, // Spread tour properties (e.g., tour_id, activity)
+          destinations, // Array of destination objects
+          accommodations, // Array of accommodation objects
+        };
+      })
+    );
+
+    // Send response with enriched tours
+    res.json(enrichedTours);
   } catch (error) {
     res
       .status(500)
@@ -1177,7 +1230,7 @@ const getTourDetails = async (req, res) => {
     }
 
     // Fetch destinations and accommodations
-    const destinations = await TourDest.getDestinationsByTourId(id);
+    const destinations = await TourDes.getDestinationsByTourId(id);
     const accommodations = await TourAcc.getAccommodationsByTourId(id);
 
     // Combine results

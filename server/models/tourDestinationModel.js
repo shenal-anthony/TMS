@@ -14,6 +14,53 @@ const addPackageDestination = async ({ tourId, destinationId }) => {
   }
 };
 
+// Delete all destinations for a tour
+const deleteTourDestinations = async (tourId) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM tours_destinations WHERE tour_id = $1 RETURNING *",
+      [tourId]
+    );
+    return result.rows;
+  } catch (error) {
+    console.error("Error deleting tour destinations:", error);
+    throw error;
+  }
+};
+
+// Add a single destination to a tour
+const addTourDestination = async ({ tourId, destinationId }) => {
+  try {
+    const result = await pool.query(
+      "INSERT INTO tours_destinations (tour_id, destination_id) VALUES ($1, $2) RETURNING *",
+      [tourId, destinationId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error("Error adding tour destination:", error);
+    throw error;
+  }
+};
+
+// Update tour destinations (delete existing and add new)
+const updateTourDestinations = async (tourId, destinationIds) => {
+  try {
+    // Delete existing destinations
+    await deleteTourDestinations(tourId);
+
+    // Add new destinations
+    const results = await Promise.all(
+      destinationIds.map((destinationId) =>
+        addTourDestination({ tourId, destinationId })
+      )
+    );
+    return results;
+  } catch (error) {
+    console.error("Error updating tour destinations:", error);
+    throw error;
+  }
+};
+
 const getDestinationsByTourId = async (tourId) => {
   const query = `
     SELECT 
@@ -31,7 +78,7 @@ const getDestinationsByTourId = async (tourId) => {
 };
 
 // Get destination IDs for a tour
-async function getTourDestinations(tourId) {
+const getTourDestinations = async (tourId) => {
   const query = `
     SELECT destination_id
     FROM tours_destinations
@@ -39,7 +86,7 @@ async function getTourDestinations(tourId) {
   `;
   const result = await pool.query(query, [tourId]);
   return result.rows.map((row) => row.destination_id);
-}
+};
 
 // get tour details by destination id
 const getTourDetailsByDesId = async (id) => {
@@ -94,4 +141,7 @@ module.exports = {
   getToursByDestinationIds,
   getTourDestinations,
   getTourIdsByDestinationIds,
+  addTourDestination,
+  updateTourDestinations,
+  deleteTourDestinations,
 };

@@ -134,7 +134,7 @@ const GuideAvailability = () => {
     const updatePromises = selectedIds.map((id) =>
       axios.patch(`${apiUrl}/api/guides/status/${id}`, {
         status: newStatus,
-        leave_due_date: newStatus === "In Leave" ? formattedStartDate : null,
+        leave_start_date: newStatus === "In Leave" ? formattedStartDate : null,
         leave_end_date: newStatus === "In Leave" ? formattedEndDate : null,
       })
     );
@@ -147,7 +147,7 @@ const GuideAvailability = () => {
               ? {
                   ...guide,
                   status: newStatus,
-                  leave_due_date:
+                  leave_start_date:
                     newStatus === "In Leave" ? formattedStartDate : null,
                   leave_end_date:
                     newStatus === "In Leave" ? formattedEndDate : null,
@@ -384,8 +384,8 @@ const GuideAvailability = () => {
                     <TableCell align="center">{`${guide.first_name} ${guide.last_name}`}</TableCell>
                     <TableCell align="center">{guide.email_address}</TableCell>
                     <TableCell align="center">
-                      {guide.leave_due_date
-                        ? format(new Date(guide.leave_due_date), "dd/MM/yyyy")
+                      {guide.leave_start_date
+                        ? format(new Date(guide.leave_start_date), "dd/MM/yyyy")
                         : "N/A"}
                     </TableCell>
                     <TableCell align="center">
