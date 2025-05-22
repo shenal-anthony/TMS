@@ -202,7 +202,9 @@ const Packages = () => {
                     description: response.data.package.description,
                     price: parseFloat(response.data.package.price),
                     duration: response.data.package.duration,
-                    accommodation_ids: Array.isArray(response.data.accommodations)
+                    accommodation_ids: Array.isArray(
+                      response.data.accommodations
+                    )
                       ? response.data.accommodations.map(
                           (acc) => acc.accommodationId
                         )
@@ -664,7 +666,8 @@ const Packages = () => {
                       {accom.accommodationName}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      (ID: {accom.accommodationId} — Type: {accom.accommodationType})
+                      (ID: {accom.accommodationId} — Type:{" "}
+                      {accom.accommodationType})
                     </Typography>
                   </MenuItem>
                 ))}
@@ -745,47 +748,111 @@ const Packages = () => {
                   <TableRow
                     key={pkg.package_id}
                     sx={{
+                      // Highlight row on hover
                       "&:hover td": {
                         backgroundColor: "#e3f2fd !important",
+                      },
+                      // Default styling for all cells in the row
+                      "& td": {
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                        verticalAlign: "middle", // Align all cells vertically centered
                       },
                     }}
                   >
                     <TableCell align="center">
                       {index + 1 + packagePage * rowsPerPage}
                     </TableCell>
+
                     <TableCell align="center">{pkg.package_id}</TableCell>
                     <TableCell align="center">{pkg.package_name}</TableCell>
-                    <TableCell align="center">{pkg.duration}</TableCell>
+
+                    <TableCell align="center" sx={{ maxWidth: "150px" }}>
+                      {pkg.duration < 60
+                        ? `${pkg.duration} minutes`
+                        : pkg.duration < 1440
+                        ? (() => {
+                            const hours = Math.floor(pkg.duration / 60);
+                            const minutes = pkg.duration % 60;
+                            return (
+                              `${hours} hour${hours !== 1 ? "s" : ""}` +
+                              `${
+                                minutes > 0
+                                  ? ` ${minutes} minute${
+                                      minutes !== 1 ? "s" : ""
+                                    }`
+                                  : ""
+                              }`
+                            );
+                          })()
+                        : (() => {
+                            const days = Math.floor(pkg.duration / 1440);
+                            const remainingMinutes = pkg.duration % 1440;
+                            const hours = Math.floor(remainingMinutes / 60);
+                            return (
+                              `${days} day${days !== 1 ? "s" : ""}` +
+                              `${
+                                hours > 0
+                                  ? ` ${hours} hour${hours !== 1 ? "s" : ""}`
+                                  : ""
+                              }`
+                            );
+                          })()}
+                    </TableCell>
+
                     <TableCell align="center">
                       {getDestinationNames(pkg.destination_ids, destinations)}
                     </TableCell>
+
                     <TableCell align="center">
                       {getAccommodationNames(
                         pkg.accommodation_ids,
                         accommodations
                       )}
                     </TableCell>
-                    <TableCell
-                      align="center"
-                      style={{ display: "flex", justifyContent: "center" }}
-                    >
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        onClick={() => handleEditPackage(pkg)}
+
+                    <TableCell align="center">
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
                       >
-                        Update
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        size="small"
-                        onClick={() => handleRemovePackage(pkg.package_id)}
-                        style={{ marginLeft: "10px" }}
-                      >
-                        Remove
-                      </Button>
+                        <Button
+                          variant="contained"
+                          sx={{
+                            minWidth: "64px", // MUI small button default
+                            height: "32px", // MUI small height
+                            padding: "4px 10px", // MUI small padding
+                            whiteSpace: "nowrap", // Force text to stay on one line
+                            overflow: "hidden", // Optional: hide overflow if needed
+                            textOverflow: "ellipsis", // Optional: show "..." if text overflows
+                          }}
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEditPackage(pkg)}
+                        >
+                          Update
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          size="small"
+                          onClick={() => handleRemovePackage(pkg.package_id)}
+                          sx={{
+                            minWidth: "64px", // MUI small button default
+                            height: "32px", // MUI small height
+                            padding: "4px 10px", // MUI small padding
+                            whiteSpace: "nowrap", // Force text to stay on one line
+                            overflow: "hidden", // Optional: hide overflow if needed
+                            textOverflow: "ellipsis", // Optional: show "..." if text overflows
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))
