@@ -638,4 +638,4 @@ const Dashboard = ({ userId }) => {
   );
 };
 
-export default Dashboard
+export default Dashboard;

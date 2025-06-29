@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import BaseLayout from "./layouts/BaseLayout";
+import LoginForm from "./pages/LoginForm";
+import RegisterForm from "./pages/RegisterForm";
 import Dashboard from "./pages/Dashboard";
 import VehicleRegForm from "./pages/VehicleRegisterForm";
 import Reports from "./pages/Reports";
@@ -142,6 +144,6 @@ const App = () => {
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;
