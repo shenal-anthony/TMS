@@ -72,4 +72,5 @@ server/node_modules/express-validator/lib/middlewares/validation-chain-builders.
 server/node_modules/.package-lock.json
 
 server/node_modules/.package-lock.json
-.env
+server/.env
+client/web-site/.env
