@@ -1,4 +1,7 @@
-const { saveGuideRequest, updateGuideResponse } = require("./models/guideResponseModel");
+const {
+  saveGuideRequest,
+  updateGuideResponse,
+} = require("./models/guideResponseModel");
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
