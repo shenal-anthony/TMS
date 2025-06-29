@@ -1,53 +1,80 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import bodyParser from "body-parser";
-import helmet from "helmet";
-import morgan from "morgan";
-import generalRoutes from "./routes/generalRoutes.js";
-import superRoutes from "./routes/superRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
-import guideRoutes from "./routes/guideRoutes.js";
-import { Sequelize } from "sequelize";
-
-// const express = require("express");
-// const cors = require("cors");
-// const bodyParser = require("body-parser");
-// const authRoutes = require("./routes/authRoutes");
-
-dotenv.config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 const app = express();
+require("dotenv").config();
+const multer = require("multer");
 
-app.use(express.json());
-app.use(helmet());
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
-app.use(morgan("common"));
+const http = require("http");
+const { Server } = require("socket.io");
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Or your frontend origin
+    methods: ["GET", "POST"],
+  },
+});
+
+// Import and use socket logic
+require("./socket")(io);
+// Store io for later use in routes/controllers if needed
+app.set("io", io);
+// Middleware imports
+const bodyParser = require("body-parser");
+
+// Route imports
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const vehicleRoutes = require("./routes/vehicleRoutes");
+const guideRoutes = require("./routes/guideRoutes");
+const contentRoutes = require("./routes/contentRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
+const touristRoutes = require("./routes/touristRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+
+const port = process.env.PORT || 8001;
+
+// Middlewares
+const allowedOrigins = ["http://localhost:5174", "http://localhost:5173"];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
+app.use(express.json());
 
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, "public")));
 
 // Routes
-app.use("/general", generalRoutes);
-app.use("/super", superRoutes);
-app.use("/admin", adminRoutes);
-app.use("/guide", guideRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admins", adminRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/guides", guideRoutes);
+app.use("/api/contents", contentRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/tourists", touristRoutes);
+app.use("/api/reports", reportRoutes);
 
-const PORT = process.env.PORT || 8009;
+// Error handling middleware
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: err.message });
+  }
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
 
-// PostgreSQL connection with Sequelize
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-    host: process.env.DB_HOST || "localhost",
-    port: process.env.DB_PORT || 5432,
-    dialect: "postgres",
-    logging: false,
-  });
-  
-  // Test database connection
-  sequelize.authenticate()
-    .then(() => console.log(`PostgreSQL Connected: ${process.env.DB_NAME}`))
-    .catch(err => console.error("PostgreSQL Connection Error:", err));
-
-
-// Console output
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Server startup
+server.listen(port, () => console.log(`Server running on port ${port}`));

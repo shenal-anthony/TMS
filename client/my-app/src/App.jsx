@@ -1,48 +1,146 @@
-import {
-  BrowserRouter as Router,
-  Navigate,
-  Routes,
-  Route,
-} from "react-router-dom";
-import { CssBaseline, ThemeProvider } from "@mui/material";
-import { createTheme } from "@mui/material/styles";
-import { useMemo } from "react";
-import { useSelector } from "react-redux";
-import { themeSettings } from "./theme";
-// import { state } from "./state/index";
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useState } from "react";
 import BaseLayout from "./layouts/BaseLayout";
 import Dashboard from "./pages/Dashboard";
+import VehicleRegForm from "./pages/VehicleRegisterForm";
+import Reports from "./pages/Reports";
+import PendingBookings from "./pages/PendingBookings";
+import ViewBookings from "./pages/ViewBookings";
+import Admins from "./pages/Admins";
+import Destinations from "./pages/Destinations";
+// import Events from "./pages/Events";
+import GuideAvailability from "./pages/GuideAvailability";
+import YourVehicles from "./pages/YourVehicles";
+import ManageVehicles from "./pages/ManageVehicles";
+import EditProfile from "./pages/EditProfile";
+import ProtectedRoute from "./components/ProtectedRoute";
+import GuideLayout from "./layouts/GuideLayout";
+import GuideDashboard from "./pages/GuideDashboard";
+import GuideTours from "./pages/GuideTours";
+import GuideReports from "./pages/GuideReports";
+// import Feedbacks from "./pages/Feedbacks";
+import Packages from "./pages/Packages";
+import Tours from "./pages/Tours";
 
-function App() {
-  // const mode = useSelector((state) => state.global.mode);
-  // const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+import { Slide, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Accommodations from "./pages/Accommodations";
+
+const App = () => {
+  const [authUser, setAuthUser] = useState(null);
+
   return (
-    <div className="app">
-      <Router>
-        {/* <ThemeProvider theme={theme}> */}
-          {/* <CssBaseline /> */}
-          <Routes>
-            {/* Public Routes */}
-            {/* <Route path="/login" element={<LoginForm />} /> */}
-            {/* 
-        
-        <Route path="/register" element={<RegisterForm />} /> */}
+    <Router>
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        closeOnClick
+        newestOnTop
+        draggable
+        pauseOnHover
+        transition={Slide}
+        theme="light"
+      />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LoginForm />} />
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/register" element={<RegisterForm />} />
+        <Route path="/vehicleRegisterForm" element={<VehicleRegForm />} />
 
-            {/* Protected Routes (Wrapped in BaseLayout) */}
-            <Route element={<BaseLayout />}>
-              <Routes path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              {/* <Route path="bookings/pending" element={<PendingBookings />} /> */}
-              {/* <Route path="bookings/confirmed" element={<ConfirmedBookings />} /> */}
-              {/* <Route path="/vehicleregister" element={<VehicleRegForm />} /> */}
-              {/* <Route path="/users" element={<Users />} />
-          <Route path="/reports" element={<Reports />} /> */}
-            </Route>
-          </Routes>
-        {/* </ThemeProvider> */}
-      </Router>
-    </div>
+        {/* Protected Routes for admin */}
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={["Admin", "SuperAdmin"]}
+              onAuthSuccess={(user) => setAuthUser(user)}
+            />
+          }
+        >
+          <Route element={<BaseLayout role={authUser?.role} />}>
+            <Route
+              path="/dashboard"
+              element={<Dashboard userId={authUser?.userId} />}
+            />
+            <Route path="/bookings/pending" element={<PendingBookings />} />
+            <Route
+              path="/bookings/confirmed"
+              element={
+                <ViewBookings userId={authUser?.userId} role={authUser?.role} />
+              }
+            />
+            <Route
+              path="/admins"
+              element={
+                <Admins userId={authUser?.userId} role={authUser?.role} />
+              }
+            />
+            <Route path="/contents/destinations" element={<Destinations />} />
+            <Route path="/contents/packages" element={<Packages />} />
+            <Route
+              path="/contents/accommodations"
+              element={<Accommodations />}
+            />
+            {/* <Route path="/contents/events" element={<Events />} /> */}
+            <Route path="/contents/tours" element={<Tours />} />
+            <Route path="/guide-availability" element={<GuideAvailability />} />
+            <Route
+              path="/vehicles/your-vehicles"
+              element={<YourVehicles userId={authUser?.userId} />}
+            />
+            <Route
+              path="/vehicles/manage-vehicles"
+              element={<ManageVehicles userId={authUser?.userId} />}
+            />
+            <Route
+              path="/reports"
+              element={<Reports userId={authUser?.userId} />}
+            />
+            <Route
+              path="/edit-profile"
+              element={<EditProfile userId={authUser?.userId} />}
+            />
+          </Route>
+        </Route>
+
+        {/* Protected routes for Guide role */}
+        <Route
+          element={
+            <ProtectedRoute
+              allowedRoles={["Guide"]}
+              onAuthSuccess={(user) => setAuthUser(user)}
+            />
+          }
+        >
+          <Route element={<GuideLayout role={authUser?.role} />}>
+            <Route
+              path="/guide-dashboard"
+              element={<GuideDashboard userId={authUser?.userId} />}
+            />
+            <Route
+              path="/guide-tours"
+              element={<GuideTours userId={authUser?.userId} />}
+            />
+            {/* <Route
+              path="/Feedbacks"
+              element={<Feedbacks userId={authUser?.userId} />}
+            /> */}
+            <Route
+              path="/your-vehicles"
+              element={<YourVehicles userId={authUser?.userId} />}
+            />
+            <Route
+              path="/guide-reports"
+              element={<GuideReports userId={authUser?.userId} />}
+            />
+            <Route
+              path="/guide/edit-profile"
+              element={<EditProfile userId={authUser?.userId} />}
+            />
+          </Route>
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 

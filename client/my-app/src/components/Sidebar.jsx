@@ -1,41 +1,73 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Dashboard,
-  People,
-  DirectionsCar,
-  BarChart,
-  ExpandMore,
-  ExpandLess,
+  Book,
   SupervisorAccount,
   LibraryBooks,
-  FolderShared,
+  DirectionsCar,
+  BarChart,
+  ChevronRight,
   ExitToApp,
-  Book,
-  ManageAccounts,
-  PermMedia,
-  ShowChart,
-  Explore
+  ExpandMore,
+  ExpandLess,
+  Explore,
 } from "@mui/icons-material";
 
 const Sidebar = ({ isCollapsed }) => {
-  const [open, setOpen] = useState({
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [openMenus, setOpenMenus] = useState({
     bookings: false,
+    contents: false,
     vehicles: false,
   });
 
+  const logout = () => {
+    sessionStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    navigate("/login");
+  };
+
+  // Helper function to check if the current route is under a specific path
+  const isRouteUnder = (path) => location.pathname.startsWith(path);
+
+  // Toggle submenu open/closed and close other menus
+  const toggleMenu = (menu) => {
+    setOpenMenus((prev) => {
+      const newState = { bookings: false, contents: false, vehicles: false };
+      newState[menu] = !prev[menu];
+      return newState;
+    });
+  };
+
+  // Automatically close submenus when navigating to a different section
+  useEffect(() => {
+    if (
+      !isRouteUnder("/bookings") &&
+      !isRouteUnder("/contents") &&
+      !isRouteUnder("/vehicles")
+    ) {
+      setOpenMenus({ bookings: false, contents: false, vehicles: false });
+    }
+  }, [location.pathname]);
+
   return (
     <aside
-      className={`bg-gray-900 text-white flex flex-col ${
-        isCollapsed ? "w-16" : "w-64"
-      } transition-all duration-300 h-full overflow-y-auto p-3`}
+      className={`bg-gray-900 text-white flex flex-col transition-all duration-300 h-full overflow-y-auto p-3 ${
+        isCollapsed ? "w-16 min-w-[4rem]" : "w-64 min-w-[16rem]"
+      } shrink-0`}
     >
       <ul className="flex-grow">
         {/* Dashboard */}
         <li>
           <NavLink
             to="/dashboard"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
             <Dashboard /> {!isCollapsed && "Dashboard"}
           </NavLink>
@@ -43,32 +75,47 @@ const Sidebar = ({ isCollapsed }) => {
 
         {/* Bookings */}
         <li>
-          <button
-            className="flex items-center justify-between w-full p-2 hover:bg-gray-700"
-            onClick={() => setOpen({ ...open, bookings: !open.bookings })}
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("bookings")}
           >
             <div className="flex items-center gap-2">
               <Book /> {!isCollapsed && "Bookings"}
             </div>
-            {!isCollapsed && (open.bookings ? <ExpandLess /> : <ExpandMore />)}
-          </button>
+            {!isCollapsed &&
+              (openMenus.bookings || isRouteUnder("/bookings") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
 
-          {open.bookings && (
-            <ul className="ml-6">
+          {(openMenus.bookings || isRouteUnder("/bookings")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
               <li>
                 <NavLink
                   to="/bookings/pending"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  Pending Bookings
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Pending Bookings"}
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/bookings/confirmed"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  View Bookings
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "View Bookings"}
                 </NavLink>
               </li>
             </ul>
@@ -79,19 +126,13 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <NavLink
             to="/admins"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
             <SupervisorAccount /> {!isCollapsed && "Admins"}
-          </NavLink>
-        </li>
-
-        {/* Contents */}
-        <li>
-          <NavLink
-            to="/contents"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
-          >
-            <LibraryBooks /> {!isCollapsed && "Contents"}
           </NavLink>
         </li>
 
@@ -99,40 +140,148 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <NavLink
             to="/guide-availability"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
-            <Explore /> {!isCollapsed && "Guide & Availability"}
+            <Explore /> {!isCollapsed && "Guide-Availability"}
           </NavLink>
+        </li>
+
+        {/* Contents */}
+        <li>
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("contents")}
+          >
+            <div className="flex items-center gap-2">
+              <LibraryBooks /> {!isCollapsed && "Contents"}
+            </div>
+            {!isCollapsed &&
+              (openMenus.contents || isRouteUnder("/contents") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
+
+          {(openMenus.contents || isRouteUnder("/contents")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
+              <li>
+                <NavLink
+                  to="/contents/destinations"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Destinations"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contents/packages"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" /> {!isCollapsed && "Packages"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contents/Accommodations"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Accommodations"}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/contents/tours"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" /> {!isCollapsed && "Tour"}
+                </NavLink>
+              </li>
+              {/* <li>
+                <NavLink
+                  to="/contents/events"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
+                >
+                  <ChevronRight fontSize="small" /> {!isCollapsed && "Events"}
+                </NavLink>
+              </li> */}
+            </ul>
+          )}
         </li>
 
         {/* Vehicles */}
         <li>
-          <button
-            className="flex items-center justify-between w-full p-2 hover:bg-gray-700"
-            onClick={() => setOpen({ ...open, vehicles: !open.vehicles })}
+          <div
+            className="flex items-center justify-between w-full p-2 hover:bg-gray-700 cursor-pointer"
+            onClick={() => toggleMenu("vehicles")} // Toggle vehicles menu
           >
             <div className="flex items-center gap-2">
               <DirectionsCar /> {!isCollapsed && "Vehicles"}
             </div>
-            {!isCollapsed && (open.vehicles ? <ExpandLess /> : <ExpandMore />)}
-          </button>
+            {!isCollapsed &&
+              (openMenus.vehicles || isRouteUnder("/vehicles") ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              ))}
+          </div>
 
-          {open.vehicles && (
-            <ul className="ml-6">
+          {/* Show submenu if:
+              1. The menu is toggled open, OR
+              2. The current route is under "/vehicles"
+          */}
+          {(openMenus.vehicles || isRouteUnder("/vehicles")) && (
+            <ul className={`${isCollapsed ? "ml-2" : "ml-6"}`}>
               <li>
                 <NavLink
                   to="/vehicles/your-vehicles"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  Your Vehicles
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Your Vehicles"}
                 </NavLink>
               </li>
               <li>
                 <NavLink
                   to="/vehicles/manage-vehicles"
-                  className="block p-2 hover:bg-gray-700"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                      isActive ? "bg-gray-700" : ""
+                    }`
+                  }
                 >
-                  Manage Vehicles
+                  <ChevronRight fontSize="small" />{" "}
+                  {!isCollapsed && "Manage Vehicles"}
                 </NavLink>
               </li>
             </ul>
@@ -143,21 +292,25 @@ const Sidebar = ({ isCollapsed }) => {
         <li>
           <NavLink
             to="/reports"
-            className="flex items-center gap-2 p-2 hover:bg-gray-700"
+            className={({ isActive }) =>
+              `flex items-center gap-2 p-2 hover:bg-gray-700 ${
+                isActive ? "bg-gray-700" : ""
+              }`
+            }
           >
             <BarChart /> {!isCollapsed && "Reports"}
           </NavLink>
         </li>
       </ul>
 
-      {/* Logout at the bottom */}
+      {/* Logout Button */}
       <div className="mt-auto">
-        <NavLink
-          to="/login"
-          className="flex items-center gap-2 p-2 hover:bg-red-600"
+        <div
+          onClick={logout}
+          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-red-600"
         >
           <ExitToApp /> {!isCollapsed && "Logout"}
-        </NavLink>
+        </div>
       </div>
     </aside>
   );
