@@ -11,7 +11,7 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Or your frontend origin
+    origin: "*", // frontend origin
     methods: ["GET", "POST"],
   },
 });

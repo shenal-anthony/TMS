@@ -70,7 +70,7 @@ const deleteGuideRequestByBookingId = async (bookingId, guideId) => {
     console.log("Guide request deleted successfully");
   } catch (err) {
     console.error("Error deleting guide request:", err);
-    throw err; // important to throw so controller can handle it
+    throw err;
   }
 };
 
